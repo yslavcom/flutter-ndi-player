@@ -1,0 +1,47 @@
+#pragma once
+
+#include <cstddef>
+
+#include </home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/include/Processing.NDI.Advanced.h>
+#include "source-container.hpp"
+#include "interfaces/input-observer.hpp"
+
+#include <thread>
+
+class NdiRx
+{
+public:
+    NdiRx();
+    ~NdiRx();
+
+    bool start();
+    bool scanNdiSources();
+
+    std::string getSourceName(unsigned idx) const
+    {
+        return mSourceContainer.getSource(idx).mSourceName;
+    }
+    std::string getSourceUrl(unsigned idx) const
+    {
+        return mSourceContainer.getSource(idx).mSourceUrl;
+    }
+    const SourceContainer& getSourceContainer() const
+    {
+        return mSourceContainer;
+    }
+
+    void addObserver(InputObserver* obs);
+    void removeObserver(InputObserver* obs);
+
+private:
+    NDIlib_find_instance_t pNDI_find;
+
+    unsigned mSourceCount;
+    SourceContainer mSourceContainer;
+    unsigned trackNdiSourcesBackgroundBlock(bool& risChanged); // a blocking function
+    std::thread mShadowsourceTrackThread;
+
+    void updateObserversAboutInputState();
+    std::set<InputObserver*> mInputSinkObservers;
+};
+
