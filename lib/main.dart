@@ -22,7 +22,7 @@ class MainApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromRGBO(157, 240, 240, 1)),
         ),
-        home: MyHomePage(),
+        home: const MyHomePage(),
       ),
     );
   }

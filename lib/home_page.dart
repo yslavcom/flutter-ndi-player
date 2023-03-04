@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'pages.dart';
 import 'my_app_state.dart';
+import 'sources_page.dart';
 
 class MyHomePage extends StatefulWidget {
     const MyHomePage({super.key});
@@ -22,8 +23,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 page = HomePage();
                 break;
             case PageIndex.sources:
-                // page = SourcesPage();
-                throw UnimplementedError('no widget for $selectedPage');
+                page = SourcesPage();
+                break;
             case PageIndex.player:
                 // page = PlayerPage();
                 throw UnimplementedError('no widget for $selectedPage');
@@ -60,7 +61,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                         });
                                     }
                                     )
-                            )
+                            ),
+                            // Display the page on the right handside
+                            Expanded(
+                                    child: Container(
+                                    color: Theme.of(context).colorScheme.primaryContainer,
+                                    child: page,
+                                ),
+                            ),
                         ],
                     )
                 );
