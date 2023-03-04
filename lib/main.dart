@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'my_app_state.dart';
+import 'home_page.dart';
 
 void main() {
   runApp(const MainApp());
@@ -9,12 +13,18 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
+    return ChangeNotifierProvider(
+      create: (context) => NdiMonitorState(),
+      child: MaterialApp(
+        title: 'Ndi Monitor',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromRGBO(157, 240, 240, 1)),
         ),
+        home: MyHomePage(),
       ),
     );
   }
 }
+
