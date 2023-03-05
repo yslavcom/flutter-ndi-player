@@ -6,3 +6,9 @@ set(TARGET_NAME ndi-monitor)
 include_directories(${GLIB_INCLUDE_DIRS})
 
 add_subdirectory(ndi-rx)
+
+file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
+
+add_library(${TARGET_NAME} SHARED ${SOURCES})
+target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${TARGET_NAME} PUBLIC ndi-rx)
