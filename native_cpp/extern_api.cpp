@@ -3,6 +3,8 @@
 #include <memory>
 #include <mutex>
 
+#define EXPORT extern "C" __attribute__((visibility("default"))) __attribute__((used))
+
 namespace
 {
 std::unique_ptr<NdiRx> mNdiRx;
@@ -20,3 +22,10 @@ NdiRx* getInstanceRx()
 }
 
 } // anon namespace
+
+EXPORT
+void scanNdiSources()
+{
+    getInstanceRx()->start();
+    getInstanceRx()->scanNdiSources();
+}
