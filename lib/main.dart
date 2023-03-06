@@ -1,3 +1,5 @@
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,3 +30,6 @@ class MainApp extends StatelessWidget {
   }
 }
 
+class FFIBridge {
+
+}
