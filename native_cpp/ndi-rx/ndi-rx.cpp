@@ -1,6 +1,7 @@
 #include "ndi-rx.hpp"
 
 #include <iostream>
+#include <vector>
 
 NdiRx::NdiRx()
     : pNDI_find(nullptr)
@@ -83,9 +84,16 @@ unsigned NdiRx::trackNdiSourcesBackgroundBlock(bool& risChanged) // a blocking f
 
 void NdiRx::updateObserversAboutInputState()
 {
+    std::vector<std::string> sources;
+    auto count = mSourceContainer.getSourceCount();
+    for (unsigned i = 0; i < count; i ++)
+    {
+        auto source = mSourceContainer.getSource(i);
+        sources.push_back({source.mSourceName});
+    }
     for (auto &obs : mInputSinkObservers)
     {
-        obs->updateInputState();
+        obs->updateInputState(sources);
     }
 }
 

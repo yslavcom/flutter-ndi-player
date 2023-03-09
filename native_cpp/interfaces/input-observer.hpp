@@ -1,16 +1,10 @@
 #pragma once
 
-#include <string_view>
+#include <vector>
+#include <string>
 
-class InputObserver;
-class InputObserverServer
-{
-public:
-    virtual void registerObserver(InputObserver* obs) = 0;
-    virtual void deregisterObserver(InputObserver* obs) = 0;
-};
 class InputObserver
 {
 public:
-    virtual void updateInputState() = 0;
+    virtual void updateInputState(std::vector<std::string> inputNames) = 0;
 };
