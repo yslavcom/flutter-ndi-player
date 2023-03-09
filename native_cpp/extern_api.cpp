@@ -3,6 +3,8 @@
 #include <memory>
 #include <mutex>
 
+#include <iostream>
+
 #define EXPORT extern "C" __attribute__((visibility("default"))) __attribute__((used))
 
 namespace
@@ -26,6 +28,8 @@ NdiRx* getInstanceRx()
 EXPORT
 int scanNdiSources()
 {
+    std::cout << __func__ << std::endl;
+
     getInstanceRx()->start();
     getInstanceRx()->scanNdiSources();
     return 0;

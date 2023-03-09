@@ -1,5 +1,7 @@
 #include "ndi-rx.hpp"
 
+#include <iostream>
+
 NdiRx::NdiRx()
     : pNDI_find(nullptr)
     , mSourceCount(0)
@@ -126,6 +128,7 @@ bool NdiRx::scanNdiSources()
             bool countChanged = (mSourceCount != count);
             if (countChanged || isContentsChanged)
             {
+                std::cout << "NDI Source Count changed:" << count << std::endl;
                 updateObserversAboutInputState();
                 mSourceCount = count;
             }
