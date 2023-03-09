@@ -24,8 +24,9 @@ NdiRx* getInstanceRx()
 } // anon namespace
 
 EXPORT
-void scanNdiSources()
+int scanNdiSources()
 {
     getInstanceRx()->start();
     getInstanceRx()->scanNdiSources();
+    return 0;
 }

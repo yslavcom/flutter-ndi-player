@@ -1,13 +1,13 @@
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'ffi_bridge.dart';
 import 'my_app_state.dart';
 import 'home_page.dart';
 
 void main() {
-  runApp(const MainApp());
+    FFIBridge.initialize();
+    runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
@@ -28,8 +28,4 @@ class MainApp extends StatelessWidget {
       ),
     );
   }
-}
-
-class FFIBridge {
-
 }

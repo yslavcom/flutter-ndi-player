@@ -1,5 +1,6 @@
 // import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:ndi_player/ffi_bridge.dart';
 import 'package:provider/provider.dart';
 
 import 'pages.dart';
@@ -78,6 +79,9 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class HomePage extends StatelessWidget {
+
+  var onButtonPressCounter = 0;
+
     @override
     Widget build(BuildContext context){
         var appState = context.watch<NdiMonitorState>();
@@ -93,7 +97,12 @@ class HomePage extends StatelessWidget {
                         children: [
                             ElevatedButton.icon(
                                 onPressed: () {
-                                    print("Pressed the button");
+                                    print("Pressed the button: $onButtonPressCounter");
+                                    if (0 == onButtonPressCounter)
+                                    {
+                                        onButtonPressCounter = 1;
+                                        FFIBridge.scanNdiSources();
+                                    }
                                 },
                                 icon: Icon(icon),
                                 label: const Text('Search NDI sources'),
