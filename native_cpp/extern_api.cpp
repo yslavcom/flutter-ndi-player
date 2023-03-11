@@ -27,7 +27,7 @@ NdiRx* getInstanceRx()
     return mNdiRx.get();
 }
 
-void (*ndiSourceChange)(int32_t) = nullptr;
+int32_t (*ndiSourceChange)(int32_t) = nullptr;
 
 } // anon namespace
 
@@ -42,7 +42,7 @@ int32_t notifyUI_NdiSourceChange(int32_t count)
 }
 
 EXPORT
-void notifyUI_NdiSourceChange_CbRegister(void (*cb)(int32_t))
+void notifyUI_NdiSourceChange_CbRegister(int32_t (*cb)(int32_t))
 {
     ndiSourceChange = cb;
 }
