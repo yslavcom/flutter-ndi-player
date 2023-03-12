@@ -1,6 +1,8 @@
 #include "ndi-rx/ndi-rx.hpp"
 #include "ndi_src_observer.hpp"
 
+#include "DartApiDL/include/dart_api_dl.c"
+
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -27,24 +29,40 @@ NdiRx* getInstanceRx()
     return mNdiRx.get();
 }
 
-int32_t (*ndiSourceChange)(int32_t) = nullptr;
+int64_t DartApiMessagePort = -1;
+
+// this will send long integer to dart receiver port as a message
+void sendMsgToFlutter(int64_t msg)
+{
+    if (DartApiMessagePort == -1)
+    {
+        return;
+    }
+    Dart_CObject obj;
+    obj.type = Dart_CObject_kInt64;
+    obj.value.as_int64 = msg;
+    Dart_PostCObject_DL(DartApiMessagePort, &obj);
+}
 
 } // anon namespace
 
 EXPORT
-int32_t notifyUI_NdiSourceChange(int32_t count)
+int64_t InitializeDartApi(void *data)
 {
-    if (ndiSourceChange)
-    {
-        ndiSourceChange(count);
-    }
-    return count;
+  return Dart_InitializeApiDL(data);
 }
 
 EXPORT
-void notifyUI_NdiSourceChange_CbRegister(int32_t (*cb)(int32_t))
+void SetDartApiMessagePort(int64_t port)
 {
-    ndiSourceChange = cb;
+    DartApiMessagePort = port;
+}
+
+EXPORT
+int32_t notifyUI_NdiSourceChange(int32_t count)
+{
+    sendMsgToFlutter(count);
+    return count;
 }
 
 EXPORT
