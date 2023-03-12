@@ -47,14 +47,16 @@ void sendMsgToFlutter(int64_t msg)
 } // anon namespace
 
 EXPORT
-int64_t InitializeDartApi(void *data)
+int64_t initializeApiDLData(void *data)
 {
-  return Dart_InitializeApiDL(data);
+    std::cout << __func__ << ":" << data << std::endl;
+    return Dart_InitializeApiDL(data);
 }
 
 EXPORT
-void SetDartApiMessagePort(int64_t port)
+void setDartApiMessagePort(int64_t port)
 {
+    std::cout << __func__ << ":" << port << std::endl;
     DartApiMessagePort = port;
 }
 
