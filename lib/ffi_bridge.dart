@@ -18,6 +18,9 @@ class FFIBridge {
 
         final interactiveCppRequests = ReceivePort()
             ..listen((message) {
+              //  final _address = message as int;
+              //  final ndiSources = Pointer<NdiSources>.fromAddress(_address);
+
                 print('NDI inputs, count:$message');
              });
 
@@ -30,3 +33,11 @@ class FFIBridge {
     static late DynamicLibrary nativeNdiMonitorLib;
     static late Function scanNdiSources;
 }
+
+// class NdiSources extends Struct {
+//   external Pointer<Pointer<Utf8>> stringList;
+//
+//   factory NdiSources.allocate(Pointer<Pointer<Utf8>> stringList) =>
+//       allocate<NdiSources>().ref
+//         ..stringList = stringList;
+// }

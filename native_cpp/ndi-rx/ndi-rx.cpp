@@ -37,8 +37,11 @@ unsigned NdiRx::trackNdiSourcesBackgroundBlock(bool& risChanged) // a blocking f
         mSourceContainer.commit();
     };
 
+    unsigned count = 0;
+
     if (!pNDI_find)
     {
+        std::lock_guard lk(mSourceMutex);
         if (mSourceContainer.getSourceCount())
         {
             risChanged = true;
@@ -50,47 +53,46 @@ unsigned NdiRx::trackNdiSourcesBackgroundBlock(bool& risChanged) // a blocking f
     {
         uint32_t sourcesCount = 0;
         NDIlib_find_wait_for_sources(pNDI_find, 1000/* One second */);
-        auto ndiSources = NDIlib_find_get_current_sources(pNDI_find, &sourcesCount);
 
-        if (sourcesCount && ndiSources)
         {
-            if (mSourceContainer.getSourceCount() != sourcesCount)
-            {
-                risChanged = true;
-            }
+            std::lock_guard lk(mSourceMutex);
+            auto ndiSources = NDIlib_find_get_current_sources(pNDI_find, &sourcesCount);
 
-            mSourceContainer.startAdd();
-            for (uint32_t count = 0; count < sourcesCount; count ++)
+            if (sourcesCount && ndiSources)
             {
-                auto ptr = ndiSources + count;
-                if (mSourceContainer.addSource({ptr->p_ndi_name, ptr->p_url_address}))
+                if (mSourceContainer.getSourceCount() != sourcesCount)
                 {
                     risChanged = true;
                 }
+
+                mSourceContainer.startAdd();
+                for (uint32_t count = 0; count < sourcesCount; count ++)
+                {
+                    auto ptr = ndiSources + count;
+                    if (mSourceContainer.addSource({ptr->p_ndi_name, ptr->p_url_address}))
+                    {
+                        risChanged = true;
+                    }
+                }
+                mSourceContainer.commit();
             }
-            mSourceContainer.commit();
-        }
-        else
-        {
-            if (mSourceContainer.getSourceCount())
+            else
             {
-                risChanged = true;
-                deleteSources();
+                if (mSourceContainer.getSourceCount())
+                {
+                    risChanged = true;
+                    deleteSources();
+                }
             }
+
+            count = mSourceContainer.getSourceCount();
         }
     }
-    return mSourceContainer.getSourceCount();
+    return count;
 }
 
-void NdiRx::updateObserversAboutInputState()
+void NdiRx::updateObserversAboutInputState(std::vector<std::string> sources)
 {
-    std::vector<std::string> sources;
-    auto count = mSourceContainer.getSourceCount();
-    for (unsigned i = 0; i < count; i ++)
-    {
-        auto source = mSourceContainer.getSource(i);
-        sources.push_back({source.mSourceName});
-    }
     for (auto &obs : mInputSinkObservers)
     {
         obs->updateInputState(sources);
@@ -136,9 +138,20 @@ bool NdiRx::scanNdiSources()
             bool countChanged = (mSourceCount != count);
             if (countChanged || isContentsChanged)
             {
-                std::cout << "NDI Source Count changed:" << count << std::endl;
-                updateObserversAboutInputState();
+                std::vector<std::string> sources;
+                {
+                    std::lock_guard lk(mSourceMutex);
+                    auto count = mSourceContainer.getSourceCount();
+                    for (unsigned i = 0; i < count; i ++)
+                    {
+                        auto source = mSourceContainer.getSource(i);
+                        sources.push_back({source.mSourceName});
+                    }
+                }
                 mSourceCount = count;
+                std::cout << "NDI Source Count changed:" << count << std::endl;
+                updateObserversAboutInputState(sources);
+
             }
         }
         return true;

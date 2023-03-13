@@ -7,6 +7,7 @@
 #include "interfaces/input-observer.hpp"
 
 #include <thread>
+#include <mutex>
 
 class NdiRx
 {
@@ -41,7 +42,8 @@ private:
     unsigned trackNdiSourcesBackgroundBlock(bool& risChanged); // a blocking function
     std::thread mShadowsourceTrackThread;
 
-    void updateObserversAboutInputState();
+    void updateObserversAboutInputState(std::vector<std::string> sources);
     std::set<InputObserver*> mInputSinkObservers;
+    std::mutex mSourceMutex;
 };
 

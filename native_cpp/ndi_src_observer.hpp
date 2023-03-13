@@ -5,7 +5,7 @@
 
 class NdiSrcObserver: public InputObserver
 {
-    using UiUpdateCb = std::function<int32_t(int32_t)>;
+    using UiUpdateCb = std::function<int32_t(std::vector<std::string>)>;
 
 public:
     void updateInputState(std::vector<std::string> inputNames)
@@ -14,11 +14,12 @@ public:
         std::cout << __func__ << std::endl;
         for (auto& el : inputNames)
         {
+            // debug only
             std::cout << el << std::endl;
         }
         if (mUiUpdateCb)
         {
-            mUiUpdateCb(mInputNames.size());
+            mUiUpdateCb(inputNames);
         }
     }
 
