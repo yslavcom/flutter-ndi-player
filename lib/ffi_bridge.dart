@@ -18,8 +18,8 @@ class FFIBridge {
 
         final interactiveCppRequests = ReceivePort()
             ..listen((message) {
-                ndiSourceNames = const LineSplitter().convert(ascii.decode(message));
-                print('NDI inputs:$ndiSourceNames');
+                _ndiSourceNames = const LineSplitter().convert(ascii.decode(message));
+                print('NDI inputs:$_ndiSourceNames');
              });
 
         final int nativePort = interactiveCppRequests.sendPort.nativePort;
@@ -30,7 +30,12 @@ class FFIBridge {
     }
     static late DynamicLibrary nativeNdiMonitorLib;
     static late Function scanNdiSources;
-    static late List<String> ndiSourceNames;
+    static late List<String> _ndiSourceNames;
+    static getNdiSourceNames()
+    {
+        return _ndiSourceNames;
+    }
+
 }
 
 // class NdiSources extends Struct {

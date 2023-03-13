@@ -1,3 +1,6 @@
+import 'dart:ffi';
+import 'ffi_bridge.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,12 +15,7 @@ class SourcesPage extends StatelessWidget {
         IconData icon;
         icon = Icons.search;
 
-        var textList = <String>[];
-        for (var i = 0; i < 100; i ++)
-        {
-            textList.add('Text+$i');
-        }
-
+        var textList = FFIBridge.getNdiSourceNames();
 
         return ListView(
             children: <Widget>[
