@@ -40,11 +40,12 @@ struct CharFromSources
         mCharLen = 0;
         for (auto& el : sources)
         {
-            if ((mCharLen + el.size() + NULL_CHAR_LEN) < mSourcesChars.size())
+            if ((mCharLen + el.size() + END_STRING_LEN) < mSourcesChars.size())
             {
                 memcpy(&mSourcesChars[mCharLen], el.c_str(), el.size());
-                mSourcesChars[mCharLen + el.size()] = '\0';
-                mCharLen += (el.size() + NULL_CHAR_LEN);
+                mSourcesChars[mCharLen + el.size()] = '\r';
+                mSourcesChars[mCharLen + el.size() + 1] = '\n';
+                mCharLen += (el.size() + END_STRING_LEN);
             }
             else
             {
@@ -58,7 +59,7 @@ struct CharFromSources
     // We do not want to change it's location dynamically because the contents mightbe updated at any moment.
     std::array<uint8_t, 1024> mSourcesChars;
     unsigned mCharLen;
-    static constexpr unsigned NULL_CHAR_LEN = 1;
+    static constexpr unsigned END_STRING_LEN = 2;
 };
 CharFromSources mCharFromSources;
 

@@ -1,6 +1,6 @@
 import 'dart:ffi';
 import 'dart:isolate';
-import 'package:ffi/ffi.dart';
+import 'dart:convert';
 
 class FFIBridge {
     static bool initialize() {
@@ -18,10 +18,8 @@ class FFIBridge {
 
         final interactiveCppRequests = ReceivePort()
             ..listen((message) {
-              //  final _address = message as int;
-              //  final ndiSources = Pointer<NdiSources>.fromAddress(_address);
-
-                print('NDI inputs, count:$message');
+                ndiSourceNames = const LineSplitter().convert(ascii.decode(message));
+                print('NDI inputs:$ndiSourceNames');
              });
 
         final int nativePort = interactiveCppRequests.sendPort.nativePort;
@@ -32,6 +30,7 @@ class FFIBridge {
     }
     static late DynamicLibrary nativeNdiMonitorLib;
     static late Function scanNdiSources;
+    static late List<String> ndiSourceNames;
 }
 
 // class NdiSources extends Struct {
