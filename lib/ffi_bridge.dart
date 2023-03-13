@@ -17,7 +17,9 @@ class FFIBridge {
         }
 
         final interactiveCppRequests = ReceivePort()
-            ..listen((message) { });
+            ..listen((message) {
+                print('NDI inputs, count:$message');
+             });
 
         final int nativePort = interactiveCppRequests.sendPort.nativePort;
         final void Function(int port) setDartApiMessagePort = nativeNdiMonitorLib.lookup<NativeFunction<Void Function(Int64)>>('setDartApiMessagePort').asFunction();
