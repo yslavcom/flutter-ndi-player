@@ -5,7 +5,7 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
-set(TARGET_NAME ndi_rx)
+set(TARGET_NAME ndi_rx_scan)
 
 add_compile_options(-fPIC)
 

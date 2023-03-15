@@ -1,4 +1,4 @@
-#include "ndi-rx/ndi-rx.hpp"
+#include "ndi-rx-scan/ndi-rx.hpp"
 #include "ndi_src_observer.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
