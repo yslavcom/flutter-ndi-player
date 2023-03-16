@@ -11,19 +11,39 @@ class SourcesPage extends StatelessWidget {
 
     @override
     Widget build(BuildContext context){
+
+        var theme = Theme.of(context);
         var appState = context.watch<NdiMonitorState>();
         IconData icon;
         icon = Icons.search;
 
-        var textList = FFIBridge.getNdiSourceNames();
+        List<String> textList = FFIBridge.getNdiSourceNames();
 
-        return ListView(
-            children: <Widget>[
-                for (var el in textList)
-                    ListTile(
-                        title: Text(el),
-                    ),
-            ],
-        );
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Inputs'),
+          backgroundColor: theme.colorScheme.surfaceTint,
+          foregroundColor: Colors.white,
+          ),
+        backgroundColor: theme.colorScheme.background,
+        body: ListView.separated(
+            itemCount: textList.length,
+            separatorBuilder: (BuildContext context, int index) => Divider(
+              height: 1,
+              color: theme.colorScheme.surfaceVariant,
+              thickness: 1,
+            ),
+            itemBuilder: (BuildContext context, int index) => ListTile(
+              textColor: theme.colorScheme.primary,
+              title: Text(textList[index]),
+              onLongPress: () {
+                  FFIBridge.startProgram(index);
+              },
+              onTap: (){
+                  FFIBridge.startProgram(index);
+              },
+            ),
+        ),
+      );
     }
 }

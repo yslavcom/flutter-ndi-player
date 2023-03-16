@@ -26,6 +26,8 @@ class FFIBridge {
         final void Function(int port) setDartApiMessagePort = nativeNdiMonitorLib.lookup<NativeFunction<Void Function(Int64)>>('setDartApiMessagePort').asFunction();
         setDartApiMessagePort(nativePort);
 
+        startProgram = nativeNdiMonitorLib.lookup<NativeFunction<Void Function(Uint32)>>('startProgram').asFunction();
+
         return true;
     }
     static late DynamicLibrary nativeNdiMonitorLib;
@@ -36,6 +38,7 @@ class FFIBridge {
         return _ndiSourceNames;
     }
 
+    static late void Function(int port) startProgram;
 }
 
 // class NdiSources extends Struct {
