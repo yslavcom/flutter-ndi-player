@@ -102,6 +102,12 @@ int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
 }
 
 EXPORT
+void startProgram(int64_t progrIdx)
+{
+    std::cout << __func__ << progrIdx << std::endl;
+}
+
+EXPORT
 int32_t scanNdiSources()
 {
     mNdiSrcObserver.setup(notifyUI_NdiSourceChange);
