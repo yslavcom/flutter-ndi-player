@@ -1,4 +1,5 @@
 #include "ndi-rx-scan/ndi-rx.hpp"
+#include "ndi-rx/ndi-app.hpp"
 #include "ndi_src_observer.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
@@ -11,27 +12,53 @@
 
 #define EXPORT extern "C" __attribute__((visibility("default"))) __attribute__((used))
 
-
+// Scan Singleton
 class NdiRxScan
 {
 public:
-    static NdiRx* getInstanceRx()
+    static NdiRx* getInstance()
     {
-        std::call_once(mNdiRxInitFlag, &NdiRxScan::buildInstanceRx);
+        std::call_once(mInitFlag, &NdiRxScan::buildInstance);
         return mNdiRx.get();
     }
 
 private:
     static std::unique_ptr<NdiRx> mNdiRx;
-    static std::once_flag mNdiRxInitFlag;
-    static void buildInstanceRx()
+    static std::once_flag mInitFlag;
+    static void buildInstance()
     {
         mNdiRx.reset(new NdiRx);
     }
 };
 
 std::unique_ptr<NdiRx> NdiRxScan::mNdiRx;
-std::once_flag NdiRxScan::mNdiRxInitFlag;
+std::once_flag NdiRxScan::mInitFlag;
+
+auto Scan = NdiRxScan::getInstance();
+
+// Start Program Rx Singleton
+class NdiRxProg
+{
+public:
+    static NdiApp* getInstance()
+    {
+        std::call_once(mInitFlag, &NdiRxProg::buildInstance);
+        return mNdiApp.get();
+    }
+
+private:
+    static std::unique_ptr<NdiApp> mNdiApp;
+    static std::once_flag mInitFlag;
+    static void buildInstance()
+    {
+        mNdiApp.reset(new NdiApp);
+    }
+};
+
+std::unique_ptr<NdiApp> NdiRxProg::mNdiApp;
+std::once_flag NdiRxProg::mInitFlag;
+
+auto ProgramRx = NdiRxProg::getInstance();
 
 namespace
 {
@@ -88,6 +115,8 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     Dart_PostCObject_DL(DartApiMessagePort, &obj);
 }
 
+    NdiApp::Quality mProgramQuality = NdiApp::Quality::High;
+
 } // anon namespace
 
 EXPORT
@@ -114,6 +143,7 @@ void startProgram(int64_t progrIdx)
 {
     std::cout << __func__ << progrIdx << std::endl;
 
+    ProgramRx->createReceiver("", "", mProgramQuality);
 }
 
 EXPORT
@@ -121,8 +151,8 @@ int32_t scanNdiSources()
 {
     mNdiSrcObserver.setup(notifyUI_NdiSourceChange);
 
-    NdiRxScan::getInstanceRx()->start();
-    NdiRxScan::getInstanceRx()->addObserver(&mNdiSrcObserver);
-    NdiRxScan::getInstanceRx()->scanNdiSources();
+    Scan->start();
+    Scan->addObserver(&mNdiSrcObserver);
+    Scan->scanNdiSources();
     return 0;
 }
