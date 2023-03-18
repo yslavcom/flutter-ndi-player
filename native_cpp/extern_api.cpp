@@ -11,23 +11,31 @@
 
 #define EXPORT extern "C" __attribute__((visibility("default"))) __attribute__((used))
 
+
+class NdiRxScan
+{
+public:
+    static NdiRx* getInstanceRx()
+    {
+        std::call_once(mNdiRxInitFlag, &NdiRxScan::buildInstanceRx);
+        return mNdiRx.get();
+    }
+
+private:
+    static std::unique_ptr<NdiRx> mNdiRx;
+    static std::once_flag mNdiRxInitFlag;
+    static void buildInstanceRx()
+    {
+        mNdiRx.reset(new NdiRx);
+    }
+};
+
+std::unique_ptr<NdiRx> NdiRxScan::mNdiRx;
+std::once_flag NdiRxScan::mNdiRxInitFlag;
+
 namespace
 {
-std::unique_ptr<NdiRx> mNdiRx;
-std::once_flag mNdiRxInitFlag;
-
 NdiSrcObserver mNdiSrcObserver;
-
-void buildInstanceRx()
-{
-    mNdiRx.reset(new NdiRx);
-}
-
-NdiRx* getInstanceRx()
-{
-    std::call_once(mNdiRxInitFlag, &buildInstanceRx);
-    return mNdiRx.get();
-}
 
 int64_t DartApiMessagePort = -1;
 
@@ -105,6 +113,7 @@ EXPORT
 void startProgram(int64_t progrIdx)
 {
     std::cout << __func__ << progrIdx << std::endl;
+
 }
 
 EXPORT
@@ -112,8 +121,8 @@ int32_t scanNdiSources()
 {
     mNdiSrcObserver.setup(notifyUI_NdiSourceChange);
 
-    getInstanceRx()->start();
-    getInstanceRx()->addObserver(&mNdiSrcObserver);
-    getInstanceRx()->scanNdiSources();
+    NdiRxScan::getInstanceRx()->start();
+    NdiRxScan::getInstanceRx()->addObserver(&mNdiSrcObserver);
+    NdiRxScan::getInstanceRx()->scanNdiSources();
     return 0;
 }
