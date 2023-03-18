@@ -1,16 +1,21 @@
 #include "ndi-rx-scan/ndi-rx.hpp"
 #include "ndi-rx/ndi-app.hpp"
 #include "ndi_src_observer.hpp"
+#include "ndi_input_packet_observer.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
 
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <thread>
 
 #include <iostream>
 
 #define EXPORT extern "C" __attribute__((visibility("default"))) __attribute__((used))
+
+namespace
+{
 
 // Scan Singleton
 class NdiRxScan
@@ -35,6 +40,7 @@ std::unique_ptr<NdiRx> NdiRxScan::mNdiRx;
 std::once_flag NdiRxScan::mInitFlag;
 
 auto Scan = NdiRxScan::getInstance();
+NdiSrcObserver mNdiSrcObserver;
 
 // Start Program Rx Singleton
 class NdiRxProg
@@ -59,12 +65,8 @@ std::unique_ptr<NdiApp> NdiRxProg::mNdiApp;
 std::once_flag NdiRxProg::mInitFlag;
 
 auto ProgramRx = NdiRxProg::getInstance();
-
-namespace
-{
-NdiSrcObserver mNdiSrcObserver;
-
-int64_t DartApiMessagePort = -1;
+std::thread mCapturePacketsThread;
+NdiInputPacketsObserver mNdiInputPacketsObserver;
 
 std::vector<std::string> mSources;
 struct CharFromSources
@@ -97,6 +99,7 @@ struct CharFromSources
     static constexpr unsigned END_STRING_LEN = 2;
 };
 CharFromSources mCharFromSources;
+int64_t DartApiMessagePort = -1;
 
 void sendMsgToFlutter(std::vector<std::string> sources)
 {
@@ -142,8 +145,23 @@ EXPORT
 void startProgram(int64_t progrIdx)
 {
     std::cout << __func__ << progrIdx << std::endl;
+    auto name = Scan->getSourceName(progrIdx);
+    auto url = Scan->getSourceUrl(progrIdx);
 
-    ProgramRx->createReceiver("", "", mProgramQuality);
+    ProgramRx->addObserver(&mNdiInputPacketsObserver);
+
+    if (ProgramRx->createReceiver(name, url, mProgramQuality))
+    {
+        if (!mCapturePacketsThread.joinable())
+        {
+            mCapturePacketsThread = std::thread([](){
+                for (;;)
+                {
+                    ProgramRx->capturePackets();
+                }
+            });
+        }
+    }
 }
 
 EXPORT

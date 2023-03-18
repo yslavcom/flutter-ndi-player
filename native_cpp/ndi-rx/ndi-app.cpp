@@ -151,15 +151,19 @@ void NdiApp::removeObserver(InputPacketsObserver* obs)
 template <typename T>
 void NdiApp::receivedPack(T *pack, std::function<void(void* userData)> releaseCb)
 {
-    for (auto& el: mInputPacketsObservers)
+    if constexpr (std::is_same_v<T, NDIlib_video_frame_v2_t>)
     {
-        if constexpr (std::is_same_v<T, NDIlib_video_frame_v2_t>)
+        for (auto& el: mInputPacketsObservers)
         {
             el->receivedVideoPack(pack, releaseCb);
         }
-        else if constexpr (std::is_same_v<T, NDIlib_video_frame_v2_t>)
+    }
+    else if constexpr (std::is_same_v<T, NDIlib_audio_frame_v3_t>)
+    {
+        for (auto& el: mInputPacketsObservers)
         {
             el->receivedAudioPack(pack, releaseCb);
         }
     }
 }
+
