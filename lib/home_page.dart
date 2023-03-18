@@ -1,11 +1,11 @@
 // import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:ndi_player/ffi_bridge.dart';
 import 'package:provider/provider.dart';
 
 import 'pages.dart';
 import 'my_app_state.dart';
 import 'sources_page.dart';
+import 'program_control.dart';
 
 class MyHomePage extends StatefulWidget {
     const MyHomePage({super.key});
@@ -80,7 +80,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class HomePage extends StatelessWidget {
 
-  var onButtonPressCounter = 0;
+    var onButtonPressCounter = 0;
+    final ProgramControl _programControl = ProgramControl();
 
     @override
     Widget build(BuildContext context){
@@ -101,7 +102,7 @@ class HomePage extends StatelessWidget {
                                     if (0 == onButtonPressCounter)
                                     {
                                         onButtonPressCounter = 1;
-                                        FFIBridge.scanNdiSources();
+                                        _programControl.scanPrograms();
                                     }
                                 },
                                 icon: Icon(icon),

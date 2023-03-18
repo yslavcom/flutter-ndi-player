@@ -38,7 +38,7 @@ class FFIBridge {
         return _ndiSourceNames;
     }
 
-    static late void Function(int port) startProgram;
+    static late void Function(int programIdx) startProgram;
 }
 
 // class NdiSources extends Struct {
