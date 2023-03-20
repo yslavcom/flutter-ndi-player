@@ -7,6 +7,7 @@ import 'pages.dart';
 import 'my_app_state.dart';
 import 'sources_page.dart';
 import 'program_control.dart';
+import 'player_window.dart';
 
 class MyHomePage extends StatefulWidget {
     const MyHomePage({super.key});
@@ -28,8 +29,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 page = SourcesPage();
                 break;
             case PageIndex.player:
-                // page = PlayerPage();
-                throw UnimplementedError('no widget for $selectedPage');
+                page = PlayerWindow();
+                break;
             default:
                 throw UnimplementedError('no widget for $selectedPage');
         }
