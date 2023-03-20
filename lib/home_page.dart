@@ -1,6 +1,7 @@
 // import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 
 import 'pages.dart';
 import 'my_app_state.dart';
@@ -98,7 +99,9 @@ class HomePage extends StatelessWidget {
                         children: [
                             ElevatedButton.icon(
                                 onPressed: () {
-                                    print("Pressed the button: $onButtonPressCounter");
+                                    if (kDebugMode) {
+                                      print("Pressed the button: $onButtonPressCounter");
+                                    }
                                     if (0 == onButtonPressCounter)
                                     {
                                         onButtonPressCounter = 1;

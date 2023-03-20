@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 class FFIBridge {
     static bool initialize() {
@@ -19,7 +20,9 @@ class FFIBridge {
         final interactiveCppRequests = ReceivePort()
             ..listen((message) {
                 _ndiSourceNames = const LineSplitter().convert(ascii.decode(message));
-                print('NDI inputs:$_ndiSourceNames');
+                if (kDebugMode) {
+                  print('NDI inputs:$_ndiSourceNames');
+                }
              });
 
         final int nativePort = interactiveCppRequests.sendPort.nativePort;
