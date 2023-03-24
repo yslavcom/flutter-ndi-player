@@ -5,8 +5,17 @@ import 'ffi_bridge.dart';
 import 'my_app_state.dart';
 import 'home_page.dart';
 
+import 'dart:io' show Platform;
+
 void main() {
-//    FFIBridge.initialize();
+    if (Platform.isLinux)
+    {
+      FFIBridge.initialize();
+    }
+    else if (Platform.isAndroid)
+    {
+      FFINDKBridge.initialize();
+    }
     runApp(const MainApp());
 }
 

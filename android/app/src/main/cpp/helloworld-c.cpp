@@ -2,7 +2,14 @@
 #include <jni.h>
 
 extern "C" {
-    void handle_cmd(android_app *pApp, int32_t cmd) {
+
+void handle_cmd(android_app *pApp, int32_t cmd)
+{
+}
+
+int32_t sumUp(int32_t a, int32_t b)
+{
+    return a + b;
 }
 
 void android_main(struct android_app *pApp) {
@@ -18,4 +25,4 @@ void android_main(struct android_app *pApp) {
         }
     } while (!pApp->destroyRequested);
 }
-}
+} // extern "C"

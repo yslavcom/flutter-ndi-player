@@ -44,10 +44,11 @@ class FFIBridge {
     static late void Function(int programIdx) startProgram;
 }
 
-// class NdiSources extends Struct {
-//   external Pointer<Pointer<Utf8>> stringList;
-//
-//   factory NdiSources.allocate(Pointer<Pointer<Utf8>> stringList) =>
-//       allocate<NdiSources>().ref
-//         ..stringList = stringList;
-// }
+
+class FFINDKBridge {
+    static bool initialize() {
+        ndkLib = (DynamicLibrary.open('libhelloworld-c.so')); // android & linux
+        return true;
+    }
+    static late DynamicLibrary ndkLib;
+}
