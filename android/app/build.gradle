@@ -60,6 +60,15 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    // Encapsulates external native build configurations.
+    externalNativeBuild {
+        // Encapsulates CMake build configurations.
+	cmake {
+		    // Provides a relative path to CMake build script
+		    path "CMakeLists.txt"
+	    }
+    }
 }
 
 flutter {
