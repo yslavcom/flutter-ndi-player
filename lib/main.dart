@@ -6,7 +6,7 @@ import 'my_app_state.dart';
 import 'home_page.dart';
 
 void main() {
-    FFIBridge.initialize();
+//    FFIBridge.initialize();
     runApp(const MainApp());
 }
 
