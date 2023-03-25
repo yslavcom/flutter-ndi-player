@@ -6,7 +6,7 @@ set(TARGET_NAME ndi-monitor)
 include_directories(${GLIB_INCLUDE_DIRS})
 
 if (ANDROID)
-    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/arm64-v8a/libndi.so")
+    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
 elseif (LINUX)
     set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/lib/x86_64-linux-gnu/libndi.so.5.5.3")
 else ()
