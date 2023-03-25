@@ -8,11 +8,8 @@ import 'home_page.dart';
 import 'dart:io' show Platform;
 
 void main() {
-    if (Platform.isLinux)
-    {
-      FFIBridge.initialize();
-    }
-    else if (Platform.isAndroid)
+    FFIBridge.initialize();
+    if (Platform.isAndroid)
     {
       FFINDKBridge.initialize();
     }

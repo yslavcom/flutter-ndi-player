@@ -1,5 +1,6 @@
 #include <android_native_app_glue.h>
 #include <jni.h>
+#include <android/log.h>
 
 extern "C" {
 
@@ -9,6 +10,7 @@ void handle_cmd(android_app *pApp, int32_t cmd)
 
 int32_t sumUp(int32_t a, int32_t b)
 {
+    __android_log_print(ANDROID_LOG_DEBUG, "SUM-UP", "%d %d", a, b);
     return a + b;
 }
 

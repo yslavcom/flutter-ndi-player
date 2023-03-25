@@ -3,6 +3,8 @@ import 'dart:isolate';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
+//import 'dart::abi';
+
 class FFIBridge {
     static bool initialize() {
         nativeNdiMonitorLib = (DynamicLibrary.open('libndi-monitor.so')); // android & linux
@@ -48,7 +50,12 @@ class FFIBridge {
 class FFINDKBridge {
     static bool initialize() {
         ndkLib = (DynamicLibrary.open('libhelloworld-c.so')); // android & linux
+
+        sumUp = ndkLib.lookup<NativeFunction<Int32 Function(Int32, Int32)>>('sumUp').asFunction();
+
         return true;
     }
+
     static late DynamicLibrary ndkLib;
+    static late int Function(int a, int b) sumUp;
 }

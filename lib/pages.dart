@@ -1,5 +1,6 @@
 enum PageIndex {
     home,
     sources,
-    player
+    player,
+    androidDebug
 }

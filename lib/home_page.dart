@@ -7,8 +7,8 @@ import 'pages.dart';
 import 'my_app_state.dart';
 import 'sources_page.dart';
 import 'program_control.dart';
-//import 'player_window.dart';
 import 'player_texture.dart';
+import 'android_debug.dart';
 
 class MyHomePage extends StatefulWidget {
     const MyHomePage({super.key});
@@ -18,6 +18,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
     PageIndex selectedPage = PageIndex.home;
+    //PageIndex selectedPage = PageIndex.android_debug;
 
     @override
     Widget build(BuildContext context) {
@@ -31,6 +32,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 break;
             case PageIndex.player:
                 page = PlayerTex();
+                break;
+            case PageIndex.androidDebug:
+                page = AndroidDebug();
                 break;
             default:
                 throw UnimplementedError('no widget for $selectedPage');
@@ -56,6 +60,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                         NavigationRailDestination(
                                             icon: Icon(Icons.abc),
                                             label: Text('Player'),
+                                        ),
+                                        NavigationRailDestination(
+                                            icon: Icon(Icons.access_alarm),
+                                            label: Text('Android Debug'),
                                         ),
                                     ],
                                     selectedIndex: selectedPage.index,

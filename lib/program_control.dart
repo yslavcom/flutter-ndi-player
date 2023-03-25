@@ -5,6 +5,9 @@ abstract class IProgramControl
     void scanPrograms();
     void startProgram(int programIdx);
     List<String> getProgramsName();
+
+    // debug android
+    int sumUp(int a, int b);
 }
 
 class ProgramControl extends IProgramControl {
@@ -24,5 +27,11 @@ class ProgramControl extends IProgramControl {
     List<String> getProgramsName()
     {
         return FFIBridge.getNdiSourceNames();
+    }
+
+    @override
+    int sumUp(int a, int b)
+    {
+        return FFINDKBridge.sumUp(a, b);
     }
 }
