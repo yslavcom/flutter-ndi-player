@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.1)
+cmake_minimum_required(VERSION 3.18.1)
 
 project(
   ndi-monitor
@@ -14,4 +14,4 @@ file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 
 add_library(${TARGET_NAME} STATIC ${SOURCES})
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ../)
-target_link_libraries(${TARGET_NAME} PUBLIC -lndi ${LIB_NDI_VAR})
+target_link_libraries(${TARGET_NAME} PUBLIC ${LIB_NDI_VAR})
