@@ -5,7 +5,11 @@ set(TARGET_NAME ndi-monitor)
 
 include_directories(${GLIB_INCLUDE_DIRS})
 
+set(CMAKE_BUILD_TYPE Debug)
+
 if (ANDROID)
+    message(${CMAKE_SOURCE_DIR})
+   # set(LIB_NDI_VAR "${CMAKE_SOURCE_DIR}/../../jniLibs/${ANDROID_ABI}/libndi.so")
     set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
 elseif (LINUX)
     set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/lib/x86_64-linux-gnu/libndi.so.5.5.3")
