@@ -5,6 +5,8 @@
 
 #include "DartApiDL/include/dart_api_dl.c"
 
+#include "logger.hpp"
+
 #include <memory>
 #include <mutex>
 #include <vector>
