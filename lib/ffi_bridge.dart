@@ -49,13 +49,17 @@ class FFIBridge {
 
 class FFINDKBridge {
     static bool initialize() {
-        ndkLib = (DynamicLibrary.open('libhelloworld-c.so')); // android & linux
-
-        sumUp = ndkLib.lookup<NativeFunction<Int32 Function(Int32, Int32)>>('sumUp').asFunction();
+//        ndkLib = (DynamicLibrary.open('libhelloworld-c.so')); // android & linux
+//
+//        sumUp = ndkLib.lookup<NativeFunction<Int32 Function(Int32, Int32)>>('sumUp').asFunction();
 
         return true;
     }
 
-    static late DynamicLibrary ndkLib;
-    static late int Function(int a, int b) sumUp;
+    //static late DynamicLibrary ndkLib;
+    //static late int Function(int a, int b) sumUp;
+    static sumUp(int a, int b)
+    {
+        return a+b;
+    }
 }
