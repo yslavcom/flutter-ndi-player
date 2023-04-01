@@ -7,16 +7,6 @@ include_directories(${GLIB_INCLUDE_DIRS})
 
 set(CMAKE_BUILD_TYPE Debug)
 
-if (ANDROID)
-    message(${CMAKE_SOURCE_DIR})
-   # set(LIB_NDI_VAR "${CMAKE_SOURCE_DIR}/../../jniLibs/${ANDROID_ABI}/libndi.so")
-    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
-elseif (LINUX)
-    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/lib/x86_64-linux-gnu/libndi.so.5.5.3")
-else ()
-    set(LIB_NDI_VAR "")
-endif ()
-
 add_subdirectory(ndi-rx-scan)
 add_subdirectory(ndi-rx)
 
@@ -25,5 +15,17 @@ file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 add_library(${TARGET_NAME} SHARED ${SOURCES})
+
+if (ANDROID)
+    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
+    target_compile_definitions(${TARGET_NAME} PRIVATE ANDROID_OUT=1)
+elseif (LINUX)
+    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/lib/x86_64-linux-gnu/libndi.so.5.5.3")
+    target_compile_definitions(${TARGET_NAME} PRIVATE LINUX_OUT=1)
+else ()
+    set(LIB_NDI_VAR "")
+    target_compile_definitions(${TARGET_NAME} PRIVATE OTHER_OUT=1)
+endif ()
+
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ndi-rx-scan ndi-app)
 target_link_libraries(${TARGET_NAME} PUBLIC ndi_rx_scan ndi_app_rx)
