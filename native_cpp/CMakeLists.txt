@@ -9,6 +9,9 @@ set(CMAKE_BUILD_TYPE Debug)
 
 if (ANDROID)
     set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
+    find_library(log-lib
+        log)
+
 elseif (LINUX)
     set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/lib/x86_64-linux-gnu/libndi.so.5.5.3")
 else ()
@@ -25,6 +28,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 add_library(${TARGET_NAME} SHARED ${SOURCES})
 
 if (ANDROID)
+    target_link_libraries(${TARGET_NAME} PUBLIC  ${log-lib})
     target_compile_definitions(${TARGET_NAME} PRIVATE ANDROID_OUT=1)
 elseif (LINUX)
     target_compile_definitions(${TARGET_NAME} PRIVATE LINUX_OUT=1)
