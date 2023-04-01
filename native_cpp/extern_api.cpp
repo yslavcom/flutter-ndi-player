@@ -5,7 +5,7 @@
 
 #include "DartApiDL/include/dart_api_dl.c"
 
-#include "logger.hpp"
+#include "common/logger.hpp"
 
 #include <memory>
 #include <mutex>
@@ -88,7 +88,7 @@ struct CharFromSources
             }
             else
             {
-                std::cerr << "Failed to fit a source name:" << el << std::endl;
+                LOGE("Failed to fit a source name:%s\n", el.c_str());
             }
         }
     }
@@ -146,7 +146,8 @@ int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
 EXPORT
 void startProgram(int64_t progrIdx)
 {
-    std::cout << __func__ << progrIdx << std::endl;
+    LOGW("%s:%ld\n", __func__, progrIdx);
+
     auto name = Scan->getSourceName(progrIdx);
     auto url = Scan->getSourceUrl(progrIdx);
 
@@ -169,6 +170,8 @@ void startProgram(int64_t progrIdx)
 EXPORT
 int32_t scanNdiSources()
 {
+    LOGW("!!! Hello !!! \n");
+
     mNdiSrcObserver.setup(notifyUI_NdiSourceChange);
 
     Scan->start();

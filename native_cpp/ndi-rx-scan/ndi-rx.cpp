@@ -1,5 +1,7 @@
 #include "ndi-rx.hpp"
 
+#include "common/logger.hpp"
+
 #include <iostream>
 #include <vector>
 
@@ -149,7 +151,7 @@ bool NdiRx::scanNdiSources()
                     }
                 }
                 mSourceCount = count;
-                std::cout << "NDI Source Count changed:" << count << std::endl;
+                LOGW("NDI Source Count changed:%d\n", count);
                 updateObserversAboutInputState(sources);
 
             }

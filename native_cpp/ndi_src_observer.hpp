@@ -1,5 +1,7 @@
 #include "interfaces/input-observer.hpp"
 
+#include "common/logger.hpp"
+
 #include <iostream>
 #include <functional>
 
@@ -11,11 +13,11 @@ public:
     void updateInputState(std::vector<std::string> inputNames)
     {
         mInputNames = inputNames;
-        std::cout << __func__ << std::endl;
+        LOGW("%s\n", __func__);
         for (auto& el : inputNames)
         {
             // debug only
-            std::cout << el << std::endl;
+            LOGW("%s\n", el.c_str());
         }
         if (mUiUpdateCb)
         {

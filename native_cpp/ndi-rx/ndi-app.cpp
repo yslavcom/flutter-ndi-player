@@ -1,5 +1,7 @@
 #include "ndi-app.hpp"
 
+#include "common/logger.hpp"
+
 #include <iostream>
 #include <type_traits>
 
@@ -112,7 +114,7 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
             break;
 
         case NDIlib_frame_type_error:
-            std::cerr << "NDI pack rx error" << std::endl;
+            LOGE("NDI pack rx error\n");
             break;
 
         default:

@@ -9,11 +9,11 @@ class NdiInputPacketsObserver : public InputPacketsObserver
 public:
     void receivedVideoPack(NDIlib_video_frame_v2_t *video, std::function<void(void* userData)> releaseCb) override
     {
-        std::cout << "video:" << video->xres << std::endl;
+        LOGW("video:%d\n", video->xres);
     }
 
     void receivedAudioPack(NDIlib_audio_frame_v3_t *audio, std::function<void(void* userData)> releaseCb) override
     {
-        std::cout << "audio:" << audio->no_samples << std::endl;
+        LOGW("audio:%d\n", audio->no_samples);
     }
 };
