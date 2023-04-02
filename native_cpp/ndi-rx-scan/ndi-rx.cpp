@@ -5,6 +5,14 @@
 #include <iostream>
 #include <vector>
 
+#define _DBG_RX
+
+#ifdef _DBG_RX
+    #define DBG_RX LOGW
+#else
+    #define DBG_RX
+#endif
+
 NdiRx::NdiRx()
     : pNDI_find(nullptr)
     , mSourceCount(0)
@@ -18,16 +26,27 @@ NdiRx::~NdiRx()
 
 bool NdiRx::start()
 {
+#if 0
+#ifdef ANDROID_OUT
+    m_nsdManager = (NsdManager)getSystemService(Context.NSD_SERVICE);
+#endif
+#endif
+
     if (!NDIlib_initialize())
     {
+        LOGE("%s:Failed to NDIlib_initialize\n", __func__);
         return false;
     }
 
     pNDI_find = NDIlib_find_create_v2();
     if (!pNDI_find)
     {
+        LOGE("%s:Failed to NDIlib_find_create_v2\n", __func__);
         return false;
     }
+
+    LOGE("%s:OK, version:%s\n", __func__, NDIlib_version());
+
     return true;
 }
 
@@ -58,8 +77,9 @@ unsigned NdiRx::trackNdiSourcesBackgroundBlock(bool& risChanged) // a blocking f
 
         {
             std::lock_guard lk(mSourceMutex);
-            auto ndiSources = NDIlib_find_get_current_sources(pNDI_find, &sourcesCount);
 
+            auto ndiSources = NDIlib_find_get_current_sources(pNDI_find, &sourcesCount);
+            DBG_RX("%s:sources:%p, count:%d", __func__, ndiSources, sourcesCount);
             if (sourcesCount && ndiSources)
             {
                 if (mSourceContainer.getSourceCount() != sourcesCount)
@@ -137,6 +157,7 @@ bool NdiRx::scanNdiSources()
         {
             bool isContentsChanged = false; // must be preset to false
             auto count = trackNdiSourcesBackgroundBlock(isContentsChanged);
+            DBG_RX("scanNdiSources[%s]:%d\n", __func__, count);
             bool countChanged = (mSourceCount != count);
             if (countChanged || isContentsChanged)
             {

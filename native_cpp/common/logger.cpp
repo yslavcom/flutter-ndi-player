@@ -17,7 +17,7 @@ void LOGW(const char * format, ... )
     va_start(arg, format);
     char str[256];
     vsnprintf(str, 256, format, arg);
-    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "%s: %s", str);
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "%s", str);
     va_end(arg);
 }
 
@@ -27,7 +27,7 @@ void LOGE(const char * format, ... )
     va_start(arg, format);
     char str[256];
     vsnprintf(str, 256, format, arg);
-    __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "%s: %s", str);
+    __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "%s", str);
     va_end(arg);
 }
 

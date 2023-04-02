@@ -32,6 +32,6 @@ class ProgramControl extends IProgramControl {
     @override
     int sumUp(int a, int b)
     {
-        return FFINDKBridge.sumUp(a, b);
+        return a+b;
     }
 }

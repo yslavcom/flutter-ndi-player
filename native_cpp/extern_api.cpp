@@ -127,12 +127,15 @@ void sendMsgToFlutter(std::vector<std::string> sources)
 EXPORT
 int64_t initializeApiDLData(void *data)
 {
+    LOGW("%s\n", __func__);
+
     return Dart_InitializeApiDL(data);
 }
 
 EXPORT
 void setDartApiMessagePort(int64_t port)
 {
+    LOGW("%s:%ld\n", __func__, port);
     DartApiMessagePort = port;
 }
 
@@ -170,7 +173,7 @@ void startProgram(int64_t progrIdx)
 EXPORT
 int32_t scanNdiSources()
 {
-    LOGW("!!! Hello !!! \n");
+    LOGW("%s\n", __func__);
 
     mNdiSrcObserver.setup(notifyUI_NdiSourceChange);
 

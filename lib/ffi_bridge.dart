@@ -2,8 +2,7 @@ import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-
-//import 'dart::abi';
+import 'package:nsd/nsd.dart';
 
 class FFIBridge {
     static bool initialize() {
@@ -46,20 +45,49 @@ class FFIBridge {
     static late void Function(int programIdx) startProgram;
 }
 
+class Nds {
+  static init() async {
 
-class FFINDKBridge {
-    static bool initialize() {
-//        ndkLib = (DynamicLibrary.open('libhelloworld-c.so')); // android & linux
-//
-//        sumUp = ndkLib.lookup<NativeFunction<Int32 Function(Int32, Int32)>>('sumUp').asFunction();
-
-        return true;
-    }
-
-    //static late DynamicLibrary ndkLib;
-    //static late int Function(int a, int b) sumUp;
-    static sumUp(int a, int b)
+    if (kDebugMode)
     {
-        return a+b;
+      print("!!! Nds::init");
     }
+
+
+    final discovery = await startDiscovery('_services._dns-sd._udp', autoResolve: false);
+
+    try
+    {
+      discovery.addListener(() {
+        if (kDebugMode)
+        {
+          var services = discovery.services;
+          print("$services");
+        }
+       });
+    }
+    catch (e)
+    {
+      if (kDebugMode)
+        {
+          print("!!! discovery error:$e");
+        }
+    }
+
+//    discovery.then((value) => handleDiscovery(value)).catchError(handleDiscoveryError);
+  }
+
+//  static handleDiscovery(value){
+//    if (kDebugMode)
+//    {
+//      print('handleDiscovery value:$value');
+//    }
+//  }
+//
+//  static handleDiscoveryError(e){
+//    if (kDebugMode)
+//    {
+//      print('handleDiscoveryError value:$e');
+//    }
+//  }
 }
