@@ -6,6 +6,8 @@
 #include <cstring>
 #include <memory>
 
+#if 0
+
 /**********************************************
  *
  *  Single Window
@@ -499,3 +501,4 @@ bool WindowsHandle::shouldClose()
     return shouldClose;
 }
 
+#endif
