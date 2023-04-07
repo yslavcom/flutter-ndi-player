@@ -41,10 +41,10 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
 
-    //    main {
-    //        // let gradle pack the shared library into the apk
-    //        jniLibs.srcDirs = ['/../../../ffmpeg-android-maker/build/ffmpeg']
-    //    }
+        main {
+            // let gradle pack the shared library into the apk
+            jniLibs.srcDirs = ['../../../ffmpeg-android-maker/build/ffmpeg']
+        }
     }
 
     defaultConfig {
