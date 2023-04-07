@@ -2,7 +2,6 @@
 
 #include "common/frame-queue.hpp"
 
-#include <GLFW/glfw3.h>
 #include <string>
 #include <map>
 #include <memory>
