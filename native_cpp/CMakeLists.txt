@@ -18,6 +18,7 @@ endif ()
 add_subdirectory(common)
 add_subdirectory(ndi-rx-scan)
 add_subdirectory(ndi-rx)
+add_subdirectory(player)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 
@@ -33,5 +34,5 @@ else ()
     target_compile_definitions(${TARGET_NAME} PRIVATE OTHER_OUT=1)
 endif ()
 
-target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} common ndi-rx-scan ndi-app)
-target_link_libraries(${TARGET_NAME} PUBLIC ndi_rx_scan ndi_app_rx common)
+target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} common ndi-rx-scan ndi-app player)
+target_link_libraries(${TARGET_NAME} PUBLIC ndi_rx_scan ndi_app_rx common player)
