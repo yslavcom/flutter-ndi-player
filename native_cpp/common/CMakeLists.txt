@@ -7,6 +7,31 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(TARGET_NAME common)
 
+if (ANDROID)
+    set(ffmpeg_dir /home/iaroslav/Downloads/personal/Flutter/prj/TestDrive/ffmpeg-android-maker/output)
+    set(ffmpeg_libs ${ffmpeg_dir}/lib/${ANDROID_ABI})
+    set(ffmpeg_include_dir ${ffmpeg_dir}/include/${ANDROID_ABI})
+    include_directories(${ffmpeg_include_dir})
+
+    set(
+        # List variable name
+        ffmpeg_libs_names
+        # Values in the list
+        avutil avformat avcodec swscale)
+
+    foreach (ffmpeg_lib_name ${ffmpeg_libs_names})
+        add_library(
+            ${ffmpeg_lib_name}
+            SHARED
+            IMPORTED)
+        set_target_properties(
+            ${ffmpeg_lib_name}
+            PROPERTIES
+            IMPORTED_LOCATION
+            ${ffmpeg_libs}/lib${ffmpeg_lib_name}.so)
+    endforeach ()
+endif ()
+
 add_compile_options(-fPIC)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
@@ -22,7 +47,7 @@ endif ()
 
 if (ANDROID)
     find_library(log-lib log)
-    target_link_libraries(${TARGET_NAME} PUBLIC  ${log-lib})
+    target_link_libraries(${TARGET_NAME} PUBLIC  ${log-lib}  ${ffmpeg_libs_names})
 endif ()
 
-target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}  ../)
+target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${ffmpeg_include_dir} ../)
