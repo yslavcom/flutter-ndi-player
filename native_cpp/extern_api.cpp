@@ -2,6 +2,7 @@
 #include "ndi-rx/ndi-app.hpp"
 #include "ndi_src_observer.hpp"
 #include "ndi_input_packet_observer.hpp"
+#include "player/player.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
 
@@ -105,6 +106,8 @@ struct CharFromSources
     std::array<uint8_t, 1024> mSourcesChars;
     unsigned mCharLen;
     static constexpr unsigned END_STRING_LEN = 2;
+
+    std::unique_ptr<Player> mPlayer;
 };
 CharFromSources mCharFromSources;
 int64_t DartApiMessagePort = -1;
