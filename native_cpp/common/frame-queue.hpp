@@ -5,7 +5,7 @@
 
 namespace FrameQueue
 {
-struct VideoFrame
+struct VideoFrameStr
 {
     void *opaque;
     uint8_t* data;
@@ -15,7 +15,7 @@ struct VideoFrame
     unsigned fourCC;
 };
 
-struct AudioFrame
+struct AudioFrameStr
 {
     void *opaque;
     unsigned chanNo;
@@ -26,8 +26,8 @@ struct AudioFrame
 };
 
 using ReleaseCb = std::function<void(void*)>;
-using Frame = std::pair<VideoFrame, ReleaseCb>;
-using AudFrame = std::pair<AudioFrame, ReleaseCb>;
+using VideoFrame = std::pair<VideoFrameStr, ReleaseCb>;
+using AudioFrame = std::pair<AudioFrameStr, ReleaseCb>;
 
 template <typename T>
 class Queue_: public SafeQueue<T>
@@ -67,6 +67,6 @@ private:
     std::mutex& mMutex;
 };
 
-using Queue = Queue_<Frame>;
-using Audio = Queue_<AudFrame>;
-}
+using VideoRx = Queue_<VideoFrame>;
+using AudioRx = Queue_<AudioFrame>;
+} // namespace FrameQueue

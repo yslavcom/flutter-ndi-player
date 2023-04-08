@@ -6,6 +6,7 @@
 #include "DartApiDL/include/dart_api_dl.c"
 
 #include "common/logger.hpp"
+#include "common/frame-queue.hpp"
 
 #include <memory>
 #include <mutex>
@@ -68,7 +69,12 @@ std::once_flag NdiRxProg::mInitFlag;
 
 auto ProgramRx = NdiRxProg::getInstance();
 std::thread mCapturePacketsThread;
-NdiInputPacketsObserver mNdiInputPacketsObserver;
+
+std::mutex mFrameRxMutex;
+FrameQueue::VideoRx mVideoRxQueue(mFrameRxMutex);
+FrameQueue::AudioRx mAudioRxQueue(mFrameRxMutex);
+
+NdiInputPacketsObserver mNdiInputPacketsObserver(mVideoRxQueue, mAudioRxQueue);
 
 std::vector<std::string> mSources;
 struct CharFromSources
