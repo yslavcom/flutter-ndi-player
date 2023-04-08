@@ -39,7 +39,6 @@ public:
 
     Window(std::string name, unsigned xRes, unsigned yRes, OnCloseCallback onCloseCb);
     ~Window();
-    bool setContext();
     bool setFocus();
     void swapBuffers();
     bool getWinFrameBufSize(int& w, int& h);
@@ -52,35 +51,23 @@ public:
     bool shouldClose();
     void runRender1();
     void runRender2();
-    std::unique_ptr<uint8_t[]> convScaleFrame(const FrameQueue::VideoFrame& frame, size_t& size);
-    void passFrame(const FrameQueue::VideoFrame& video);
+    std::unique_ptr<uint8_t[]> convScaleFrame(const FrameQueue::VideoFrameStr& frame, size_t& size);
+    void passFrame(const FrameQueue::VideoFrameStr& video);
     void renderFrame();
     std::string getName() const;
     bool setName(std::string newName);
     bool closeWindow();
 
 private:
-    GLFWwindow* mWindow;
     Dimensions mDimViewport;
     Dimensions mDimTex;
-    std::string mWinName;
     std::unique_ptr<Texture2D> mTex;
 
     void framebuffer_size_callback(int width, int height);
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-    void window_close_callback();
-    static void window_close_callback(GLFWwindow* window);
-    static std::map<GLFWwindow*, Window&> mWindowMap;
-
-    std::unique_ptr<ConvertScale> mConvertScale;
-    const FrameQueue::VideoFrame* mVideoFrame = nullptr;
 
     void render();
-
-    OnCloseCallback mOnCloseCallback;
 };
-
-std::map<GLFWwindow*, Window&> Window::mWindowMap;
 
 Window::Window(std::string name, unsigned xRes, unsigned yRes, OnCloseCallback onCloseCb)
     : mWinName(name)
@@ -118,17 +105,6 @@ Window::~Window()
     glfwDestroyWindow(mWindow);
 }
 
-bool Window::setContext()
-{
-    glfwMakeContextCurrent(mWindow);
-    return true;
-}
-
-bool Window::setFocus()
-{
-    glfwFocusWindow(mWindow);
-    return true;
-}
 
 void Window::swapBuffers()
 {
@@ -147,11 +123,6 @@ bool Window::loadTex(uint8_t* frameBuf)
     auto ret = mTex->loadImage(0, GL_RGBA, mDimTex.xRes, mDimTex.yRes, 0, GL_RGBA, GL_UNSIGNED_BYTE, frameBuf);
     mTex->unbind();
     return ret;
-}
-
-bool Window::shouldClose()
-{
-    return glfwWindowShouldClose(mWindow);
 }
 
 void Window::render()
@@ -207,29 +178,7 @@ void Window::framebuffer_size_callback(GLFWwindow* window, int width, int height
     }
 }
 
-void Window::window_close_callback()
-{
-    std::cout << __func__ << std::endl;
-    if (mOnCloseCallback)
-    {
-        mOnCloseCallback();
-    }
-}
-
-void Window::window_close_callback(GLFWwindow* window)
-{
-    if (window)
-    {
-        // get the Window object holding this GLFWwindow
-        auto it = mWindowMap.find(window);
-        if (it != mWindowMap.cend())
-        {
-            it->second.window_close_callback();
-        }
-    }
-}
-
-std::unique_ptr<uint8_t[]> Window::convScaleFrame(const FrameQueue::VideoFrame& frame, size_t& size)
+std::unique_ptr<uint8_t[]> Window::convScaleFrame(const FrameQueue::VideoFrameStr& frame, size_t& size)
 {
     const int outputPixelComponentscount = 4; //RGBA
 
@@ -264,7 +213,7 @@ std::unique_ptr<uint8_t[]> Window::convScaleFrame(const FrameQueue::VideoFrame& 
     return nullptr;
 }
 
-void Window::passFrame(const FrameQueue::VideoFrame& video)
+void Window::passFrame(const FrameQueue::VideoFrameStr& video)
 {
     mVideoFrame = &video;
 }
@@ -284,23 +233,6 @@ void Window::renderFrame()
     }
 }
 
-std::string Window::getName() const
-{
-    return mWinName;
-}
-
-bool Window::setName(std::string newName)
-{
-    mWinName = newName;
-    glfwSetWindowTitle(mWindow, mWinName.c_str());
-    return true;
-}
-
-bool Window::closeWindow()
-{
-    glfwSetWindowShouldClose(mWindow, GLFW_TRUE);
-    return true;
-}
 
 /**********************************************
  *
@@ -328,116 +260,6 @@ WindowsHandle* WindowsHandle::getInstance()
     return mHandle;
 }
 
-WindowsHandle::~WindowsHandle()
-{
-    // delete all existing windows
-    for (auto& win: mWinsMap)
-    {
-        win.second.reset();
-    }
-
-    if (mGlfwInited)
-    {
-        glfwTerminate();
-        mGlfwInited --;
-    }
-}
-
-bool WindowsHandle::create(std::string name, unsigned xRes, unsigned yRes, OnCloseCallback onCloseCb)
-{
-    std::cout << __func__ << " name:" << name << std::endl;
-    auto win = std::make_unique<Window>(name, xRes, yRes, onCloseCb);
-    if (!win)
-    {
-        return false;
-    }
-    else if(!win->valid())
-    {
-        return false;
-    }
-    auto iter = mWinsMap.find(name);
-    if (iter != mWinsMap.end())
-    {
-        std::cout << __func__ << " erasing:" << name << std::endl;
-        mWinsMap.erase(iter);
-    }
-
-    mWinsMap[name] = std::move(win);
-    return true;
-}
-
-bool WindowsHandle::rename(std::string oldName, std::string newName)
-{
-    auto win = getWindowByName(oldName);
-    if (!win)
-    {
-        return false;
-    }
-    return win->setName(newName);
-}
-
-bool WindowsHandle::closeAllWindows()
-{
-#if 1
-    for (auto& el : mWinsMap)
-    {
-        deleteWin(el.first);
-    }
-    return true;
-#else
-    for (auto& el : mWinsMap)
-    {
-        el.second.get()->closeWindow();
-    }
-    return true;
-#endif
-}
-
-bool WindowsHandle::deleteWin(std::string name)
-{
-    std::cout << __func__ << std::endl;
-
-    auto iter = mWinsMap.find(name);
-    if (iter != mWinsMap.end())
-    {
-        mWinsMap.erase(iter);
-        return true;
-    }
-    return false;
-}
-
-bool WindowsHandle::setContext(std::string name)
-{
-    auto win = getWindowByName(name);
-    if (win)
-    {
-        mWinInFocusName = name;
-        return win->setContext();
-    }
-    return false;
-}
-
-bool WindowsHandle::setFocus(std::string name)
-{
-    auto win = getWindowByName(name);
-    if (win)
-    {
-        mWinInFocusName = name;
-        return win->setFocus();
-    }
-    return false;
-}
-
-Window* WindowsHandle::getWindowByName(std::string name)
-{
-    auto iter = mWinsMap.find(name);
-    if (iter != mWinsMap.end())
-    {
-        return iter->second.get();
-    }
-    return nullptr;
-}
-
 void WindowsHandle::dbgFilleBuffer()
 {
     mDbgBuffer.resize(100*100*3);
@@ -462,12 +284,7 @@ void WindowsHandle::dbgFilleBuffer()
     }
 }
 
-void WindowsHandle::pollEvents()
-{
-    glfwPollEvents();
-}
-
-void WindowsHandle::renderFrame(const FrameQueue::VideoFrame& video, unsigned destWinIdx)
+void WindowsHandle::renderFrame(const FrameQueue::VideoFrameStr& video, unsigned destWinIdx)
 {
     // TODO: change to acessing the needed window based on input arguments
     for (auto& el : mWinsMap)
@@ -479,26 +296,6 @@ void WindowsHandle::renderFrame(const FrameQueue::VideoFrame& video, unsigned de
             win->renderFrame();
         }
     }
-}
-
-bool WindowsHandle::shouldClose()
-{
-    bool shouldClose = true;
-    for (auto& el : mWinsMap)
-    {
-        auto win = el.second.get();
-        if (!el.second->shouldClose())
-        {
-            shouldClose = false;
-            break;
-        }
-        else
-        {
-            deleteWin(el.first);
-        }
-    }
-
-    return shouldClose;
 }
 
 #endif

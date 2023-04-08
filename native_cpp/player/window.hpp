@@ -24,26 +24,11 @@ public:
     WindowsHandle& operator=(WindowsHandle&&) = delete;
 
     bool create(std::string name, unsigned xRes, unsigned yRes, OnCloseCallback onCloseCb);
-    bool rename(std::string oldName, std::string newName);
-    bool closeAllWindows();
-    bool setContext(std::string name);
-    bool setFocus(std::string name);
 
-    bool shouldClose();
-    void renderFrame(const FrameQueue::VideoFrame& video, unsigned destWinIdx);
-
-    void pollEvents();
+    void renderFrame(const FrameQueue::VideoFrameStr& video, unsigned destWinIdx);
 
     void dbgFilleBuffer();
 
 private:
-    std::map<std::string, std::unique_ptr<Window>> mWinsMap;
-    static WindowsHandle* mHandle;
-    static int mGlfwInited;
-    std::string mWinInFocusName;
 
-    Window* getWindowByName(std::string name);
-    std::vector<char> mDbgBuffer;
-
-    bool deleteWin(std::string name);
 };
