@@ -16,15 +16,16 @@ public:
     void installVideoFrameObs(VideoFrameObserver* obs);
     void uninstallVideoFrameObs(VideoFrameObserver* obs);
 
+    void installAudioFrameObs(AudioFrameObserver* obs);
+    void uninstallAudioFrameObs(AudioFrameObserver* obs);
+
     void run();
 private:
     FrameQueue::VideoRx& mVideoRxQueue;
     FrameQueue::AudioRx& mAudioRxQueue;
 
     std::set<VideoFrameObserver*> mVideoFrameObservers;
-
-    // TODO: add audio here as well
-    // std::set<AudioFrameObserver*> mAudioFrameObservers;
+    std::set<AudioFrameObserver*> mAudioFrameObservers;
 
     void processVideoQueue();
     void processAudioQueue();

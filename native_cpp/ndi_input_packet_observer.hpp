@@ -42,7 +42,15 @@ public:
 
     void receivedAudioPack(NDIlib_audio_frame_v3_t *audio, std::function<void(void* userData)> releaseCb) override
     {
-        LOGW("audio:%d\n", audio->no_samples);
+
+        FrameQueue::AudioFrameStr frame;
+        frame.opaque = (void*)audio;
+        frame.chanNo = audio->no_channels;
+        frame.samplesNo = audio->no_samples;
+        frame.samples = audio->p_data;
+        // TODO: check FOURCC here to figure out the right stride
+        frame.stride = audio->channel_stride_in_bytes;
+        mAudioRxQueue.push(std::make_pair(frame, releaseCb));
     }
 
 private:

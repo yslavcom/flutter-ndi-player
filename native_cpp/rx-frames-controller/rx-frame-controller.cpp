@@ -19,6 +19,24 @@ void RxFrameController::uninstallVideoFrameObs(VideoFrameObserver* obs)
     mVideoFrameObservers.erase(obs);
 }
 
+void RxFrameController::installAudioFrameObs(AudioFrameObserver* obs)
+{
+    if (!obs)
+    {
+        return;
+    }
+    mAudioFrameObservers.emplace(obs);
+}
+
+void RxFrameController::uninstallAudioFrameObs(AudioFrameObserver* obs)
+{
+    if (!obs)
+    {
+        return;
+    }
+    mAudioFrameObservers.erase(obs);
+}
+
 void RxFrameController::run()
 {
     processVideoQueue();
@@ -51,15 +69,10 @@ void RxFrameController::processAudioQueue()
             FrameQueue::AudioFrame frame;
             if (queue.read(frame))
             {
-#if 0
                 for (auto& el: mAudioFrameObservers)
                 {
                     el->onFrame(&frame, queue.getCount());
                 }
-#else
-                frame.second(frame.first.opaque);
-                LOGW("Dump audio frame\n");
-#endif
             }
         }
     }
