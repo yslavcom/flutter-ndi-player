@@ -3,6 +3,7 @@
 #include "ndi_src_observer.hpp"
 #include "ndi_input_packet_observer.hpp"
 #include "player/player.hpp"
+#include  "rx-frames-controller/rx-frame-controller.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
 
@@ -106,8 +107,6 @@ struct CharFromSources
     std::array<uint8_t, 1024> mSourcesChars;
     unsigned mCharLen;
     static constexpr unsigned END_STRING_LEN = 2;
-
-    std::unique_ptr<Player> mPlayer;
 };
 CharFromSources mCharFromSources;
 int64_t DartApiMessagePort = -1;
@@ -131,7 +130,10 @@ void sendMsgToFlutter(std::vector<std::string> sources)
 
     NdiApp::Quality mProgramQuality = NdiApp::Quality::High;
 
-} // anon namespace
+    std::unique_ptr<Player> mPlayer;
+    RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
+
+} // anonymous namespace
 
 EXPORT
 int64_t initializeApiDLData(void *data)
@@ -167,6 +169,12 @@ void startProgram(int64_t progrIdx)
 
     if (ProgramRx->createReceiver(name, url, mProgramQuality))
     {
+        if (!mPlayer)
+        {
+            mPlayer.reset(new Player);
+            mRxFrameController.installVideoFrameObs(mPlayer.get());
+        }
+
         if (!mCapturePacketsThread.joinable())
         {
             mCapturePacketsThread = std::thread([](){
@@ -176,6 +184,16 @@ void startProgram(int64_t progrIdx)
                 }
             });
         }
+    }
+}
+
+EXPORT
+void stopProgram(int64_t progrIdx)
+{
+    if (mPlayer)
+    {
+        mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
+        mPlayer = nullptr;
     }
 }
 
