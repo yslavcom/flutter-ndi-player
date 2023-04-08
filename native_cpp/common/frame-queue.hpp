@@ -34,37 +34,29 @@ class Queue_: public SafeQueue<T>
 {
 public:
     Queue_(std::mutex& mu)
-        : SafeQueue<T>(mu)
-        , mMutex(mu)
-    {}
+        : SafeQueue<T>(mu, [](T* el)
+        {
+            if (el)
+            {
+                if (el->second)
+                {
+                    el->second(el->first.opaque);
+                }
+            }
+        })
+    {
+    }
 
     virtual ~Queue_()
     {
-#if 0
-        flush();
-#endif
     }
 
     void flush()
     {
-#if 0
-        std::lock_guard lock(mMutex);
-        unsigned count = getCountUnsafe();
-        while(count --)
-        {
-            auto val = mQueue.front();
-            if (val.second)
-            {
-                val.second(val.first.opaque);
-            }
-
-            mQueue.pop();
-        }
-#endif
+        this->clearQueue();
     }
 
 private:
-    std::mutex& mMutex;
 };
 
 using VideoRx = Queue_<VideoFrame>;

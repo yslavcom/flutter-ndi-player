@@ -17,6 +17,11 @@ public:
         , mEraseElementCb(eraseElementCb)
     {}
 
+    virtual ~SafeQueue()
+    {
+        clearQueue();
+    }
+
     bool push(T&& val)
     {
         std::lock_guard lock(mMutex);
@@ -47,19 +52,19 @@ public:
         return false;
     }
 
-    void clear()
+    void clearQueue()
     {
         std::lock_guard lock(mMutex);
         if (!mEraseElementCb)
         {
-            mQueue.clear();
         }
         else
         {
-            for (auto& el : mQueue)
+            while (getCountUnsafe())
             {
-                mEraseElementCb(&el);
+                T val = mQueue.front();
                 mQueue.pop();
+                mEraseElementCb(&val);
             }
         }
     }
