@@ -17,7 +17,7 @@ if (ANDROID)
         # List variable name
         ffmpeg_libs_names
         # Values in the list
-        avutil avformat avcodec swscale)
+        avutil avformat avcodec swscale swresample)
 
     foreach (ffmpeg_lib_name ${ffmpeg_libs_names})
         add_library(
