@@ -132,6 +132,7 @@ void sendMsgToFlutter(std::vector<std::string> sources)
 
     std::unique_ptr<Player> mPlayer;
     RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
+    std::thread mRxFrameControllerThread;
 
 } // anonymous namespace
 
@@ -174,6 +175,7 @@ void startProgram(int64_t progrIdx)
         {
             mPlayer.reset(new Player);
             mRxFrameController.installVideoFrameObs(mPlayer.get());
+            mRxFrameController.installAudioFrameObs(mPlayer.get());
         }
 
         if (!mCapturePacketsThread.joinable())
@@ -182,6 +184,16 @@ void startProgram(int64_t progrIdx)
                 for (;;)
                 {
                     ProgramRx->capturePackets();
+                }
+            });
+        }
+
+        if (!mRxFrameControllerThread.joinable())
+        {
+            mRxFrameControllerThread = std::thread([](){
+                for (;;)
+                {
+                    mRxFrameController.run();
                 }
             });
         }

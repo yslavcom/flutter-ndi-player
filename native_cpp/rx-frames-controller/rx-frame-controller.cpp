@@ -64,15 +64,12 @@ void RxFrameController::processAudioQueue()
     auto& queue = mAudioRxQueue;
     if (queue.getCount())
     {
-        if (queue.getCount())
+        FrameQueue::AudioFrame frame;
+        if (queue.read(frame))
         {
-            FrameQueue::AudioFrame frame;
-            if (queue.read(frame))
+            for (auto& el: mAudioFrameObservers)
             {
-                for (auto& el: mAudioFrameObservers)
-                {
-                    el->onFrame(&frame, queue.getCount());
-                }
+                el->onFrame(&frame, queue.getCount());
             }
         }
     }

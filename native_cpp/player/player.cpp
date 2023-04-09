@@ -11,6 +11,10 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 
     // render the frame
     LOGW("render video, remaining:%d\n", remainingCount);
+    if (frame->second)
+    {
+        frame->second(frame->first.opaque);
+    }
 }
 
 void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
