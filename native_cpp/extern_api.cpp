@@ -138,7 +138,7 @@ void sendMsgToFlutter(std::vector<std::string> sources)
 EXPORT
 int64_t initializeApiDLData(void *data)
 {
-    LOGW("%s\n", __func__);
+    LOGW("%s, %p\n", __func__, data);
 
     return Dart_InitializeApiDL(data);
 }
@@ -153,6 +153,7 @@ void setDartApiMessagePort(int64_t port)
 EXPORT
 int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
 {
+    LOGW("%s, count:%d\n", __func__, sources.size());
     sendMsgToFlutter(sources);
     return sources.size();
 }

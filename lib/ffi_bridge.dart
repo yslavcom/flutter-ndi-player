@@ -62,7 +62,7 @@ class Nds {
         if (kDebugMode)
         {
           var services = discovery.services;
-          print("$services");
+          print("Discovered:$services");
         }
        });
     }
