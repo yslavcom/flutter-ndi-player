@@ -48,6 +48,7 @@ android {
 //        }
 
         main.jniLibs.srcDirs += '/home/iaroslav/Downloads/personal/Flutter/prj/TestDrive/ffmpeg-android-maker/output'
+        main.jniLibs.srcDirs += '/home/iaroslav/work/streaming/NDI/Android/NDI Advanced SDK for Android/lib'
     }
 
     defaultConfig {
