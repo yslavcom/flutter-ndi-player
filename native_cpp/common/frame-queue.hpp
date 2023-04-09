@@ -34,7 +34,8 @@ class Queue_: public SafeQueue<T>
 {
 public:
     Queue_(std::mutex& mu)
-        : SafeQueue<T>(mu, [](T* el)
+        : SafeQueue<T>(mu
+        , [](T* el)
         {
             if (el)
             {
@@ -43,7 +44,8 @@ public:
                     el->second(el->first.opaque);
                 }
             }
-        })
+        }
+        , 100)
     {
     }
 

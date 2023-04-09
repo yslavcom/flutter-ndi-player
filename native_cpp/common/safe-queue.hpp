@@ -10,11 +10,13 @@ class SafeQueue
 public:
     SafeQueue(std::mutex& mu)
         : mMutex(mu)
+        , mLIMIT(0)
     {}
 
-    SafeQueue(std::mutex& mu, std::function<void(T*)> eraseElementCb)
+    SafeQueue(std::mutex& mu, std::function<void(T*)> eraseElementCb, unsigned limitFrames)
         : mMutex(mu)
         , mEraseElementCb(eraseElementCb)
+        , mLIMIT(limitFrames)
     {}
 
     virtual ~SafeQueue()
@@ -25,6 +27,11 @@ public:
     bool push(T&& val)
     {
         std::lock_guard lock(mMutex);
+        if (mLIMIT > 0 && getCountUnsafe() > mLIMIT)
+        {
+            removeOldestElement();
+        }
+
         mQueue.emplace(val);
         return true;
     }
@@ -55,17 +62,9 @@ public:
     void clearQueue()
     {
         std::lock_guard lock(mMutex);
-        if (!mEraseElementCb)
+        while (getCountUnsafe())
         {
-        }
-        else
-        {
-            while (getCountUnsafe())
-            {
-                T val = mQueue.front();
-                mQueue.pop();
-                mEraseElementCb(&val);
-            }
+            removeOldestElement();
         }
     }
 
@@ -75,4 +74,16 @@ protected:
 private:
     std::mutex& mMutex;
     std::function<void(T*)> mEraseElementCb;
+
+    void removeOldestElement()
+    {
+        T val = mQueue.front();
+        mQueue.pop();
+        if (mEraseElementCb)
+        {
+            mEraseElementCb(&val);
+        }
+    }
+
+    const unsigned mLIMIT;
 };
