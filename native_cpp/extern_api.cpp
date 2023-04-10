@@ -174,6 +174,7 @@ void startProgram(int64_t progrIdx)
         if (!mPlayer)
         {
             mPlayer.reset(new Player);
+            mPlayer->setTexDimensions(640, 480);
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());
         }

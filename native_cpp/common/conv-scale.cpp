@@ -1,5 +1,7 @@
 #include "conv-scale.hpp"
 
+#include "common/logger.hpp"
+
 extern "C" {
 #include "libswscale/swscale.h"
 }
@@ -37,7 +39,7 @@ ConvertScale::ConvertScale(unsigned srcW, unsigned srcH, unsigned dstW, unsigned
                                 nullptr, nullptr, nullptr);
     if (!mScaleContext->mSwsContext)
     {
-        std::cerr << "Failed to init sw scaler";
+        LOGE("Failed to init sw scaler\n");
     }
 }
 
@@ -56,7 +58,7 @@ int ConvertScale::scale(unsigned srcH, const uint8_t *const srcSlice[], const in
         dst, dstStride);
     if (!(ret > 0))
     {
-        std::cerr << "ret:" << ret << std::endl;
+        LOGE("ret:%d", ret);
     }
     return ret;
 }

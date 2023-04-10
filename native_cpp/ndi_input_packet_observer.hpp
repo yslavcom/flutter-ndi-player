@@ -19,7 +19,6 @@ public:
         {
             return;
         }
-        LOGW("video:%d\n", video->xres);
 
         bool compressed = isCompressed(video->FourCC);
 
