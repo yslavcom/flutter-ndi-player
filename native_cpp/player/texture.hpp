@@ -1,6 +1,7 @@
 #pragma once
 
-#include <GLES3/gl3.h>
+#include <GLES3/gl32.h>
+#include <GLES/gl.h>
 
 #include <iostream>
 
@@ -16,7 +17,6 @@ public:
     {
         std::cout << __func__ << std::endl;
         glBindTexture(GL_TEXTURE_2D, 0);
-        //glDeleteTextures(0, &mTexHandle);
     }
 
     bool bind()
@@ -36,14 +36,11 @@ public:
         GLenum format, GLenum type,
         const void * data)
     {
-        //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-#if 0
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-#endif
         glTexImage2D(GL_TEXTURE_2D, level, internalformat, width, height, border, format, type, data);
         return true;
     }

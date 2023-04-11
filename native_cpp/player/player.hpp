@@ -1,5 +1,7 @@
 #pragma once
 
+#include "texture.hpp"
+
 #include "interfaces/frame_observer.hpp"
 #include "common/frame-queue.hpp"
 #include "common/conv-scale.hpp"
@@ -11,7 +13,9 @@ class Player: public VideoFrameObserver, public AudioFrameObserver
 {
 public:
     Player();
+    ~Player();
 
+    void init();
     struct Dimensions
     {
         Dimensions()
@@ -33,6 +37,9 @@ public:
     };
 
     void setTexDimensions(unsigned hor, unsigned ver);
+    void setViewportDimensions(unsigned hor, unsigned ver);
+
+    bool loadTex(uint8_t* frameBuf);
 
 private:
     void onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount) override ;
@@ -47,4 +54,6 @@ private:
     std::mutex mMu;
 
     void renderFrame(FrameQueue::VideoFrameStr& frame);
+
+    std::unique_ptr<Texture2D> mTexture2D;
 };
