@@ -9,6 +9,8 @@
 #include <memory>
 #include <mutex>
 
+class EglWrap;
+
 class Player: public VideoFrameObserver, public AudioFrameObserver
 {
 public:
@@ -56,4 +58,5 @@ private:
     void renderFrame(FrameQueue::VideoFrameStr& frame);
 
     std::unique_ptr<Texture2D> mTexture2D;
+    EglWrap *mEglWrap;
 };

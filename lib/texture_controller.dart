@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class OpenGLTextureController {
-  static const MethodChannel _channel = const MethodChannel('opengl_texture');
+  static const MethodChannel _channel = MethodChannel('opengl_texture');
 
-  int textureId = 0;
+    int textureId = -1;
 
-  Future<int> initialize(double width, double height) async {
+  Future<int> initialize(int width, int height) async {
     if (kDebugMode) {
       print('textureId-1:$textureId');
     }
@@ -21,8 +21,8 @@ class OpenGLTextureController {
     return textureId;
   }
 
-  Future<Null> dispose() =>
+  Future<void> dispose() =>
       _channel.invokeMethod('dispose', {'textureId': textureId});
 
-  bool get isInitialized => textureId != null;
+  bool get isInitialized => textureId >= 0;
 }

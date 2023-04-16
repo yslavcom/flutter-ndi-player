@@ -10,8 +10,7 @@ import 'dart:io' show Platform;
 void main() {
     WidgetsFlutterBinding.ensureInitialized();
     FFIBridge.initialize();
-    if (Platform.isAndroid)
-    {
+    if (Platform.isAndroid) {
       Nds.init();
     }
     runApp(const MainApp());

@@ -42,6 +42,10 @@ class Texture: MethodCallHandler, FlutterPlugin {
             {
                 result.notImplemented()
             }
+        }
+        else if (call.method == "dispose") {
+            val textureId = call.argument<Int>("textureId")
+            // do something here
         } else {
             result.notImplemented()
         }

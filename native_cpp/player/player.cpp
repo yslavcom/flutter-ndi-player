@@ -2,7 +2,136 @@
 
 #include "common/logger.hpp"
 
+#include <android_native_app_glue.h>
+
+#include <GLES/gl.h>
+#include <EGL/egl.h>
+
+#define CASE_STR( value ) case value: return #value;
+const char* getEGLErrorString( EGLint error )
+{
+    switch( error )
+    {
+    CASE_STR( EGL_SUCCESS             )
+    CASE_STR( EGL_NOT_INITIALIZED     )
+    CASE_STR( EGL_BAD_ACCESS          )
+    CASE_STR( EGL_BAD_ALLOC           )
+    CASE_STR( EGL_BAD_ATTRIBUTE       )
+    CASE_STR( EGL_BAD_CONTEXT         )
+    CASE_STR( EGL_BAD_CONFIG          )
+    CASE_STR( EGL_BAD_CURRENT_SURFACE )
+    CASE_STR( EGL_BAD_DISPLAY         )
+    CASE_STR( EGL_BAD_SURFACE         )
+    CASE_STR( EGL_BAD_MATCH           )
+    CASE_STR( EGL_BAD_PARAMETER       )
+    CASE_STR( EGL_BAD_NATIVE_PIXMAP   )
+    CASE_STR( EGL_BAD_NATIVE_WINDOW   )
+    CASE_STR( EGL_CONTEXT_LOST        )
+    default: return "Unknown";
+    }
+}
+#undef CASE_STR
+
+
+class EglWrap
+{
+public:
+    EglWrap(){}
+
+    bool init(EGLNativeWindowType texture)
+    {
+        display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        if (display == EGL_NO_DISPLAY)
+        {
+            LOGE("can't load EGL display: %s\n", getEGLErrorString(eglGetError()));
+            return false;
+        }
+
+        if (!eglInitialize(display, &major, &minor))
+        {
+            LOGE("EGL initialize failed: %s\n", getEGLErrorString(eglGetError()));
+        }
+
+        eglBindAPI(EGL_OPENGL_ES_API);
+
+        const EGLint attribs[] =
+        {
+                EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                EGL_BLUE_SIZE, 8,
+                EGL_GREEN_SIZE, 8,
+                EGL_RED_SIZE, 8,
+				EGL_ALPHA_SIZE, 8,
+                EGL_BUFFER_SIZE, 32,
+                EGL_DEPTH_SIZE, 16,
+                EGL_STENCIL_SIZE, 0,
+                EGL_CONFIG_CAVEAT, EGL_NONE,
+                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+                EGL_NONE
+        };
+        EGLint numConfigs = 0;
+        EGLConfig allConfigs[20];
+        if (!eglChooseConfig(display, attribs, allConfigs, 20, &numConfigs))
+        {
+            LOGE("EGL choose config failed: %s\n", getEGLErrorString(eglGetError()));
+            return false;
+        }
+        eglConfig = allConfigs[0];
+
+        EGLint attributes[] =
+        {
+            EGL_CONTEXT_CLIENT_VERSION,
+            3,
+            EGL_NONE
+        };
+
+        auto eglContext = eglCreateContext(display, &eglConfig, &context, attributes);
+        if (eglContext == EGL_NO_CONTEXT)
+        {
+            LOGE("EGL create context failed: %s\n", getEGLErrorString(eglGetError()));
+            return false;
+        }
+
+        this->texture = texture;
+        surface = eglCreateWindowSurface(display, eglConfig, texture, NULL);
+        if (surface == nullptr || surface == EGL_NO_SURFACE)
+        {
+            LOGE("GL Error: %s\n", getEGLErrorString(eglGetError()));
+        }
+
+        if (!eglMakeCurrent(display, surface, surface, context))
+        {
+            LOGE("EGL make current failed: %s\n", getEGLErrorString(eglGetError()));
+        }
+
+        return true;
+
+    }
+
+    ~EglWrap()
+    {
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(display, surface);
+        eglDestroyContext(display, context);
+        eglTerminate(display);
+    }
+
+private:
+    EGLDisplay display;
+    EGLint major;
+    EGLint minor;
+    EGLContext context;
+    EGLConfig eglConfig;
+    EGLSurface surface;
+    EGLNativeWindowType texture;
+};
+
+namespace
+{
+    std::unique_ptr<EglWrap> mEglWrap;
+}
+
 Player::Player()
+    : mEglWrap(nullptr)
 {
     glViewport(0, 0, mDimViewport.xRes, mDimViewport.yRes);
 }
@@ -15,6 +144,14 @@ Player::~Player()
 void Player::init()
 {
     mTexture2D = std::make_unique<Texture2D>();
+    if (!::mEglWrap)
+    {
+        ::mEglWrap = std::make_unique<EglWrap>();
+        mEglWrap = ::mEglWrap.get();
+#if 0
+        mEglWrap->init(/*(EGLNativeWindowType)*/mTexture2D->handle());
+#endif
+    }
 }
 
 bool Player::loadTex(uint8_t* frameBuf)
@@ -126,19 +263,23 @@ void Player::renderFrame(FrameQueue::VideoFrameStr& frame)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Set up orthographic projection
+#if 0
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glOrthof(0, mDimTex.xRes, mDimTex.yRes, 0, -1, 1);
         glMatrixMode(GL_MODELVIEW);
-
+#endif
         // load texture
         loadTex(framePtr.get());
+#if 0
+        // render to quad
 
-        // render
+        // enable 2d texture capability,
+        //If enabled and no fragment shader is active, two-dimensional texturing is performed
         glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-            glTexCoord2d(0, 0);
-            glVertex2i(0, 0);
+        glBegin(GL_QUADS); // render rectangle
+            glTexCoord2d(0, 0); // set the current texture coord
+            glVertex2i(0, 0); // vertex coordinate
 
             glTexCoord2d(1, 0);
             glVertex2i(mDimTex.xRes, 0);
@@ -152,5 +293,8 @@ void Player::renderFrame(FrameQueue::VideoFrameStr& frame)
         glDisable(GL_TEXTURE_2D);
 
         glfwSwapBuffers(mWindow);
+
+        glFlush();
+#endif
     }
 }

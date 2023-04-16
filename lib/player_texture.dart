@@ -10,8 +10,8 @@ class PlayerTex extends StatefulWidget {
 
 class _PlayerTexState extends State<PlayerTex> {
   final _controller = OpenGLTextureController();
-  final _width = 200.0;
-  final _height = 200.0;
+  final _width = 200;
+  final _height = 200;
 
   @override
   initState() {
@@ -36,8 +36,8 @@ class _PlayerTexState extends State<PlayerTex> {
         ),
         body: Center(
           child: SizedBox(
-            width: _width,
-            height: _height,
+            width: _width.toDouble(),
+            height: _height.toDouble(),
             child: _controller.isInitialized
                 ? Texture(textureId: _controller.textureId)
                 : null,

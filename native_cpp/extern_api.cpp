@@ -206,11 +206,13 @@ void startProgram(int64_t progrIdx)
 EXPORT
 void stopProgram(int64_t progrIdx)
 {
+#if 0
     if (mPlayer)
     {
         mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
         mPlayer = nullptr;
     }
+#endif
 }
 
 EXPORT

@@ -73,21 +73,5 @@ class Nds {
           print("!!! discovery error:$e");
         }
     }
-
-//    discovery.then((value) => handleDiscovery(value)).catchError(handleDiscoveryError);
   }
-
-//  static handleDiscovery(value){
-//    if (kDebugMode)
-//    {
-//      print('handleDiscovery value:$value');
-//    }
-//  }
-//
-//  static handleDiscoveryError(e){
-//    if (kDebugMode)
-//    {
-//      print('handleDiscoveryError value:$e');
-//    }
-//  }
 }
