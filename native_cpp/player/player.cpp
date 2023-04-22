@@ -12,9 +12,10 @@ class EglWrap
 public:
     EglWrap()
         : mEglShareContext(EGL_NO_CONTEXT)
+        , mEglTexture(nullptr)
     {}
 
-    bool init(EGLNativeWindowType texture)
+    bool init(void* texture)
     {
         mEglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         if (mEglDisplay == EGL_NO_DISPLAY)
@@ -51,7 +52,7 @@ public:
 
 
         mEglTexture = texture;
-        mEglSurface = eglCreateWindowSurface(mEglDisplay, mEGLConfig, mEglTexture, NULL);
+        mEglSurface = eglCreateWindowSurface(mEglDisplay, mEGLConfig, (EGLNativeWindowType)mEglTexture, NULL);
         if (mEglSurface == nullptr || mEglSurface == EGL_NO_SURFACE)
         {
             LOGE("GL Error: %s\n", getEGLErrorString(eglGetError()));
@@ -82,7 +83,7 @@ private:
     EGLContext mEglShareContext;
     EGLContext mEglContext;
     EGLSurface mEglSurface;
-    EGLNativeWindowType mEglTexture;
+    void* mEglTexture;
 #if 1
     EGLConfig chooseEglConfig() {
         EGLConfig configs;
@@ -149,28 +150,36 @@ Player::Player()
 
 Player::~Player()
 {
+#if !USE_EXTERN_TEXTURE
     mTexture2D.reset();
+#endif
 }
 
-void Player::init()
+void Player::init(void* surfaceTexture)
 {
+#if !USE_EXTERN_TEXTURE
     mTexture2D = std::make_unique<Texture2D>();
+#endif
+
     if (!::mEglWrap)
     {
         ::mEglWrap = std::make_unique<EglWrap>();
         mEglWrap = ::mEglWrap.get();
 #if 1
         //mEglWrap->init((EGLNativeWindowType)mTexture2D->handle());
-        mEglWrap->init(0);
+        mEglWrap->init(surfaceTexture);
 #endif
     }
 }
 
 bool Player::loadTex(uint8_t* frameBuf)
 {
+    bool ret = true;
+#if !USE_EXTERN_TEXTURE
     mTexture2D->bind();
-    auto ret = mTexture2D->loadImage(0, GL_RGBA, mDimTex.xRes, mDimTex.yRes, 0, GL_RGBA, GL_UNSIGNED_BYTE, frameBuf);
+    ret = mTexture2D->loadImage(0, GL_RGBA, mDimTex.xRes, mDimTex.yRes, 0, GL_RGBA, GL_UNSIGNED_BYTE, frameBuf);
     mTexture2D->unbind();
+#endif
     return ret;
 }
 

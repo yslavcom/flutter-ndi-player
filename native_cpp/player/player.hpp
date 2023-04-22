@@ -9,6 +9,8 @@
 #include <memory>
 #include <mutex>
 
+#define USE_EXTERN_TEXTURE (1)
+
 class EglWrap;
 
 class Player: public VideoFrameObserver, public AudioFrameObserver
@@ -17,7 +19,7 @@ public:
     Player();
     ~Player();
 
-    void init();
+    void init(void* surfaceTexture);
     struct Dimensions
     {
         Dimensions()
@@ -57,6 +59,8 @@ private:
 
     void renderFrame(FrameQueue::VideoFrameStr& frame);
 
+#if !USE_EXTERN_TEXTURE
     std::unique_ptr<Texture2D> mTexture2D;
+#endif
     EglWrap *mEglWrap;
 };
