@@ -11,13 +11,15 @@
 
 #define USE_EXTERN_TEXTURE (1)
 
-class EglWrap;
+//class EglWrap;
 
 class Player: public VideoFrameObserver, public AudioFrameObserver
 {
 public:
     Player();
     ~Player();
+
+    void setRenderObserver(RenderVidFrameObserver* obs);
 
     void init(void* surfaceTexture);
     struct Dimensions
@@ -62,5 +64,7 @@ private:
 #if !USE_EXTERN_TEXTURE
     std::unique_ptr<Texture2D> mTexture2D;
 #endif
-    EglWrap *mEglWrap;
+//    EglWrap *mEglWrap;
+
+    RenderVidFrameObserver* mRenderVidFrameObserver;
 };

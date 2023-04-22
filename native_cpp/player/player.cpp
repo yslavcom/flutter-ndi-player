@@ -7,6 +7,7 @@
 #include <GLES/gl.h>
 #include <EGL/egl.h>
 
+#if 0
 class EglWrap
 {
 public:
@@ -141,9 +142,12 @@ namespace
 {
     std::unique_ptr<EglWrap> mEglWrap;
 }
+#endif
+
 
 Player::Player()
-    : mEglWrap(nullptr)
+    //: mEglWrap(nullptr)
+    : mRenderVidFrameObserver(nullptr)
 {
     glViewport(0, 0, mDimViewport.xRes, mDimViewport.yRes);
 }
@@ -155,6 +159,12 @@ Player::~Player()
 #endif
 }
 
+void Player::setRenderObserver(RenderVidFrameObserver* obs)
+{
+    mRenderVidFrameObserver = obs;
+}
+
+#if 0
 void Player::init(void* surfaceTexture)
 {
 #if !USE_EXTERN_TEXTURE
@@ -171,6 +181,7 @@ void Player::init(void* surfaceTexture)
 #endif
     }
 }
+#endif
 
 bool Player::loadTex(uint8_t* frameBuf)
 {
@@ -196,6 +207,11 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
     if (frame->second)
     {
         frame->second(frame->first.opaque);
+    }
+
+    if (mRenderVidFrameObserver)
+    {
+        mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
     }
 }
 

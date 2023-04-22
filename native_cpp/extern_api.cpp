@@ -2,6 +2,7 @@
 #include "ndi-rx/ndi-app.hpp"
 #include "ndi_src_observer.hpp"
 #include "ndi_input_packet_observer.hpp"
+#include "render_vid_frame.hpp"
 #include "player/player.hpp"
 #include  "rx-frames-controller/rx-frame-controller.hpp"
 
@@ -134,6 +135,8 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
     std::thread mRxFrameControllerThread;
 
+    RenderVidFrame mRenderVidFrame;
+
 } // anonymous namespace
 
 EXPORT
@@ -176,7 +179,8 @@ void startProgram(int64_t progrIdx)
             mPlayer.reset(new Player);
             mPlayer->setTexDimensions(640, 480);
             mPlayer->setViewportDimensions(640, 480);
-            mPlayer->init(nullptr /*pass texture*/);
+            // mPlayer->init(nullptr /*pass texture*/);
+            mPlayer->setRenderObserver(&mRenderVidFrame);
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());
         }
