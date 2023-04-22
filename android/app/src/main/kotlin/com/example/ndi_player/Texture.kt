@@ -58,9 +58,10 @@ class Texture: MethodCallHandler, FlutterPlugin {
         mSurfaceTexture.setDefaultBufferSize(surfaceWidth, surfaceHeight)
 
         mSurface = Surface(mSurfaceTexture)
-        val canvas = mSurface.lockCanvas(null)
-        canvas.drawRGB(255, 230, 15)
-        mSurface.unlockCanvasAndPost(canvas)
+
+//        val canvas = mSurface.lockCanvas(null)
+//        canvas.drawRGB(255, 230, 15)
+//        mSurface.unlockCanvasAndPost(canvas)
 
         return surfaceTextureEntry.id()
     }
