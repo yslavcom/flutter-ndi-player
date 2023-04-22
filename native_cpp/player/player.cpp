@@ -7,122 +7,133 @@
 #include <GLES/gl.h>
 #include <EGL/egl.h>
 
-#define CASE_STR( value ) case value: return #value;
-const char* getEGLErrorString( EGLint error )
-{
-    switch( error )
-    {
-    CASE_STR( EGL_SUCCESS             )
-    CASE_STR( EGL_NOT_INITIALIZED     )
-    CASE_STR( EGL_BAD_ACCESS          )
-    CASE_STR( EGL_BAD_ALLOC           )
-    CASE_STR( EGL_BAD_ATTRIBUTE       )
-    CASE_STR( EGL_BAD_CONTEXT         )
-    CASE_STR( EGL_BAD_CONFIG          )
-    CASE_STR( EGL_BAD_CURRENT_SURFACE )
-    CASE_STR( EGL_BAD_DISPLAY         )
-    CASE_STR( EGL_BAD_SURFACE         )
-    CASE_STR( EGL_BAD_MATCH           )
-    CASE_STR( EGL_BAD_PARAMETER       )
-    CASE_STR( EGL_BAD_NATIVE_PIXMAP   )
-    CASE_STR( EGL_BAD_NATIVE_WINDOW   )
-    CASE_STR( EGL_CONTEXT_LOST        )
-    default: return "Unknown";
-    }
-}
-#undef CASE_STR
-
-
 class EglWrap
 {
 public:
-    EglWrap(){}
+    EglWrap()
+        : mEglShareContext(EGL_NO_CONTEXT)
+    {}
 
     bool init(EGLNativeWindowType texture)
     {
-        display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        if (display == EGL_NO_DISPLAY)
+        mEglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        if (mEglDisplay == EGL_NO_DISPLAY)
         {
-            LOGE("can't load EGL display: %s\n", getEGLErrorString(eglGetError()));
+            LOGE("can't load EGL mEglDisplay: %s\n", getEGLErrorString(eglGetError()));
             return false;
         }
 
-        if (!eglInitialize(display, &major, &minor))
+        if (!eglInitialize(mEglDisplay, &mEglMajor, &mEglMinor))
         {
             LOGE("EGL initialize failed: %s\n", getEGLErrorString(eglGetError()));
         }
 
         eglBindAPI(EGL_OPENGL_ES_API);
 
-        const EGLint attribs[] =
-        {
-                EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-                EGL_BLUE_SIZE, 8,
-                EGL_GREEN_SIZE, 8,
-                EGL_RED_SIZE, 8,
-				EGL_ALPHA_SIZE, 8,
-                EGL_BUFFER_SIZE, 32,
-                EGL_DEPTH_SIZE, 16,
-                EGL_STENCIL_SIZE, 0,
-                EGL_CONFIG_CAVEAT, EGL_NONE,
-                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-                EGL_NONE
-        };
-        EGLint numConfigs = 0;
-        EGLConfig allConfigs[20];
-        if (!eglChooseConfig(display, attribs, allConfigs, 20, &numConfigs))
-        {
-            LOGE("EGL choose config failed: %s\n", getEGLErrorString(eglGetError()));
-            return false;
-        }
-        eglConfig = allConfigs[0];
+        mEGLConfig = chooseEglConfig();
 
         EGLint attributes[] =
         {
             EGL_CONTEXT_CLIENT_VERSION,
-            3,
+            2,
             EGL_NONE
         };
 
-        auto eglContext = eglCreateContext(display, &eglConfig, &context, attributes);
-        if (eglContext == EGL_NO_CONTEXT)
+        mEglContext = eglCreateContext(mEglDisplay, mEGLConfig, mEglShareContext, attributes);
+        if (mEglContext == EGL_NO_CONTEXT)
         {
-            LOGE("EGL create context failed: %s\n", getEGLErrorString(eglGetError()));
+            LOGE("EGL create mEglContext failed: %s\n", getEGLErrorString(eglGetError()));
             return false;
         }
+        {
+            LOGW("mEglContext:%p\n", mEglContext);
+        }
 
-        this->texture = texture;
-        surface = eglCreateWindowSurface(display, eglConfig, texture, NULL);
-        if (surface == nullptr || surface == EGL_NO_SURFACE)
+
+        mEglTexture = texture;
+        mEglSurface = eglCreateWindowSurface(mEglDisplay, mEGLConfig, mEglTexture, NULL);
+        if (mEglSurface == nullptr || mEglSurface == EGL_NO_SURFACE)
         {
             LOGE("GL Error: %s\n", getEGLErrorString(eglGetError()));
         }
 
-        if (!eglMakeCurrent(display, surface, surface, context))
+        if (!eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext))
         {
             LOGE("EGL make current failed: %s\n", getEGLErrorString(eglGetError()));
         }
 
+        LOGW("Init ok\n");
         return true;
-
     }
 
     ~EglWrap()
     {
-        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroySurface(display, surface);
-        eglDestroyContext(display, context);
-        eglTerminate(display);
+        eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(mEglDisplay, mEglSurface);
+        eglDestroyContext(mEglDisplay, mEglContext);
+        eglTerminate(mEglDisplay);
     }
 
 private:
-    EGLDisplay display;
-    EGLint major;
-    EGLint minor;
-    EGLContext context;
-    EGLConfig eglConfig;
-    EGLSurface surface;
-    EGLNativeWindowType texture;
+    EGLDisplay mEglDisplay;
+    EGLint mEglMajor;
+    EGLint mEglMinor;
+    EGLConfig mEGLConfig;
+    EGLContext mEglShareContext;
+    EGLContext mEglContext;
+    EGLSurface mEglSurface;
+    EGLNativeWindowType mEglTexture;
+#if 1
+    EGLConfig chooseEglConfig() {
+        EGLConfig configs;
+        EGLint numConfigs;
+
+        if (!eglChooseConfig(mEglDisplay, mEglConfigSpecs, &configs, 1, &numConfigs))
+        {
+            LOGE("EGL choose config failed: %s\n", getEGLErrorString(eglGetError()));
+            return nullptr;
+        }
+        return configs;
+    }
+
+    static constexpr EGLint mEglConfigSpecs[] = {
+        EGL_RENDERABLE_TYPE, 4,
+        EGL_RED_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_BLUE_SIZE, 8,
+        EGL_ALPHA_SIZE, 8,
+        EGL_DEPTH_SIZE, 16,
+        EGL_STENCIL_SIZE, 0,
+        EGL_SAMPLE_BUFFERS, 1,
+        EGL_SAMPLES, 4,
+        EGL_NONE
+    };
+#endif
+
+    #define CASE_STR( value ) case value: return #value;
+    const char* getEGLErrorString( EGLint error )
+    {
+        switch( error )
+        {
+        CASE_STR( EGL_SUCCESS             )
+        CASE_STR( EGL_NOT_INITIALIZED     )
+        CASE_STR( EGL_BAD_ACCESS          )
+        CASE_STR( EGL_BAD_ALLOC           )
+        CASE_STR( EGL_BAD_ATTRIBUTE       )
+        CASE_STR( EGL_BAD_CONTEXT         )
+        CASE_STR( EGL_BAD_CONFIG          )
+        CASE_STR( EGL_BAD_CURRENT_SURFACE )
+        CASE_STR( EGL_BAD_DISPLAY         )
+        CASE_STR( EGL_BAD_SURFACE         )
+        CASE_STR( EGL_BAD_MATCH           )
+        CASE_STR( EGL_BAD_PARAMETER       )
+        CASE_STR( EGL_BAD_NATIVE_PIXMAP   )
+        CASE_STR( EGL_BAD_NATIVE_WINDOW   )
+        CASE_STR( EGL_CONTEXT_LOST        )
+        default: return "Unknown";
+        }
+    }
+    #undef CASE_STR
 };
 
 namespace
@@ -148,8 +159,9 @@ void Player::init()
     {
         ::mEglWrap = std::make_unique<EglWrap>();
         mEglWrap = ::mEglWrap.get();
-#if 0
-        mEglWrap->init(/*(EGLNativeWindowType)*/mTexture2D->handle());
+#if 1
+        //mEglWrap->init((EGLNativeWindowType)mTexture2D->handle());
+        mEglWrap->init(0);
 #endif
     }
 }
@@ -186,9 +198,9 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     }
 
 #if 0
-    // play audio
+    //TODO: play audio
 #else
-    LOGW("dump audio, remaining:%d\n", remainingCount);
+//    LOGW("dump audio, remaining:%d\n", remainingCount);
     if (frame->second)
     {
         frame->second(frame->first.opaque);
