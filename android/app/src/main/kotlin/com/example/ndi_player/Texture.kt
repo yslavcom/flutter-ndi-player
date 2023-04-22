@@ -35,7 +35,7 @@ class Texture: MethodCallHandler, FlutterPlugin {
             val height = call.argument<Int>("height")
             if (width != null && height != null)
             {
-                val textureId = generateSurfaceTexture(width, height)
+                val textureId = generateSurfaceTextureId(width, height)
                 result.success(textureId)
             }
             else
@@ -51,7 +51,7 @@ class Texture: MethodCallHandler, FlutterPlugin {
         }
     }
 
-    private fun generateSurfaceTexture(surfaceWidth: Int, surfaceHeight: Int): Long {
+    private fun generateSurfaceTextureId(surfaceWidth: Int, surfaceHeight: Int): Long {
         val textureRegistry = mFlutterPluginBinding.textureRegistry
         val surfaceTextureEntry = textureRegistry.createSurfaceTexture()
         mSurfaceTexture = surfaceTextureEntry.surfaceTexture()
