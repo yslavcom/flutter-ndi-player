@@ -134,9 +134,6 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     std::unique_ptr<Player> mPlayer;
     RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
     std::thread mRxFrameControllerThread;
-
-    RenderVidFrame mRenderVidFrame;
-
 } // anonymous namespace
 
 EXPORT
@@ -180,7 +177,7 @@ void startProgram(int64_t progrIdx)
             mPlayer->setTexDimensions(640, 480);
             mPlayer->setViewportDimensions(640, 480);
             // mPlayer->init(nullptr /*pass texture*/);
-            mPlayer->setRenderObserver(&mRenderVidFrame);
+            mPlayer->setRenderObserver(getRenderVidFrame());
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());
         }
