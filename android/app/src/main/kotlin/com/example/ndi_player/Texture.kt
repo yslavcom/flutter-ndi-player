@@ -19,6 +19,12 @@ class Texture: MethodCallHandler, FlutterPlugin {
     private lateinit var mSurfaceTexture: SurfaceTexture
     private lateinit var mSurface: Surface
 
+    private lateinit var mRender: Render
+
+    init {
+        mRender = Render();
+    }
+
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "opengl_texture")
         channel.setMethodCallHandler(this)

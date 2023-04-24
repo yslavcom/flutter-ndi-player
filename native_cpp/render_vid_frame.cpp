@@ -7,7 +7,11 @@
 
 namespace
 {
-    //typedef void (*callback_t)(const void*, int);
+    JavaVM *m_jvm;
+    jobject gInterfaceObject;
+
+    const char* path = "com/example/ndi_player/Render";
+
     using callback_t = std::function<void(const void*, int)>;
     callback_t callback;
 
@@ -20,18 +24,76 @@ namespace
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_example_ndi_player_RegisterRender_registerCallback(JNIEnv *env, jobject instance, jobject callbackObj)
+JNIEXPORT jint
+JNI_OnLoad(JavaVM* vm, void* reserved)
 {
-    jclass callbackClass = env->GetObjectClass(callbackObj);
-    jmethodID callbackMethod = env->GetMethodID(callbackClass, "onCallback", "(Ljava/nio/ByteBuffer;)V");
+    JNIEnv* env;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return -1;
+    }
+    m_jvm = vm;
+
+    jclass cls = env->FindClass(path);
+    jmethodID constr = env->GetMethodID(cls, "<init>", "()V");
+    jobject obj = env->NewObject(cls, constr);
+    gInterfaceObject = env->NewGlobalRef(obj);
+
+//    m_callbackMethod = env->GetStaticMethodID(m_callbackClass, "onCallback", "(Ljava/nio/ByteBuffer;)V");
 
     // Save the callback function pointer
-    set_callback([env, callbackObj, callbackMethod](const void* data, int length) {
-        jobject byteBufferObj = env->NewDirectByteBuffer(const_cast<void*>(data), length);
-        env->CallVoidMethod(callbackObj, callbackMethod, byteBufferObj);
+    set_callback([](const void* data, int length) {
+        JNIEnv *env;
+        JavaVMInitArgs vm_args{};
+        vm_args.version = JNI_VERSION_1_6;
+
+        auto ret = m_jvm->AttachCurrentThread(&env, NULL);
+        if (ret != JNI_OK || !env)
+        {
+            LOGE("AttachCurrentThread fail\n");
+        }
+        else
+        {
+            jobject byteBufferObj = env->NewDirectByteBuffer(const_cast<void*>(data), length);
+
+
+            jclass interfaceClass = env->GetObjectClass(gInterfaceObject);
+            jmethodID method = env->GetStaticMethodID(interfaceClass, "onCallback", "(Ljava/nio/ByteBuffer;)V");
+
+            env->CallStaticVoidMethod(interfaceClass, method, byteBufferObj);
+            m_jvm->DetachCurrentThread();
+        }
+    });
+
+    return JNI_VERSION_1_6;
+}
+
+#if 0
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_ndi_1player_RegisterRender_registerCallback(JNIEnv *env_in, jobject instance, jobject callbackObj)
+{
+    m_callbackObj = callbackObj;
+
+    // Save the callback function pointer
+    set_callback([](const void* data, int length) {
+        JNIEnv *env;
+        JavaVMInitArgs vm_args{};
+        vm_args.version = JNI_VERSION_1_6;
+
+        auto ret = m_jvm->AttachCurrentThread(&env, NULL);
+        if (ret != JNI_OK || !env)
+        {
+            LOGE("AttachCurrentThread fail\n");
+        }
+        else
+        {
+            jobject byteBufferObj = env->NewDirectByteBuffer(const_cast<void*>(data), length);
+            env->CallStaticVoidMethod(m_callbackClass, m_callbackMethod, byteBufferObj);
+            m_jvm->DetachCurrentThread();
+        }
     });
 }
+#endif
 
 RenderVidFrame* getRenderVidFrame()
 {
@@ -60,6 +122,7 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
 
     if (callback)
     {
+        LOGW("callback:%d\n", size);
         callback(releasedPtr, size);
     }
 }
