@@ -7,11 +7,10 @@
 class RenderVidFrame: public RenderVidFrameObserver
 {
 public:
+    void cleanup(uint8_t* ptr);
 
 private:
     virtual void onRender(std::unique_ptr<uint8_t[]>, size_t size) override;
-
-    void cleanup(uint8_t* ptr);
 
     std::set<uint8_t*> mCleanupMemPtr;
 };
