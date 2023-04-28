@@ -58,9 +58,9 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 
 
             jclass interfaceClass = env->GetObjectClass(gInterfaceObject);
-            jmethodID method = env->GetStaticMethodID(interfaceClass, "onCallback", "(Ljava/nio/ByteBuffer;)V");
+            jmethodID method = env->GetStaticMethodID(interfaceClass, "onCallback", "(Ljava/nio/ByteBuffer;J)V");
 
-            env->CallStaticVoidMethod(interfaceClass, method, byteBufferObj);
+            env->CallStaticVoidMethod(interfaceClass, method, byteBufferObj, reinterpret_cast<jlong>(data));
             m_jvm->DetachCurrentThread();
         }
     });
@@ -70,11 +70,11 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_ndi_1player_RenderHelper_cleanup(JNIEnv *env_in, jobject instance, jint ptr)
+Java_com_example_ndi_1player_RenderHelper_cleanup(JNIEnv *env_in, jobject instance, jlong ptr)
 {
-    LOGW("cleanup from Kotlin:%d\n", ptr);
-
-    // getRenderVidFrame()->cleanup(ptr);
+    uint8_t* data = reinterpret_cast<uint8_t*>(ptr);
+    LOGW("cleanup from Kotlin:%p\n", data);
+    getRenderVidFrame()->cleanup(data);
 }
 
 RenderVidFrame* getRenderVidFrame()
@@ -102,14 +102,17 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
 
     if (callback)
     {
+#if 0
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
-
+#endif
+        LOGW("releasedPtr:%p\n", releasedPtr);
         callback(releasedPtr, size);
-
+#if 0
         auto now = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(now - start);
         LOGW("callback-dur:%d\n", duration.count());
+#endif
     }
 }
 
@@ -119,6 +122,7 @@ void RenderVidFrame::cleanup(uint8_t* ptr)
     auto it = mCleanupMemPtr.find(ptr);
     if (it != mCleanupMemPtr.cend())
     {
+        LOGW("Cleanup:%p\n", ptr);
         delete [] *it;
     }
 }

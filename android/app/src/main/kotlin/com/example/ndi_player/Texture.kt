@@ -19,7 +19,7 @@ class Texture: MethodCallHandler, FlutterPlugin {
     private lateinit var mSurfaceTexture: SurfaceTexture
     private lateinit var mSurface: Surface
 
-    private lateinit var mRender: Render
+    private var mRender: Render
 
     init {
         mRender = Render();
