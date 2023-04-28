@@ -13,16 +13,26 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
+class TextureHelper
+{
+    init{}
+    external fun setTexture(surface: Surface)
+    external fun clearTexture()
+}
+
 class Texture: MethodCallHandler, FlutterPlugin {
     private lateinit var channel: MethodChannel
     private lateinit var mFlutterPluginBinding: FlutterPlugin.FlutterPluginBinding
     private lateinit var mSurfaceTexture: SurfaceTexture
     private lateinit var mSurface: Surface
 
+    val mTextureHelper : TextureHelper;
+
     private var mRender: Render
 
     init {
         mRender = Render();
+        mTextureHelper = TextureHelper();
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -51,6 +61,7 @@ class Texture: MethodCallHandler, FlutterPlugin {
         }
         else if (call.method == "dispose") {
             val textureId = call.argument<Int>("textureId")
+            mTextureHelper.clearTexture()
             // do something here
         } else {
             result.notImplemented()
@@ -68,6 +79,7 @@ class Texture: MethodCallHandler, FlutterPlugin {
 //        val canvas = mSurface.lockCanvas(null)
 //        canvas.drawRGB(255, 230, 15)
 //        mSurface.unlockCanvasAndPost(canvas)
+        mTextureHelper.setTexture(mSurface)
 
         return surfaceTextureEntry.id()
     }
