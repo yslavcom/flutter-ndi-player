@@ -1,5 +1,6 @@
 #include "render_vid_frame.hpp"
 #include "common/logger.hpp"
+#include "egl_wrap.hpp"
 
 #include <jni.h>
 #include <android/native_window.h>
@@ -8,12 +9,12 @@
 
 #include <functional>
 #include <chrono>
+#include <memory>
 
 namespace
 {
     JavaVM *m_jvm;
     jobject gInterfaceObject;
-    ANativeWindow* window;
 
     const char* path = "com/example/ndi_player/Render";
 
@@ -26,6 +27,7 @@ namespace
     }
 
     std::unique_ptr<RenderVidFrame> mRenderVidFrame;
+    std::unique_ptr<EglWrap> mEglWrap;
 }
 
 extern "C"
@@ -85,8 +87,9 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_setTexture(JNIEnv* env, jobject obj, jobject surfaceTexture)
 {
-    //window = ANativeWindow_fromSurfaceTexture(env, surfaceTexture);
-    window = ANativeWindow_fromSurface(env, surfaceTexture);
+    auto window = ANativeWindow_fromSurface(env, surfaceTexture);
+    mEglWrap.reset(new EglWrap(window));
+    mEglWrap->init();
     LOGW("ANativeWindow:%p\n", window);
 }
 
@@ -94,7 +97,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_clearTexture(JNIEnv* env, jobject)
 {
-    window = nullptr;
+    mEglWrap.reset();
     LOGW("Clear texture\n");
 }
 

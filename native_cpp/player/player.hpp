@@ -1,3 +1,5 @@
+/* * (C) Copyright   @Author: iaroslav.dochien  * @Date: 2023-04-29 06:06:46  * @Last Modified by:   iaroslav.dochien  * @Last Modified time: 2023-04-29 06:06:46 . All rights reserved */
+
 #pragma once
 
 #include "texture.hpp"
