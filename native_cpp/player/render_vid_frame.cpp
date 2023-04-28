@@ -2,6 +2,9 @@
 #include "common/logger.hpp"
 
 #include <jni.h>
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
+#include <android/surface_texture.h>
 
 #include <functional>
 #include <chrono>
@@ -10,6 +13,7 @@ namespace
 {
     JavaVM *m_jvm;
     jobject gInterfaceObject;
+    ANativeWindow* window;
 
     const char* path = "com/example/ndi_player/Render";
 
@@ -77,13 +81,21 @@ Java_com_example_ndi_1player_RenderHelper_cleanup(JNIEnv *env_in, jobject instan
     getRenderVidFrame()->cleanup(data);
 }
 
-RenderVidFrame* getRenderVidFrame()
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_ndi_1player_TextureHelper_setTexture(JNIEnv* env, jobject obj, jobject surfaceTexture)
 {
-    if (!mRenderVidFrame)
-    {
-        mRenderVidFrame.reset(new RenderVidFrame());
-    }
-    return mRenderVidFrame.get();
+    //window = ANativeWindow_fromSurfaceTexture(env, surfaceTexture);
+    window = ANativeWindow_fromSurface(env, surfaceTexture);
+    LOGW("ANativeWindow:%p\n", window);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_ndi_1player_TextureHelper_clearTexture(JNIEnv* env, jobject)
+{
+    window = nullptr;
+    LOGW("Clear texture\n");
 }
 
 //////////////////////////////////////////////////
@@ -125,4 +137,16 @@ void RenderVidFrame::cleanup(uint8_t* ptr)
         LOGW("Cleanup:%p\n", ptr);
         delete [] *it;
     }
+}
+
+//////////////////////////////////////////////////
+// RenderVidFrame singleton
+
+RenderVidFrame* getRenderVidFrame()
+{
+    if (!mRenderVidFrame)
+    {
+        mRenderVidFrame.reset(new RenderVidFrame());
+    }
+    return mRenderVidFrame.get();
 }

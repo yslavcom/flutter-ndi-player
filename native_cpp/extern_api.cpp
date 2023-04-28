@@ -2,7 +2,7 @@
 #include "ndi-rx/ndi-app.hpp"
 #include "ndi_src_observer.hpp"
 #include "ndi_input_packet_observer.hpp"
-#include "render_vid_frame.hpp"
+#include "player/render_vid_frame.hpp"
 #include "player/player.hpp"
 #include  "rx-frames-controller/rx-frame-controller.hpp"
 
