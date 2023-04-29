@@ -6,6 +6,7 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <android/surface_texture.h>
+#include <android/surface_texture_jni.h>
 
 #include <functional>
 #include <chrono>
@@ -102,7 +103,7 @@ Java_com_example_ndi_1player_TextureHelper_setTexture(JNIEnv* env, jobject obj, 
     {
         std::lock_guard lk(mRenderMutex);
 
-        mRender = std::make_unique<RenderVid>(width, height);
+        mRender = std::make_unique<RenderVid>();
         mRender->init(window);
         getRenderVidFrame()->setOutDim(width, height);
     }
@@ -131,13 +132,13 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
         //nothing to do
         return;
     }
-    LOGW("onRender:%d\n", size);
+    //LOGW("onRender:%d\n", size);
 
     {
         std::lock_guard lk(mRenderMutex);
         if (mRender)
         {
-            mRender->render(frameBytes.get());
+            mRender->render(frameBytes.get(), mXres, mYres);
         }
     }
 

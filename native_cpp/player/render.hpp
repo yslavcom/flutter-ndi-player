@@ -10,9 +10,9 @@
 class RenderVid
 {
 public:
-    RenderVid(unsigned xRes, unsigned yRes);
+    RenderVid() = default;
 
-    void render(uint8_t* data);
+    void render(uint8_t* data, unsigned xRes, unsigned yRes);
 
     bool init(NativeWindowType win);
     bool clear();
@@ -23,7 +23,4 @@ private:
 
     std::unique_ptr<EglWrap> mEglWrap;
     std::unique_ptr<Texture2D> mTexture2D;
-
-    unsigned mXres;
-    unsigned mYres;
 };

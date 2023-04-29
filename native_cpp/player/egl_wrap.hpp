@@ -14,6 +14,14 @@ public:
         , mEGLNativeWindowType(window)
     {}
 
+    ~EglWrap()
+    {
+        eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroySurface(mEglDisplay, mEglSurface);
+        eglDestroyContext(mEglDisplay, mEglContext);
+        eglTerminate(mEglDisplay);
+    }
+
     bool init()
     {
         mEglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -28,7 +36,7 @@ public:
             LOGE("EGL initialize failed: %s\n", getEGLErrorString(eglGetError()));
         }
 
-        eglBindAPI(EGL_OPENGL_ES_API);
+//        eglBindAPI(EGL_OPENGL_ES_API);
 
         mEGLConfig = chooseEglConfig();
 
@@ -65,17 +73,18 @@ public:
         return true;
     }
 
-    void render()
+    void clearScreen()
     {
-
+        glClearColor(0.0, 0.0, 0.0, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    ~EglWrap()
+    void swapBuffers()
     {
-        eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroySurface(mEglDisplay, mEglSurface);
-        eglDestroyContext(mEglDisplay, mEglContext);
-        eglTerminate(mEglDisplay);
+        if (!eglSwapBuffers(mEglDisplay, mEglSurface))
+        {
+            LOGE("SwapBuffer fail: %s\n", getEGLErrorString(eglGetError()));
+        }
     }
 
 private:
@@ -98,6 +107,7 @@ private:
             LOGE("EGL choose config failed: %s\n", getEGLErrorString(eglGetError()));
             return nullptr;
         }
+        LOGW("numConfigs:%d\n", numConfigs);
         return configs;
     }
 
@@ -111,6 +121,7 @@ private:
         EGL_STENCIL_SIZE, 0,
         EGL_SAMPLE_BUFFERS, 1,
         EGL_SAMPLES, 4,
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
         EGL_NONE
     };
 #endif

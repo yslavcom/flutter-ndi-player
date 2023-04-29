@@ -2,11 +2,6 @@
 
 #include "render.hpp"
 
-RenderVid::RenderVid(unsigned xRes, unsigned yRes)
-    : mXres(xRes)
-    , mYres(yRes)
-{}
-
 bool RenderVid::init(NativeWindowType win)
 {
     if (initEgl(win))
@@ -34,9 +29,14 @@ bool RenderVid::initTex()
 {
     mTexture2D.reset(new Texture2D());
     mTexture2D->init();
-    return mTexture2D->bind();
+    return true;
 }
 
-void RenderVid::render(uint8_t* data)
+void RenderVid::render(uint8_t* data, unsigned xRes, unsigned yRes)
 {
+    mEglWrap->clearScreen();
+    mTexture2D->bind();
+    mTexture2D->loadImage(0, GL_RGBA, xRes, yRes, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    mTexture2D->unbind();
+    mEglWrap->swapBuffers();
 }
