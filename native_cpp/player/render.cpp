@@ -27,16 +27,21 @@ bool RenderVid::initEgl(NativeWindowType win)
 
 bool RenderVid::initTex()
 {
+#if 0
     mTexture2D.reset(new Texture2D());
     mTexture2D->init();
+#endif
     return true;
 }
 
 void RenderVid::render(uint8_t* data, unsigned xRes, unsigned yRes)
 {
+//    mEglWrap->makeCurrent();
     mEglWrap->clearScreen();
+#if 0
     mTexture2D->bind();
     mTexture2D->loadImage(0, GL_RGBA, xRes, yRes, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     mTexture2D->unbind();
+#endif
     mEglWrap->swapBuffers();
 }

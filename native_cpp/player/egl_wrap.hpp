@@ -6,6 +6,8 @@
 #include <GLES/gl.h>
 #include <EGL/egl.h>
 
+#include <cmath>
+
 class EglWrap
 {
 public:
@@ -64,19 +66,34 @@ public:
             LOGE("GL Error: %s\n", getEGLErrorString(eglGetError()));
         }
 
-        if (!eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext))
-        {
-            LOGE("EGL make current failed: %s\n", getEGLErrorString(eglGetError()));
-        }
+        makeCurrent();
 
         LOGW("Init ok\n");
         return true;
     }
 
+    void makeCurrent()
+    {
+        if (!eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext))
+        {
+            LOGE("EGL make current failed: %s\n", getEGLErrorString(eglGetError()));
+        }
+    }
+
     void clearScreen()
     {
+#if 1
+        mDbgTick = mDbgTick + 3.14f / 30;
+
+        float green = (float) ((std::sin(mDbgTick) + 1) / 2);
+
+        glClearColor(0., green, 0., 1.);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#else
         glClearColor(0.0, 0.0, 0.0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
     }
 
     void swapBuffers()
@@ -88,6 +105,7 @@ public:
     }
 
 private:
+    unsigned mDbgTick = 0;
     EGLDisplay mEglDisplay;
     EGLint mEglMajor;
     EGLint mEglMinor;

@@ -14,13 +14,21 @@
 
 namespace
 {
-#if 1
 // candidate to be removed
     JavaVM *m_jvm;
     jobject gInterfaceObject;
 
-    const char* path = "com/example/ndi_player/Render";
+#if 1
+    const char* pathTex = "com/example/ndi_player/Texture";
+    using ReqTextCb_t = std::function<void()>;
+    ReqTextCb_t reqTextCb;
 
+    void setReqTextCb(ReqTextCb_t cb)
+    {
+        reqTextCb = cb;
+    }
+#else
+    const char* path = "com/example/ndi_player/Render";
     using callback_t = std::function<void(const void*, int)>;
     callback_t callback;
 
@@ -31,12 +39,56 @@ namespace
 #endif
 
     std::mutex mRenderMutex;
-    std::unique_ptr<RenderVid> mRender;
+    std::unique_ptr<RenderVid> mRenderEgl;
 
     std::unique_ptr<RenderVidFrame> mRenderVidFrame;
 }
 
 #if 1
+
+extern "C"
+JNIEXPORT jint
+JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    JNIEnv* env;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return -1;
+    }
+    m_jvm = vm;
+
+    jclass cls = env->FindClass(pathTex);
+    jmethodID constr = env->GetMethodID(cls, "<init>", "()V");
+    jobject obj = env->NewObject(cls, constr);
+    gInterfaceObject = env->NewGlobalRef(obj);
+
+    // Save the callback function pointer
+    setReqTextCb([]() {
+        JNIEnv *env;
+        JavaVMInitArgs vm_args{};
+        vm_args.version = JNI_VERSION_1_6;
+
+        auto ret = m_jvm->AttachCurrentThread(&env, NULL);
+        if (ret != JNI_OK || !env)
+        {
+            LOGE("AttachCurrentThread fail\n");
+        }
+        else
+        {
+            jclass interfaceClass = env->GetObjectClass(gInterfaceObject);
+            jmethodID method = env->GetStaticMethodID(interfaceClass, "onRequestTex", "()V");
+
+            env->CallStaticVoidMethod(interfaceClass, method);
+            m_jvm->DetachCurrentThread();
+
+            LOGW("Requested texture\n");
+        }
+    });
+
+    return JNI_VERSION_1_6;
+}
+
+#else
+
 // candidate to be removed
 extern "C"
 JNIEXPORT jint
@@ -90,36 +142,50 @@ Java_com_example_ndi_1player_RenderHelper_cleanup(JNIEnv *env_in, jobject instan
     LOGW("cleanup from Kotlin:%p\n", data);
     getRenderVidFrame()->cleanup(data);
 }
+
 #endif
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_ndi_1player_TextureHelper_setTexture(JNIEnv* env, jobject obj, jobject surfaceTexture)
+Java_com_example_ndi_1player_TextureHelper_setTextureSize(JNIEnv* env, jobject obj, jint width, jint height)
 {
-    auto window = ANativeWindow_fromSurface(env, surfaceTexture);
-    int width = ANativeWindow_getWidth(window);
-    int height = ANativeWindow_getHeight(window);
-
     {
         std::lock_guard lk(mRenderMutex);
-
-        mRender = std::make_unique<RenderVid>();
-        mRender->init(window);
         getRenderVidFrame()->setOutDim(width, height);
     }
-    LOGW("NativeWindowType:%p, width:%d, height:%d\n", window, width, height);
+
+    LOGW("Tex size, width:%d, height:%d\n", width, height);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_ndi_1player_TextureHelper_clearTexture(JNIEnv* env, jobject)
+Java_com_example_ndi_1player_TextureHelper_disposeTexture(JNIEnv* env, jobject)
 {
     {
         std::lock_guard lk(mRenderMutex);
-        mRender = nullptr;
+        mRenderEgl = nullptr;
         getRenderVidFrame()->setOutDim(0, 0);
     }
     LOGW("Clear surface\n");
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj, jobject surfaceTexture)
+{
+#if 0
+    auto tex = ASurfaceTexture_fromSurfaceTexture(env, surfaceTexture);
+    auto window = ASurfaceTexture_acquireANativeWindow(tex);
+#endif
+    auto window = ANativeWindow_fromSurface(env, surfaceTexture);
+
+#if 0
+    ASurfaceTexture_release(tex);
+#endif
+    mRenderEgl = std::make_unique<RenderVid>();
+    mRenderEgl->init(window);
+
+    LOGW("NativeWindowType:%p\n", window);
 }
 
 //////////////////////////////////////////////////
@@ -136,9 +202,19 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
 
     {
         std::lock_guard lk(mRenderMutex);
-        if (mRender)
+        if (!mRenderEgl)
         {
-            mRender->render(frameBytes.get(), mXres, mYres);
+            if (auto [w, h] = getOutDim(); w != 0 && h != 0)
+            {
+                if (reqTextCb)
+                {
+                    reqTextCb();
+                }
+            }
+        }
+        if (mRenderEgl)
+        {
+            mRenderEgl->render(frameBytes.get(), mXres, mYres);
         }
     }
 

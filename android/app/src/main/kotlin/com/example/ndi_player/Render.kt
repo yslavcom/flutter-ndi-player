@@ -1,3 +1,5 @@
+/*
+
 package com.example.ndi_player
 
 import java.nio.ByteBuffer
@@ -28,3 +30,5 @@ class Render
         }
     }
 }
+
+*/
