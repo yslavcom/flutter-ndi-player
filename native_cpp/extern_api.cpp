@@ -174,9 +174,6 @@ void startProgram(int64_t progrIdx)
         if (!mPlayer)
         {
             mPlayer.reset(new Player);
-            mPlayer->setTexDimensions(640, 480);
-            mPlayer->setViewportDimensions(640, 480);
-            // mPlayer->init(nullptr /*pass texture*/);
             mPlayer->setRenderObserver(getRenderVidFrame());
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());

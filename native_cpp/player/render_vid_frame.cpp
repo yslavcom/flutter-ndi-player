@@ -1,6 +1,6 @@
 #include "render_vid_frame.hpp"
 #include "common/logger.hpp"
-#include "egl_wrap.hpp"
+#include "render.hpp"
 
 #include <jni.h>
 #include <android/native_window.h>
@@ -13,6 +13,8 @@
 
 namespace
 {
+#if 1
+// candidate to be removed
     JavaVM *m_jvm;
     jobject gInterfaceObject;
 
@@ -25,11 +27,16 @@ namespace
     {
         callback = cb;
     }
+#endif
+
+    std::mutex mRenderMutex;
+    std::unique_ptr<RenderVid> mRender;
 
     std::unique_ptr<RenderVidFrame> mRenderVidFrame;
-    std::unique_ptr<EglWrap> mEglWrap;
 }
 
+#if 1
+// candidate to be removed
 extern "C"
 JNIEXPORT jint
 JNI_OnLoad(JavaVM* vm, void* reserved)
@@ -82,23 +89,36 @@ Java_com_example_ndi_1player_RenderHelper_cleanup(JNIEnv *env_in, jobject instan
     LOGW("cleanup from Kotlin:%p\n", data);
     getRenderVidFrame()->cleanup(data);
 }
+#endif
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_setTexture(JNIEnv* env, jobject obj, jobject surfaceTexture)
 {
     auto window = ANativeWindow_fromSurface(env, surfaceTexture);
-    mEglWrap.reset(new EglWrap(window));
-    mEglWrap->init();
-    LOGW("ANativeWindow:%p\n", window);
+    int width = ANativeWindow_getWidth(window);
+    int height = ANativeWindow_getHeight(window);
+
+    {
+        std::lock_guard lk(mRenderMutex);
+
+        mRender = std::make_unique<RenderVid>(width, height);
+        mRender->init(window);
+        getRenderVidFrame()->setOutDim(width, height);
+    }
+    LOGW("NativeWindowType:%p, width:%d, height:%d\n", window, width, height);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_clearTexture(JNIEnv* env, jobject)
 {
-    mEglWrap.reset();
-    LOGW("Clear texture\n");
+    {
+        std::lock_guard lk(mRenderMutex);
+        mRender = nullptr;
+        getRenderVidFrame()->setOutDim(0, 0);
+    }
+    LOGW("Clear surface\n");
 }
 
 //////////////////////////////////////////////////
@@ -111,10 +131,19 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
         //nothing to do
         return;
     }
+    LOGW("onRender:%d\n", size);
 
+    {
+        std::lock_guard lk(mRenderMutex);
+        if (mRender)
+        {
+            mRender->render(frameBytes.get());
+        }
+    }
+
+#if 0
     auto releasedPtr = frameBytes.release();
     mCleanupMemPtr.emplace(releasedPtr);
-
     if (callback)
     {
 #if 0
@@ -129,6 +158,12 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
         LOGW("callback-dur:%d\n", duration.count());
 #endif
     }
+#endif
+}
+
+std::pair<unsigned, unsigned> RenderVidFrame::getOutDim() const
+{
+    return {mXres, mYres};
 }
 
 void RenderVidFrame::cleanup(uint8_t* ptr)

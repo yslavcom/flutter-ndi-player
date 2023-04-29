@@ -20,4 +20,5 @@ class RenderVidFrameObserver
 {
 public:
     virtual void onRender(std::unique_ptr<uint8_t[]>, size_t size) = 0;
+    virtual std::pair<unsigned, unsigned> getOutDim() const = 0;
 };

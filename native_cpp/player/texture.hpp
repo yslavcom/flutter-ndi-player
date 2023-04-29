@@ -33,16 +33,19 @@ public:
         return true;
     }
 
-    bool loadImage( GLint level, GLint internalformat,
-        GLsizei width, GLsizei height, GLint border,
-        GLenum format, GLenum type,
-        const void * data)
+    void init()
     {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE /*GL_REPEAT*/ );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE /*GL_REPEAT*/ );
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
 
+    bool loadImage( GLint level, GLint internalformat,
+        GLsizei width, GLsizei height, GLint border,
+        GLenum format, GLenum type,
+        const void * data)
+    {
         glTexImage2D(GL_TEXTURE_2D, level, internalformat, width, height, border, format, type, data);
         return true;
     }

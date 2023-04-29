@@ -65,6 +65,11 @@ public:
         return true;
     }
 
+    void render()
+    {
+
+    }
+
     ~EglWrap()
     {
         eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

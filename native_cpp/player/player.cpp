@@ -1,3 +1,5 @@
+/* * (C) Copyright   @Author: iaroslav.dochien  * @Date: 2023-04-29 06:53:53  * @Last Modified by:   iaroslav.dochien  * @Last Modified time: 2023-04-29 06:53:53 . All rights reserved */
+
 #include "player.hpp"
 #include "common/logger.hpp"
 
@@ -6,7 +8,7 @@
 Player::Player()
     : mRenderVidFrameObserver(nullptr)
 {
-    glViewport(0, 0, mDimViewport.xRes, mDimViewport.yRes);
+//    glViewport(0, 0, mDimViewport.xRes, mDimViewport.yRes);
 }
 
 Player::~Player()
@@ -34,23 +36,32 @@ bool Player::loadTex(uint8_t* frameBuf)
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
+    auto cleanupVideo = [](auto frame){
+        if (frame->second)
+        {
+            frame->second(frame->first.opaque);
+        }
+    };
+
     if (!frame)
     {
         return;
     }
 
-    // render the frame
-    size_t size;
-    auto scaledFrame = convScaleFrame(frame->first, size);
-    if (frame->second)
+    if (!mRenderVidFrameObserver)
     {
-        frame->second(frame->first.opaque);
+        cleanupVideo(frame);
+        return;
     }
-
-    if (mRenderVidFrameObserver)
+    auto [xRes, yRes] = mRenderVidFrameObserver->getOutDim();
+    // render the frame
+    if (xRes && yRes)
     {
+        size_t size;
+        auto scaledFrame = convScaleFrame(frame->first, xRes, yRes, size);
         mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
     }
+    cleanupVideo(frame);
 }
 
 void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
@@ -71,33 +82,9 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
 #endif
 }
 
-void Player::setTexDimensions(unsigned hor, unsigned ver)
+std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameStr& frame, unsigned xRes, unsigned yRes, size_t& size)
 {
-    std::lock_guard lk(mMu);
-
-    mDimTex = {hor, ver};
-}
-
-void Player::setViewportDimensions(unsigned hor, unsigned ver)
-{
-    std::lock_guard lk(mMu);
-
-    mDimViewport = {hor, ver};
-}
-
-std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameStr& frame, size_t& size)
-{
-    Dimensions dimTex;
-
-    {
-        std::lock_guard lk(mMu);
-        dimTex = mDimTex;
-    }
-
     const int outputPixelComponentscount = 4; //RGBA
-
-    auto xRes = dimTex.xRes;
-    auto yRes = dimTex.yRes;
 
     size = xRes * yRes * outputPixelComponentscount; // RGBA
     auto rgbaFrame = std::make_unique<uint8_t[]>(size);
@@ -132,7 +119,8 @@ std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameSt
 void Player::renderFrame(FrameQueue::VideoFrameStr& frame)
 {
     size_t size = 0;
-    auto framePtr = convScaleFrame(frame, size);
+//    auto framePtr = convScaleFrame(frame, size);
+    std::unique_ptr<uint8_t[]> framePtr;
     if (framePtr)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
