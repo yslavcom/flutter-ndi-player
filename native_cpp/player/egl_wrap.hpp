@@ -83,7 +83,10 @@ public:
     void clearScreen()
     {
 #if 1
-        mDbgTick = mDbgTick + 3.14f / 30;
+//        glClearColor(0.0, 0.0, 0.0, 1.0f);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        mDbgTick = mDbgTick + 3.14f / 30.0;
 
         float green = (float) ((std::sin(mDbgTick) + 1) / 2);
 
@@ -105,7 +108,7 @@ public:
     }
 
 private:
-    unsigned mDbgTick = 0;
+    float mDbgTick = 0.0;
     EGLDisplay mEglDisplay;
     EGLint mEglMajor;
     EGLint mEglMinor;
