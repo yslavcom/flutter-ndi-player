@@ -182,7 +182,8 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
 #if 0
     ASurfaceTexture_release(tex);
 #endif
-    mRenderEgl = std::make_unique<RenderVid>();
+    auto resolution = getRenderVidFrame()->getOutDim();
+    mRenderEgl = std::make_unique<RenderVid>(resolution.first, resolution.second);
     mRenderEgl->init(window);
 
     LOGW("NativeWindowType:%p\n", window);

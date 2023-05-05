@@ -10,7 +10,10 @@
 class RenderVid
 {
 public:
-    RenderVid() = default;
+    RenderVid(unsigned xRes, unsigned yRes)
+    {
+        glViewport(0, 0, xRes, yRes);
+    }
 
     void render(uint8_t* data, unsigned xRes, unsigned yRes);
 

@@ -19,9 +19,10 @@ public:
         mYres = yRes;
     }
 
+    virtual std::pair<unsigned, unsigned> getOutDim() const override;
+
 private:
     virtual void onRender(std::unique_ptr<uint8_t[]>, size_t size) override;
-    virtual std::pair<unsigned, unsigned> getOutDim() const override;
 
     std::set<uint8_t*> mCleanupMemPtr;
 
