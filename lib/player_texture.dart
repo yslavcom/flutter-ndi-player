@@ -10,8 +10,11 @@ class PlayerTex extends StatefulWidget {
 
 class _PlayerTexState extends State<PlayerTex> {
   final _controller = OpenGLTextureController();
-  final _width = 200;
-  final _height = 200;
+  // final _width = 284;
+  // final _height = 160;
+  final _width = 1920;
+  final _height = 1080;
+
 
   @override
   initState() {

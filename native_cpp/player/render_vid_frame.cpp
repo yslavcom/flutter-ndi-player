@@ -1,6 +1,5 @@
 #include "render_vid_frame.hpp"
 #include "common/logger.hpp"
-#include "render.hpp"
 
 #include <jni.h>
 #include <android/native_window.h>
@@ -38,9 +37,9 @@ namespace
     }
 #endif
 
-    std::mutex mRenderMutex;
-    std::unique_ptr<RenderVid> mRenderEgl;
+    ANativeWindow* mWindow = nullptr;
 
+    std::mutex mRenderMutex;
     std::unique_ptr<RenderVidFrame> mRenderVidFrame;
 }
 
@@ -163,8 +162,9 @@ Java_com_example_ndi_1player_TextureHelper_disposeTexture(JNIEnv* env, jobject)
 {
     {
         std::lock_guard lk(mRenderMutex);
-        mRenderEgl = nullptr;
         getRenderVidFrame()->setOutDim(0, 0);
+//        ANativeWindow_release(mWindow);
+        mWindow = nullptr;
     }
     LOGW("Clear surface\n");
 }
@@ -173,20 +173,11 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj, jobject surfaceTexture)
 {
-#if 0
-    auto tex = ASurfaceTexture_fromSurfaceTexture(env, surfaceTexture);
-    auto window = ASurfaceTexture_acquireANativeWindow(tex);
-#endif
-    auto window = ANativeWindow_fromSurface(env, surfaceTexture);
-
-#if 0
-    ASurfaceTexture_release(tex);
-#endif
     auto resolution = getRenderVidFrame()->getOutDim();
-    mRenderEgl = std::make_unique<RenderVid>(resolution.first, resolution.second);
-    mRenderEgl->init(window);
+    mWindow = ANativeWindow_fromSurface(env, surfaceTexture);
+    ANativeWindow_setBuffersGeometry(mWindow, resolution.first, resolution.second, WINDOW_FORMAT_RGBA_8888);
 
-    LOGW("NativeWindowType:%p\n", window);
+    LOGW("NativeWindowType:%p\n", mWindow);
 }
 
 //////////////////////////////////////////////////
@@ -199,11 +190,10 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
         //nothing to do
         return;
     }
-    //LOGW("onRender:%d\n", size);
 
     {
         std::lock_guard lk(mRenderMutex);
-        if (!mRenderEgl)
+        if (!mWindow)
         {
             if (auto [w, h] = getOutDim(); w != 0 && h != 0)
             {
@@ -213,9 +203,32 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
                 }
             }
         }
-        if (mRenderEgl)
+        if (mWindow)
         {
-            mRenderEgl->render(frameBytes.get(), mXres, mYres);
+            ANativeWindow_Buffer buffer;
+            ARect inOutDirtyBounds;
+            auto ret = ANativeWindow_lock(mWindow, &buffer, &inOutDirtyBounds);
+            if (0 != ret)
+            {
+                LOGE("ANativeWindow_lock fail:0x%lx\n", ret);
+            }
+            else
+            {
+#if 1
+                // Copy RGBA data to buffer
+                for (int y = 0; y < buffer.height; y++)
+                {
+                    uint8_t* dst = (uint8_t*) buffer.bits + y * buffer.stride * 4;
+                    uint8_t* src = frameBytes.get() + y * mXres * 4;
+                    memcpy(dst, src, buffer.width * 4);
+                }
+#endif
+                LOGW("buffer.width:%d, buffer.height:%d\n", buffer.width, buffer.height);
+                // Unlock ANativeWindow
+                ANativeWindow_unlockAndPost(mWindow);
+//                // Release ANativeWindow
+//                ANativeWindow_release(mWindow);
+            }
         }
     }
 
