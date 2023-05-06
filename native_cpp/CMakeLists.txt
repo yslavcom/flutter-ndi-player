@@ -15,6 +15,8 @@ else ()
     set(LIB_NDI_VAR "")
 endif ()
 
+set (NDI_PATH "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/include/")
+
 add_subdirectory(common)
 add_subdirectory(ndi-rx-scan)
 add_subdirectory(ndi-rx)

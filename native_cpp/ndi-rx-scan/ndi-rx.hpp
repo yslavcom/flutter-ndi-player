@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <stdint.h>
 
-//#include </home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/include/Processing.NDI.Advanced.h>
-#include <Processing.NDI.Lib.h>
+//#include <Processing.NDI.Lib.h>
+#include <Processing.NDI.Advanced.h>
 
 #include "source-container.hpp"
 #include "interfaces/input-observer.hpp"

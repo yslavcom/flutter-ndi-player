@@ -1,7 +1,7 @@
 #pragma once
 
-//#include </home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/include/Processing.NDI.Advanced.h>
-#include <Processing.NDI.Lib.h>
+//#include <Processing.NDI.Lib.h>
+#include <Processing.NDI.Advanced.h>
 
 #include <functional>
 

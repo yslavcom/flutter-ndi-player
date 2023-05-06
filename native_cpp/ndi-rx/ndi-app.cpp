@@ -1,5 +1,8 @@
 #include "ndi-app.hpp"
 
+// #include <Processing.NDI.Lib.h>
+#include <Processing.NDI.Advanced.h>
+
 #include "common/logger.hpp"
 
 #include <iostream>
@@ -20,7 +23,9 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
 
     // TODO: use NDIlib_recv_color_format_compressed_v5 to pass compressed video through without automatic decompression
     NDIlib_recv_create_v3_t recvDescHi{};
-    recvDescHi.color_format = NDIlib_recv_color_format_fastest;
+    //recvDescHi.color_format = NDIlib_recv_color_format_fastest; // decompressed
+    recvDescHi.color_format = (NDIlib_recv_color_format_e)NDIlib_recv_color_format_compressed_v5; // compressed
+
     recvDescHi.bandwidth = (quality == Quality::High) ? NDIlib_recv_bandwidth_highest : NDIlib_recv_bandwidth_lowest;
     recvDescHi.allow_video_fields = true;
 

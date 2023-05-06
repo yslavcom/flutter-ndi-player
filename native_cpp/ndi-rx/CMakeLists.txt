@@ -11,9 +11,12 @@ add_compile_options(-fPIC)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 
-add_library(${TARGET_NAME} STATIC ${SOURCES} ${LIB_NDI_VAR})
+# I want to generate listing
+#foreach(source_file IN LISTS SOURCES)
+#  set_source_files_properties(${source_file} PROPERTIES COMPILE_OPTIONS "-Wa,-adhln=${CMAKE_CURRENT_SOURCE_DIR}/${source_file}.lst")
+#endforeach()
 
-set (NDI_PATH "/home/iaroslav/work/streaming/NDI/Android/NDI\ SDK\ for\ Android/include/")
+add_library(${TARGET_NAME} STATIC ${SOURCES} ${LIB_NDI_VAR})
 
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${NDI_PATH} ../)
 

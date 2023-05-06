@@ -24,7 +24,7 @@ public:
 
         if (compressed)
         {
-            LOGE("compressed video not yuet implemented, FourCC:%d\n", video->FourCC);
+            LOGE("compressed video not yet implemented, FourCC:%d\n", video->FourCC);
         }
         else
         {
@@ -79,5 +79,6 @@ private:
             // not sure here
             return true;
         }
+        return true;
     }
 };
