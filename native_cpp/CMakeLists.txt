@@ -8,7 +8,7 @@ include_directories(${GLIB_INCLUDE_DIRS})
 set(CMAKE_BUILD_TYPE Debug)
 
 if (ANDROID)
-    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
+    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
 elseif (LINUX)
     set(LIB_NDI_VAR "")
 else ()
