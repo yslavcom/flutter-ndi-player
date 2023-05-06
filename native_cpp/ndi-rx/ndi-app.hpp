@@ -3,7 +3,8 @@
 
 #include <cstddef>
 
-#include </home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/include/Processing.NDI.Advanced.h>
+//#include </home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/include/Processing.NDI.Advanced.h>
+#include <Processing.NDI.Lib.h>
 
 #include "interfaces-ndi/input_packet_observer.hpp"
 
@@ -47,7 +48,8 @@ private:
             })";
 #endif
 
-            mVal = NDIlib_recv_create_v4(&arg, ndiConfig);
+//            mVal = NDIlib_recv_create_v4(&arg, ndiConfig);
+            mVal = NDIlib_recv_create_v3(&arg);
         }
         RecvClass(const RecvClass&) = delete;
         RecvClass& operator=(const RecvClass&) = delete;
