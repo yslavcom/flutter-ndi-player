@@ -20,10 +20,8 @@ typedef struct AMediaCodecOnAsyncNotifyCallback {
 class AndroidDecoder final: public Decoder
 {
 public:
-    AndroidDecoder(unsigned xRes, unsigned yRex);
+    AndroidDecoder(unsigned xRes, unsigned yRex, ANativeWindow* nativeWindow = nullptr);
     virtual ~AndroidDecoder();
-
-    void setNativeWindow(ANativeWindow* nativeWindow);
 
     const char* getFormatPresentation() const;
 
@@ -57,4 +55,6 @@ private:
     CsdData mCsdDataPps;
 
     ANativeWindow* mNativeWindow;
+
+    bool mIsStarted;
 };

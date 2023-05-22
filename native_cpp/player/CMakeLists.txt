@@ -16,6 +16,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_o
 # GLESv2
 find_path(GLES2_INCLUDE_DIR GLES2/gl2.h HINTS ${ANDROID_NDK})
 find_library(GLES2_LIBRARY libGLESv2.so HINTS ${GLES2_INCLUDE_DIR}/../lib)
+find_library(MEDIA_NDK_LIB mediandk)
 
 # EGL
 find_path(EGL_INCLUDE_DIR EGL/egl.h HINTS ${ANDROID_NDK})
@@ -34,4 +35,5 @@ target_link_libraries(${TARGET_NAME} PUBLIC
   ${GLES2_LIBRARY}
   ${EGL_LIBRARY}
   android
-  native_app_glue)
+  native_app_glue
+  ${MEDIA_NDK_LIB})

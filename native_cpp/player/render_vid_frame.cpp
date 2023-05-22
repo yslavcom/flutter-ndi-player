@@ -1,4 +1,5 @@
 #include "render_vid_frame.hpp"
+#include "android-codec.hpp"
 #include "common/logger.hpp"
 
 #include <jni.h>
@@ -17,7 +18,6 @@ namespace
     JavaVM *m_jvm;
     jobject gInterfaceObject;
 
-#if 1
     const char* pathTex = "com/example/ndi_player/Texture";
     using ReqTextCb_t = std::function<void()>;
     ReqTextCb_t reqTextCb;
@@ -26,24 +26,13 @@ namespace
     {
         reqTextCb = cb;
     }
-#else
-    const char* path = "com/example/ndi_player/Render";
-    using callback_t = std::function<void(const void*, int)>;
-    callback_t callback;
-
-    void set_callback(callback_t cb)
-    {
-        callback = cb;
-    }
-#endif
 
     ANativeWindow* mWindow = nullptr;
 
     std::mutex mRenderMutex;
     std::unique_ptr<RenderVidFrame> mRenderVidFrame;
+    std::unique_ptr<AndroidDecoder> mVidDecoder;
 }
-
-#if 1
 
 extern "C"
 JNIEXPORT jint
@@ -86,64 +75,6 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
     return JNI_VERSION_1_6;
 }
 
-#else
-
-// candidate to be removed
-extern "C"
-JNIEXPORT jint
-JNI_OnLoad(JavaVM* vm, void* reserved)
-{
-    JNIEnv* env;
-    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
-        return -1;
-    }
-    m_jvm = vm;
-
-    jclass cls = env->FindClass(path);
-    jmethodID constr = env->GetMethodID(cls, "<init>", "()V");
-    jobject obj = env->NewObject(cls, constr);
-    gInterfaceObject = env->NewGlobalRef(obj);
-
-//    m_callbackMethod = env->GetStaticMethodID(m_callbackClass, "onCallback", "(Ljava/nio/ByteBuffer;)V");
-
-    // Save the callback function pointer
-    set_callback([](const void* data, int length) {
-        JNIEnv *env;
-        JavaVMInitArgs vm_args{};
-        vm_args.version = JNI_VERSION_1_6;
-
-        auto ret = m_jvm->AttachCurrentThread(&env, NULL);
-        if (ret != JNI_OK || !env)
-        {
-            LOGE("AttachCurrentThread fail\n");
-        }
-        else
-        {
-            jobject byteBufferObj = env->NewDirectByteBuffer(const_cast<void*>(data), length);
-
-
-            jclass interfaceClass = env->GetObjectClass(gInterfaceObject);
-            jmethodID method = env->GetStaticMethodID(interfaceClass, "onCallback", "(Ljava/nio/ByteBuffer;J)V");
-
-            env->CallStaticVoidMethod(interfaceClass, method, byteBufferObj, reinterpret_cast<jlong>(data));
-            m_jvm->DetachCurrentThread();
-        }
-    });
-
-    return JNI_VERSION_1_6;
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_example_ndi_1player_RenderHelper_cleanup(JNIEnv *env_in, jobject instance, jlong ptr)
-{
-    uint8_t* data = reinterpret_cast<uint8_t*>(ptr);
-    LOGW("cleanup from Kotlin:%p\n", data);
-    getRenderVidFrame()->cleanup(data);
-}
-
-#endif
-
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_setTextureSize(JNIEnv* env, jobject obj, jint width, jint height)
@@ -178,6 +109,10 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
     ANativeWindow_setBuffersGeometry(mWindow, resolution.first, resolution.second, WINDOW_FORMAT_RGBA_8888);
 
     LOGW("NativeWindowType:%p\n", mWindow);
+
+    mVidDecoder.reset(new AndroidDecoder(resolution.first, resolution.second, mWindow));
+    mVidDecoder->create();
+    mVidDecoder->configure();
 }
 
 //////////////////////////////////////////////////

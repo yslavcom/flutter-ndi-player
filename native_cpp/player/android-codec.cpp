@@ -2,19 +2,24 @@
 #include <media/NdkMediaCodec.h>
 #include <media/NdkMediaFormat.h>
 
-AndroidDecoder::AndroidDecoder(unsigned xRes, unsigned yRes)
+AndroidDecoder::AndroidDecoder(unsigned xRes, unsigned yRes, ANativeWindow* nativeWindow)
     : mXRes(xRes)
     , mYRes(yRes)
     , mCodec(nullptr)
     , mCsdDataSps("csd_0")
     , mCsdDataPps("csd_1")
-    , mNativeWindow(nullptr)
+    , mIsStarted(false)
+    , mNativeWindow(nativeWindow)
 {}
 
 AndroidDecoder::~AndroidDecoder()
 {
     if (mCodec)
     {
+        if (mIsStarted)
+        {
+            stop();
+        }
         AMediaCodec_delete(mCodec);
     }
     if (mFormat)
@@ -30,11 +35,6 @@ const char* AndroidDecoder::getFormatPresentation() const
         return AMediaFormat_toString(mFormat);
     }
     return nullptr;
-}
-
-void AndroidDecoder::setNativeWindow(ANativeWindow* nativeWindow)
-{
-    mNativeWindow = nativeWindow;
 }
 
 bool AndroidDecoder::create()
@@ -59,21 +59,20 @@ bool AndroidDecoder::configure()
     AMediaFormat_setBuffer(mFormat, mCsdDataPps.name.c_str(), mCsdDataPps.data.data(), mCsdDataPps.data.size()); // Optional codec-specific data
 
     media_status_t ret = AMediaCodec_configure(mCodec, mFormat, mNativeWindow, nullptr, 0);
-
-//    media_status_t AMediaCodec_setOutputSurface(mCodec, mNativeWindow);
-
     return ret == AMEDIA_OK;
 }
 
 bool AndroidDecoder::start()
 {
     media_status_t ret = AMediaCodec_start(mCodec);
-    return ret == AMEDIA_OK;
+    mIsStarted = ret == AMEDIA_OK;
+    return mIsStarted;
 }
 
 bool AndroidDecoder::stop()
 {
     media_status_t ret = AMediaCodec_stop(mCodec);
+    mIsStarted = false; // regardless of the code returned, clear the started flag
     return ret == AMEDIA_OK;
 }
 
@@ -82,7 +81,7 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
     auto timeoutUs = 40000;
     auto presentationTimeUs = 40000;
     // Submit input data to codec
-    size_t inputIndex = AMediaCodec_dequeueInputBuffer(mCodec, timeoutUs);
+    auto inputIndex = AMediaCodec_dequeueInputBuffer(mCodec, timeoutUs);
     if (inputIndex >= 0)
     {
         AMediaCodecBufferInfo bufferInfo;
@@ -99,7 +98,7 @@ bool AndroidDecoder::retrieveFrame()
     // Retrieve decoded output frames
     AMediaCodecBufferInfo bufferInfo{};
     auto timeoutUs = 40000;
-    size_t outputIndex = AMediaCodec_dequeueOutputBuffer(mCodec, &bufferInfo, timeoutUs);
+    auto outputIndex = AMediaCodec_dequeueOutputBuffer(mCodec, &bufferInfo, timeoutUs);
     if (outputIndex >= 0)
     {
         size_t bufferSize;
