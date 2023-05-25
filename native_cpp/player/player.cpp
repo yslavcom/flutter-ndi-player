@@ -5,6 +5,8 @@
 
 #include <android_native_app_glue.h>
 
+#include <type_traits>
+
 Player::Player()
     : mRenderVidFrameObserver(nullptr)
 {
@@ -36,10 +38,11 @@ bool Player::loadTex(uint8_t* frameBuf)
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
-    auto cleanupVideo = [](auto frame){
-        if (frame->second)
+
+    auto cleanupVideo = [](FrameQueue::VideoFrame* inFrame){
+        if (inFrame->second)
         {
-            frame->second(frame->first.opaque);
+            FrameQueue::release(inFrame->first, inFrame->second);
         }
     };
 
@@ -57,9 +60,19 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
     // render the frame
     if (xRes && yRes)
     {
-        size_t size;
-        auto scaledFrame = convScaleFrame(frame->first, xRes, yRes, size);
-        mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
+        auto x = xRes;
+        auto y = yRes;
+
+        std::visit([this, x, y](auto&& arg)
+        {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, FrameQueue::VideoFrameStr>)
+            {
+                size_t size = 0;
+                auto scaledFrame = convScaleFrame(arg, x, y, size);
+                mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
+            }
+        }, frame->first);
     }
     cleanupVideo(frame);
 }

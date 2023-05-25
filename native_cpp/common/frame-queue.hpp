@@ -2,6 +2,7 @@
 
 #include "safe-queue.hpp"
 #include <functional>
+#include <variant>
 
 namespace FrameQueue
 {
@@ -15,6 +16,33 @@ struct VideoFrameStr
     unsigned fourCC;
 };
 
+ enum class FrameFormatType
+{
+	progressive,
+	interleaved,
+
+	// Individual fields.
+	field_0,
+	field_1,
+};
+
+struct VideoFrameCompressedStr
+{
+    void *opaque;
+
+    int xres;
+    int yres;
+    unsigned fourCC;
+	int frameRateN;
+    int frameRateD;
+	float aspectRatio;
+	FrameFormatType frameFormatType;
+
+	// The video data itself.
+	uint8_t* p_data;
+	size_t dataSizeBytes;
+};
+
 struct AudioFrameStr
 {
     void *opaque;
@@ -26,8 +54,36 @@ struct AudioFrameStr
 };
 
 using ReleaseCb = std::function<void(void*)>;
-using VideoFrame = std::pair<VideoFrameStr, ReleaseCb>;
+
+using VideoFrameVariant = std::variant<VideoFrameStr, VideoFrameCompressedStr>;
+using VideoFrame = std::pair<VideoFrameVariant, ReleaseCb>;
 using AudioFrame = std::pair<AudioFrameStr, ReleaseCb>;
+
+// helper type for the visitor
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
+template < class F>
+void release(VideoFrameVariant& var, F cleanup)
+{
+    std::visit( overloaded {
+                        [cleanup](VideoFrameStr& arg){
+                            cleanup(arg.opaque);
+                        },
+                        [cleanup](VideoFrameCompressedStr& arg){
+                            cleanup(arg.opaque);
+                        }
+    }, var);
+}
+
+template < class F>
+void release(AudioFrameStr& var, F cleanup)
+{
+    cleanup(var.opaque);
+}
 
 template <typename T>
 class Queue_: public SafeQueue<T>
@@ -37,12 +93,9 @@ public:
         : SafeQueue<T>(mu
         , [](T* el)
         {
-            if (el)
+            if (el && el->second)
             {
-                if (el->second)
-                {
-                    el->second(el->first.opaque);
-                }
+                release(el->first, el->second);
             }
         }
         , 100)
