@@ -40,12 +40,35 @@ void RxFrameController::uninstallAudioFrameObs(AudioFrameObserver* obs)
 void RxFrameController::run()
 {
     processVideoQueue();
+    processDecodedVideoQueue();
+
     processAudioQueue();
 }
 
 void RxFrameController::processVideoQueue()
 {
     auto& queue = mVideoRxQueue;
+    if (queue.getCount())
+    {
+        FrameQueue::VideoFrame frame;
+        if (queue.read(frame))
+        {
+            for (auto& el: mVideoFrameObservers)
+            {
+                el->onFrame(&frame, queue.getCount());
+            }
+        }
+    }
+}
+
+void RxFrameController::processDecodedVideoQueue()
+{
+    std::lock_guard lk(mDecodedQueueInstallMu);
+    if (!mDecodedVideoRxQueue)
+    {
+        return;
+    }
+    auto& queue = *mDecodedVideoRxQueue;
     if (queue.getCount())
     {
         FrameQueue::VideoFrame frame;

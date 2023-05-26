@@ -91,6 +91,8 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
         memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
         AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
     }
+
+    return true;
 }
 
 bool AndroidDecoder::retrieveFrame()
@@ -110,4 +112,6 @@ bool AndroidDecoder::retrieveFrame()
         bool renderBuffer = true;
         AMediaCodec_releaseOutputBuffer(mCodec, outputIndex, renderBuffer);
     }
+
+    return true;
 }

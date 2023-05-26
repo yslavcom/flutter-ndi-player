@@ -55,9 +55,9 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                 auto scaledFrame = convScaleFrame(arg, x, y, size);
                 mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
             },
-            [this](FrameQueue::VideoFrameCompressedStr& arg)
+            [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)
             {
-                mDecoder->pushToDecode(arg);
+                mDecoder->pushToDecode(arg, cleanupCb);
             }
         }, frame->first);
     }
