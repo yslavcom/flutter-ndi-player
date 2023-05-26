@@ -24,7 +24,39 @@ public:
 
         if (compressed)
         {
-            LOGE("compressed video not yet implemented, FourCC:%d\n", video->FourCC);
+            FrameQueue::VideoFrameCompressedStr frame;
+            frame.opaque = (void*)video;
+            frame.xres = video->xres;
+            frame.yres = video->yres;
+            frame.fourCC = video->FourCC;
+            frame.frameRateN = video->frame_rate_N;
+            frame.frameRateD = video->frame_rate_D;
+            frame.aspectRatio = video->picture_aspect_ratio;
+            frame.p_data = video->p_data;
+            frame.dataSizeBytes = video->data_size_in_bytes;
+            switch(video->frame_format_type)
+            {
+            case NDIlib_frame_format_type_progressive:
+                frame.frameFormatType = FrameQueue::FrameFormatType::progressive;
+            break;
+
+            case NDIlib_frame_format_type_interleaved:
+                frame.frameFormatType = FrameQueue::FrameFormatType::interleaved;
+            break;
+
+            case NDIlib_frame_format_type_field_0:
+                frame.frameFormatType = FrameQueue::FrameFormatType::field_0;
+            break;
+
+            case NDIlib_frame_format_type_field_1:
+                frame.frameFormatType = FrameQueue::FrameFormatType::field_1;
+            break;
+
+            case NDIlib_frame_format_type_max:
+                frame.frameFormatType = FrameQueue::FrameFormatType::unknown;
+            break;
+            }
+            mVideoRxQueue.push(std::make_pair(frame, releaseCb));
         }
         else
         {

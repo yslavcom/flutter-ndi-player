@@ -3,6 +3,7 @@
 #pragma once
 
 #include "texture.hpp"
+#include "codec.hpp"
 
 #include "interfaces/frame_observer.hpp"
 #include "common/frame-queue.hpp"
@@ -33,10 +34,6 @@ private:
 
     void renderFrame(FrameQueue::VideoFrameStr& frame);
 
-#if !USE_EXTERN_TEXTURE
-    std::unique_ptr<Texture2D> mTexture2D;
-#endif
-//    EglWrap *mEglWrap;
-
     RenderVidFrameObserver* mRenderVidFrameObserver;
+    Decoder* mDecoder;
 };

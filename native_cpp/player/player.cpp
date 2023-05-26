@@ -9,6 +9,7 @@
 
 Player::Player()
     : mRenderVidFrameObserver(nullptr)
+    , mDecoder(nullptr)
 {
 //    glViewport(0, 0, mDimViewport.xRes, mDimViewport.yRes);
 }
@@ -38,7 +39,6 @@ bool Player::loadTex(uint8_t* frameBuf)
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
-
     auto cleanupVideo = [](FrameQueue::VideoFrame* inFrame){
         if (inFrame->second)
         {
@@ -63,14 +63,16 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
         auto x = xRes;
         auto y = yRes;
 
-        std::visit([this, x, y](auto&& arg)
-        {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, FrameQueue::VideoFrameStr>)
+        std::visit(FrameQueue::overloaded {
+            [this, x, y](FrameQueue::VideoFrameStr& arg)
             {
                 size_t size = 0;
                 auto scaledFrame = convScaleFrame(arg, x, y, size);
                 mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
+            },
+            [this](FrameQueue::VideoFrameCompressedStr& arg)
+            {
+                mDecoder->pushToDecode(arg);
             }
         }, frame->first);
     }

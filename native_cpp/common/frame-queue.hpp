@@ -24,6 +24,8 @@ struct VideoFrameStr
 	// Individual fields.
 	field_0,
 	field_1,
+
+    unknown
 };
 
 struct VideoFrameCompressedStr
