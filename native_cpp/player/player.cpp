@@ -11,30 +11,15 @@ Player::Player()
     : mRenderVidFrameObserver(nullptr)
     , mDecoder(nullptr)
 {
-//    glViewport(0, 0, mDimViewport.xRes, mDimViewport.yRes);
 }
 
 Player::~Player()
 {
-#if !USE_EXTERN_TEXTURE
-    mTexture2D.reset();
-#endif
 }
 
 void Player::setRenderObserver(RenderVidFrameObserver* obs)
 {
     mRenderVidFrameObserver = obs;
-}
-
-bool Player::loadTex(uint8_t* frameBuf)
-{
-    bool ret = true;
-#if !USE_EXTERN_TEXTURE
-    mTexture2D->bind();
-    ret = mTexture2D->loadImage(0, GL_RGBA, mDimTex.xRes, mDimTex.yRes, 0, GL_RGBA, GL_UNSIGNED_BYTE, frameBuf);
-    mTexture2D->unbind();
-#endif
-    return ret;
 }
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
@@ -131,48 +116,3 @@ std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameSt
     return nullptr;
 }
 
-void Player::renderFrame(FrameQueue::VideoFrameStr& frame)
-{
-    size_t size = 0;
-//    auto framePtr = convScaleFrame(frame, size);
-    std::unique_ptr<uint8_t[]> framePtr;
-    if (framePtr)
-    {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Set up orthographic projection
-#if 0
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrthof(0, mDimTex.xRes, mDimTex.yRes, 0, -1, 1);
-        glMatrixMode(GL_MODELVIEW);
-#endif
-        // load texture
-        loadTex(framePtr.get());
-#if 0
-        // render to quad
-
-        // enable 2d texture capability,
-        //If enabled and no fragment shader is active, two-dimensional texturing is performed
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS); // render rectangle
-            glTexCoord2d(0, 0); // set the current texture coord
-            glVertex2i(0, 0); // vertex coordinate
-
-            glTexCoord2d(1, 0);
-            glVertex2i(mDimTex.xRes, 0);
-
-            glTexCoord2d(1, 1);
-            glVertex2i(mDimTex.xRes, mDimTex.yRes);
-
-            glTexCoord2d(0, 1);
-            glVertex2i(0, mDimTex.yRes);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
-
-        glfwSwapBuffers(mWindow);
-
-        glFlush();
-#endif
-    }
-}

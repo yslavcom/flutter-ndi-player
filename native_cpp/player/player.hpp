@@ -11,10 +11,6 @@
 
 #include <memory>
 
-#define USE_EXTERN_TEXTURE (1)
-
-//class EglWrap;
-
 class Player: public VideoFrameObserver, public AudioFrameObserver
 {
 public:
@@ -23,16 +19,12 @@ public:
 
     void setRenderObserver(RenderVidFrameObserver* obs);
 
-    bool loadTex(uint8_t* frameBuf);
-
 private:
     void onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount) override ;
     void onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount) override ;
 
     std::unique_ptr<uint8_t[]> convScaleFrame(const FrameQueue::VideoFrameStr& frame, unsigned xRes, unsigned yRes, size_t& size);
     std::unique_ptr<ConvertScale> mConvertScale;
-
-    void renderFrame(FrameQueue::VideoFrameStr& frame);
 
     RenderVidFrameObserver* mRenderVidFrameObserver;
     Decoder* mDecoder;
