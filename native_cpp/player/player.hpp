@@ -18,6 +18,7 @@ public:
     ~Player();
 
     void setRenderObserver(RenderVidFrameObserver* obs);
+    void setDecoder(Video::Decoder* decoder);
 
 private:
     void onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount) override ;
@@ -27,5 +28,6 @@ private:
     std::unique_ptr<ConvertScale> mConvertScale;
 
     RenderVidFrameObserver* mRenderVidFrameObserver;
-    Decoder* mDecoder;
+    Video::Decoder* mDecoder;
+    std::mutex mDecoderMu;
 };

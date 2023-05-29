@@ -1,8 +1,11 @@
 #pragma once
 
 #include "codec.hpp"
+#include "decoder-loop.hpp"
+
 #include <vector>
 #include <string>
+#include <memory>
 
 class AMediaCodec;
 class AMediaFormat;
@@ -17,10 +20,10 @@ typedef struct AMediaCodecOnAsyncNotifyCallback {
 } AMediaCodecOnAsyncNotifyCallback;
 */
 
-class AndroidDecoder final: public Decoder
+class AndroidDecoder final: public Video::Decoder
 {
 public:
-    AndroidDecoder(unsigned xRes, unsigned yRex, ANativeWindow* nativeWindow = nullptr);
+    AndroidDecoder();
     virtual ~AndroidDecoder();
 
     const char* getFormatPresentation() const;
@@ -31,7 +34,9 @@ public:
     virtual bool start() override;
     virtual bool stop() override;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) override;
+    virtual bool isReady() const override;
     virtual bool retrieveFrame() override;
+    virtual void init(unsigned xRes, unsigned yRes, void* nativeWindow) override;
 
 private:
     unsigned mXRes;
@@ -57,4 +62,9 @@ private:
     ANativeWindow* mNativeWindow;
 
     bool mIsStarted;
+    bool mIsValid;
+    bool mIsReady;
+    bool isValid() const;
+
+    std::unique_ptr<DecoderLoop> mDecoderLoop;
 };

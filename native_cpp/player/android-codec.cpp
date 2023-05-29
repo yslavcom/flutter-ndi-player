@@ -2,14 +2,17 @@
 #include <media/NdkMediaCodec.h>
 #include <media/NdkMediaFormat.h>
 
-AndroidDecoder::AndroidDecoder(unsigned xRes, unsigned yRes, ANativeWindow* nativeWindow)
-    : mXRes(xRes)
-    , mYRes(yRes)
+AndroidDecoder::AndroidDecoder()
+    : mXRes(0)
+    , mYRes(0)
     , mCodec(nullptr)
     , mCsdDataSps("csd_0")
     , mCsdDataPps("csd_1")
     , mIsStarted(false)
-    , mNativeWindow(nativeWindow)
+    , mNativeWindow(nullptr)
+    , mIsValid(false)
+    , mIsReady(false)
+    , mDecoderLoop(nullptr)
 {}
 
 AndroidDecoder::~AndroidDecoder()
@@ -50,6 +53,8 @@ bool AndroidDecoder::create()
 
 bool AndroidDecoder::configure()
 {
+    if (!isValid()) return false;
+
     AMediaFormat_setString(mFormat, AMEDIAFORMAT_KEY_MIME, mH264Type);
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_WIDTH, mXRes);
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_HEIGHT, mYRes);
@@ -59,7 +64,9 @@ bool AndroidDecoder::configure()
     AMediaFormat_setBuffer(mFormat, mCsdDataPps.name.c_str(), mCsdDataPps.data.data(), mCsdDataPps.data.size()); // Optional codec-specific data
 
     media_status_t ret = AMediaCodec_configure(mCodec, mFormat, mNativeWindow, nullptr, 0);
-    return ret == AMEDIA_OK;
+    mIsReady = (ret == AMEDIA_OK);
+
+    return mIsReady;
 }
 
 bool AndroidDecoder::start()
@@ -114,4 +121,25 @@ bool AndroidDecoder::retrieveFrame()
     }
 
     return true;
+}
+
+void AndroidDecoder::init(unsigned xRes, unsigned yRes, void* nativeWindow)
+{
+    mXRes = xRes;
+    mYRes = yRes;
+    mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
+
+    mDecoderLoop.reset(new DecoderLoop(this, mVidFramesToDecode, mDecodedVideoFrames));
+
+    mIsValid = true;
+}
+
+bool AndroidDecoder::isReady() const
+{
+    return mIsReady;
+}
+
+bool AndroidDecoder::isValid() const
+{
+    return mIsValid;
 }

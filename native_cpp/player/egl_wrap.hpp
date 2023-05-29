@@ -1,6 +1,8 @@
 /* * (C) Copyright   @Author: iaroslav.dochien  * @Date: 2023-04-29 05:59:14  * @Last Modified by:   iaroslav.dochien  * @Last Modified time: 2023-04-29 05:59:14 . All rights reserved */
 #pragma once
 
+#if 0
+
 #include "common/logger.hpp"
 
 #include <GLES/gl.h>
@@ -172,3 +174,5 @@ private:
     }
     #undef CASE_STR
 };
+
+#endif // #if 0

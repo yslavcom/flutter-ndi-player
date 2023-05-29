@@ -4,12 +4,14 @@
 #include "common/frame-queue.hpp"
 
 #include <stdint.h>
-
+namespace Video
+{
 class Decoder
 {
 public:
-    Decoder(FrameQueue::VideoRx* priorDecoderQueue = nullptr)
-        : mPriorDecoderQueue(priorDecoderQueue)
+    Decoder()
+        : mVidFramesToDecode(nullptr)
+        , mDecodedVideoFrames(nullptr)
     {}
 
     virtual ~Decoder(){}
@@ -19,18 +21,33 @@ public:
     virtual bool start() = 0;
     virtual bool stop() = 0;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) = 0;
+    virtual bool isReady() const = 0;
 
     virtual bool retrieveFrame() = 0;
 
+    virtual void init(unsigned xRes, unsigned yRes, void* nativeWindow) = 0;
+
+    void setVidFramesToDecode(FrameQueue::VideoRx* vidFramesToDecode)
+    {
+        mVidFramesToDecode = vidFramesToDecode;
+    }
+
     bool pushToDecode(FrameQueue::VideoFrameCompressedStr& frame, FrameQueue::ReleaseCb releaseCb)
     {
-        if (mPriorDecoderQueue)
+        if (mVidFramesToDecode)
         {
-            return mPriorDecoderQueue->push(std::make_pair(frame, releaseCb));
+            return mVidFramesToDecode->push(std::make_pair(frame, releaseCb));
         }
         return false;
     }
 
-private:
-    FrameQueue::VideoRx* mPriorDecoderQueue;
+    void setDecodedFramesQueue(FrameQueue::VideoRx* decodedVideoFrames)
+    {
+        mDecodedVideoFrames = decodedVideoFrames;
+    }
+
+protected:
+    FrameQueue::VideoRx* mVidFramesToDecode;
+    FrameQueue::VideoRx* mDecodedVideoFrames;
 };
+} // namespace Video

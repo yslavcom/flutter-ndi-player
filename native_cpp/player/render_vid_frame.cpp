@@ -11,6 +11,7 @@
 #include <functional>
 #include <chrono>
 #include <memory>
+#include <cassert>
 
 namespace
 {
@@ -94,7 +95,9 @@ Java_com_example_ndi_1player_TextureHelper_disposeTexture(JNIEnv* env, jobject)
     {
         std::lock_guard lk(mRenderMutex);
         getRenderVidFrame()->setOutDim(0, 0);
-//        ANativeWindow_release(mWindow);
+#if 0
+        ANativeWindow_release(mWindow);
+#endif
         mWindow = nullptr;
     }
     LOGW("Clear surface\n");
@@ -110,7 +113,8 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
 
     LOGW("NativeWindowType:%p\n", mWindow);
 
-    mVidDecoder.reset(new AndroidDecoder(resolution.first, resolution.second, mWindow));
+    mVidDecoder.reset(new AndroidDecoder());
+    mVidDecoder->init(resolution.first, resolution.second, mWindow);
     mVidDecoder->create();
     mVidDecoder->configure();
 }
@@ -149,7 +153,6 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
             }
             else
             {
-#if 1
                 // Copy RGBA data to buffer
                 for (int y = 0; y < buffer.height; y++)
                 {
@@ -157,34 +160,12 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
                     uint8_t* src = frameBytes.get() + y * mXres * 4;
                     memcpy(dst, src, buffer.width * 4);
                 }
-#endif
                 LOGW("buffer.width:%d, buffer.height:%d\n", buffer.width, buffer.height);
                 // Unlock ANativeWindow
                 ANativeWindow_unlockAndPost(mWindow);
-//                // Release ANativeWindow
-//                ANativeWindow_release(mWindow);
             }
         }
     }
-
-#if 0
-    auto releasedPtr = frameBytes.release();
-    mCleanupMemPtr.emplace(releasedPtr);
-    if (callback)
-    {
-#if 0
-        using namespace std::chrono;
-        auto start = high_resolution_clock::now();
-#endif
-        LOGW("releasedPtr:%p\n", releasedPtr);
-        callback(releasedPtr, size);
-#if 0
-        auto now = high_resolution_clock::now();
-        auto duration = duration_cast<microseconds>(now - start);
-        LOGW("callback-dur:%d\n", duration.count());
-#endif
-    }
-#endif
 }
 
 std::pair<unsigned, unsigned> RenderVidFrame::getOutDim() const
@@ -203,6 +184,11 @@ void RenderVidFrame::cleanup(uint8_t* ptr)
     }
 }
 
+void RenderVidFrame::setDecoder(Video::Decoder* decoder)
+{
+    mVideoDecoder = decoder;
+}
+
 //////////////////////////////////////////////////
 // RenderVidFrame singleton
 
@@ -213,4 +199,17 @@ RenderVidFrame* getRenderVidFrame()
         mRenderVidFrame.reset(new RenderVidFrame());
     }
     return mRenderVidFrame.get();
+}
+
+Video::Decoder* getVideoDecoder()
+{
+    if (!mVidDecoder)
+    {
+#if 1 // ANDROID_OUT
+        mVidDecoder.reset(new AndroidDecoder());
+#else
+        assert(false && "Setup video decoder for the platform");
+#endif
+    }
+    return mVidDecoder.get();
 }

@@ -4,6 +4,8 @@
 #include "ndi_input_packet_observer.hpp"
 #include "player/render_vid_frame.hpp"
 #include "player/player.hpp"
+#include "player/codec.hpp"
+
 #include  "rx-frames-controller/rx-frame-controller.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
@@ -134,6 +136,9 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     std::unique_ptr<Player> mPlayer;
     RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
     std::thread mRxFrameControllerThread;
+    std::mutex mVideoDecoderFrameMutex;
+    FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
+    FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
 } // anonymous namespace
 
 EXPORT
@@ -175,8 +180,14 @@ void startProgram(int64_t progrIdx)
         {
             mPlayer.reset(new Player);
             mPlayer->setRenderObserver(getRenderVidFrame());
+            auto videoDecoder = getVideoDecoder();
+            videoDecoder->setVidFramesToDecode(&mVidFramesToDecode);
+            videoDecoder->setDecodedFramesQueue(&mVidFramesDecoded);
+            mPlayer->setDecoder(videoDecoder);
+            getRenderVidFrame()->setDecoder(videoDecoder);
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());
+            mRxFrameController.setDecodedFramesQueue(&mVidFramesDecoded);
         }
 
         if (!mCapturePacketsThread.joinable())

@@ -45,6 +45,12 @@ void RxFrameController::run()
     processAudioQueue();
 }
 
+void RxFrameController::setDecodedFramesQueue(FrameQueue::VideoRx* decodedFramesQueue)
+{
+    std::lock_guard lk(mDecodedQueueInstallMu);
+    mVidFramesDecoded = decodedFramesQueue;
+}
+
 void RxFrameController::processVideoQueue()
 {
     auto& queue = mVideoRxQueue;
@@ -64,11 +70,11 @@ void RxFrameController::processVideoQueue()
 void RxFrameController::processDecodedVideoQueue()
 {
     std::lock_guard lk(mDecodedQueueInstallMu);
-    if (!mDecodedVideoRxQueue)
+    if (!mVidFramesDecoded)
     {
         return;
     }
-    auto& queue = *mDecodedVideoRxQueue;
+    auto& queue = *mVidFramesDecoded;
     if (queue.getCount())
     {
         FrameQueue::VideoFrame frame;

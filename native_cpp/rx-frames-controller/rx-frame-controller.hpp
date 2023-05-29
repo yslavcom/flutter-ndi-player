@@ -9,10 +9,10 @@
 class RxFrameController
 {
 public:
-    RxFrameController(FrameQueue::VideoRx& videoRxQueue, FrameQueue::AudioRx& audioRxQueue, FrameQueue::VideoRx* decodedVideoRxQueue = nullptr)
+    RxFrameController(FrameQueue::VideoRx& videoRxQueue, FrameQueue::AudioRx& audioRxQueue)
         : mVideoRxQueue(videoRxQueue)
         , mAudioRxQueue(audioRxQueue)
-        , mDecodedVideoRxQueue(decodedVideoRxQueue)
+        , mVidFramesDecoded(nullptr)
     {}
 
     void installVideoFrameObs(VideoFrameObserver* obs);
@@ -22,6 +22,8 @@ public:
     void uninstallAudioFrameObs(AudioFrameObserver* obs);
 
     void run();
+
+    void setDecodedFramesQueue(FrameQueue::VideoRx* decodedFramesQueue);
 private:
     // Video queue where video frames are pushed from RX.
     // Can be both decompressed (ready for render) and compressed (subject to decompression by a decoder)
@@ -29,7 +31,7 @@ private:
     FrameQueue::AudioRx& mAudioRxQueue;
 
     // Video queue where video frames are pushed from decodr after decompression and they are ready for render
-    FrameQueue::VideoRx* mDecodedVideoRxQueue;
+    FrameQueue::VideoRx* mVidFramesDecoded;
     std::mutex mDecodedQueueInstallMu;
 
     std::set<VideoFrameObserver*> mVideoFrameObservers;

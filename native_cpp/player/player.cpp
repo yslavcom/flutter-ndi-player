@@ -22,6 +22,12 @@ void Player::setRenderObserver(RenderVidFrameObserver* obs)
     mRenderVidFrameObserver = obs;
 }
 
+void Player::setDecoder(Video::Decoder* decoder)
+{
+    std::lock_guard lk(mDecoderMu);
+    mDecoder = decoder;
+}
+
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
     auto cleanupVideo = [](FrameQueue::VideoFrame* inFrame){
@@ -57,7 +63,11 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
             },
             [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)
             {
-                mDecoder->pushToDecode(arg, cleanupCb);
+                std::lock_guard lk(mDecoderMu);
+                if (mDecoder && mDecoder->isReady())
+                {
+                    mDecoder->pushToDecode(arg, cleanupCb);
+                }
             }
         }, frame->first);
     }
