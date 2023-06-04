@@ -29,6 +29,7 @@ public:
     virtual bool stop() = 0;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) = 0;
     virtual bool isReady() const = 0;
+    virtual void requestSetup() = 0;
 
     virtual bool retrieveFrame() = 0;
 

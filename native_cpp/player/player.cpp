@@ -76,10 +76,18 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                 DBG_PLAYER("Compressed, x:%d, y:%d\n", arg.xres, arg.yres);
 
                 std::lock_guard lk(mDecoderMu);
-                if (mDecoder && mDecoder->isReady())
+                if (mDecoder)
                 {
-                    DBG_PLAYER("mDecoder->pushToDecode\n");
-                    mDecoder->pushToDecode(arg, cleanupCb);
+                    if (mDecoder->isReady())
+                    {
+                        DBG_PLAYER("mDecoder->pushToDecode\n");
+                        mDecoder->pushToDecode(arg, cleanupCb);
+                    }
+                    else
+                    {
+                        DBG_PLAYER("Request render/decode window setup\n");
+                        mDecoder->requestSetup();
+                    }
                 }
             }
         }, frame->first);

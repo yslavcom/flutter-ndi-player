@@ -28,8 +28,9 @@ namespace
         reqTextCb = cb;
     }
 
-    void requestTexture()
+    void requestTexture(void* userData)
     {
+        LOGW("requestTexture:%p\n", userData);
         // It is important to request the texture form the same thread which will be used for rendering
         if (reqTextCb)
         {
@@ -122,10 +123,9 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
 
     LOGW("NativeWindowType:%p\n", mWindow);
 
-    mVidDecoder.reset(new AndroidDecoder());
-    mVidDecoder->init(resolution.first, resolution.second, mWindow);
-    mVidDecoder->create();
-    mVidDecoder->configure();
+    getVideoDecoder()->init(resolution.first, resolution.second, mWindow);
+    getVideoDecoder()->create();
+    getVideoDecoder()->configure();
 }
 
 //////////////////////////////////////////////////
@@ -145,7 +145,7 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
         {
             if (auto [w, h] = getOutDim(); w != 0 && h != 0)
             {
-                requestTexture();
+                requestTexture(this);
             }
         }
         if (mWindow)
@@ -212,7 +212,7 @@ Video::Decoder* getVideoDecoder()
     if (!mVidDecoder)
     {
 #if 1 // ANDROID_OUT
-        mVidDecoder.reset(new AndroidDecoder());
+        mVidDecoder.reset(new AndroidDecoder(requestTexture));
 #else
         assert(false && "Setup video decoder for the platform");
 #endif

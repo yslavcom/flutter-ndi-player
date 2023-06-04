@@ -12,7 +12,7 @@
 #endif
 
 
-AndroidDecoder::AndroidDecoder()
+AndroidDecoder::AndroidDecoder(RequestSetupCb cb)
     : mXRes(0)
     , mYRes(0)
     , mCodec(nullptr)
@@ -23,6 +23,7 @@ AndroidDecoder::AndroidDecoder()
     , mIsValid(false)
     , mIsReady(false)
     , mDecoderLoop(nullptr)
+    , mRequestSetupCb(cb)
 {}
 
 AndroidDecoder::~AndroidDecoder()
@@ -144,6 +145,14 @@ void AndroidDecoder::init(unsigned xRes, unsigned yRes, void* nativeWindow)
     DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
 
     mIsValid = true;
+}
+
+void AndroidDecoder::requestSetup()
+{
+    if (mRequestSetupCb)
+    {
+        mRequestSetupCb(this);
+    }
 }
 
 bool AndroidDecoder::isReady() const

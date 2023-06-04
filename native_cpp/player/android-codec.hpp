@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 class AMediaCodec;
 class AMediaFormat;
@@ -20,10 +21,12 @@ typedef struct AMediaCodecOnAsyncNotifyCallback {
 } AMediaCodecOnAsyncNotifyCallback;
 */
 
+using RequestSetupCb = std::function<void(void*)>;
+
 class AndroidDecoder final: public Video::Decoder
 {
 public:
-    AndroidDecoder();
+    AndroidDecoder(RequestSetupCb cb);
     virtual ~AndroidDecoder();
 
     const char* getFormatPresentation() const;
@@ -37,6 +40,7 @@ public:
     virtual bool isReady() const override;
     virtual bool retrieveFrame() override;
     virtual void init(unsigned xRes, unsigned yRes, void* nativeWindow) override;
+    virtual void requestSetup() override;
 
 private:
     unsigned mXRes;
@@ -67,4 +71,6 @@ private:
     bool isValid() const;
 
     std::unique_ptr<DecoderLoop> mDecoderLoop;
+
+    RequestSetupCb mRequestSetupCb;
 };
