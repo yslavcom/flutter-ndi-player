@@ -1,6 +1,16 @@
 #include "android-codec.hpp"
+#include "common/logger.hpp"
+
 #include <media/NdkMediaCodec.h>
 #include <media/NdkMediaFormat.h>
+
+#define _DBG_ANDRDEC
+#ifdef _DBG_ANDRDEC
+    #define DBG_ANDRDEC(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_ANDRDEC(format, ...)
+#endif
+
 
 AndroidDecoder::AndroidDecoder()
     : mXRes(0)
@@ -130,6 +140,8 @@ void AndroidDecoder::init(unsigned xRes, unsigned yRes, void* nativeWindow)
     mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
 
     mDecoderLoop.reset(new DecoderLoop(this, mVidFramesToDecode, mDecodedVideoFrames));
+
+    DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
 
     mIsValid = true;
 }

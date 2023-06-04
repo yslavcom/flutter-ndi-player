@@ -28,6 +28,15 @@ namespace
         reqTextCb = cb;
     }
 
+    void requestTexture()
+    {
+        // It is important to request the texture form the same thread which will be used for rendering
+        if (reqTextCb)
+        {
+            reqTextCb();
+        }
+    }
+
     ANativeWindow* mWindow = nullptr;
 
     std::mutex mRenderMutex;
@@ -136,10 +145,7 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
         {
             if (auto [w, h] = getOutDim(); w != 0 && h != 0)
             {
-                if (reqTextCb)
-                {
-                    reqTextCb();
-                }
+                requestTexture();
             }
         }
         if (mWindow)
