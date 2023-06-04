@@ -7,6 +7,14 @@
 
 #include <type_traits>
 
+
+// #define _DBG_PLAYER
+#ifdef _DBG_PLAYER
+    #define DBG_PLAYER(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_PLAYER(format, ...)
+#endif
+
 Player::Player()
     : mRenderVidFrameObserver(nullptr)
     , mDecoder(nullptr)
@@ -30,6 +38,8 @@ void Player::setDecoder(Video::Decoder* decoder)
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
+    DBG_PLAYER("Player::onFrame, frame:%p, renderObs:%p, mDecoder:%p(ready:%d)\n",
+        frame, mRenderVidFrameObserver, mDecoder, (mDecoder ? mDecoder->isReady(): false));
     auto cleanupVideo = [](FrameQueue::VideoFrame* inFrame){
         if (inFrame->second)
         {
@@ -63,9 +73,12 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
             },
             [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)
             {
+                DBG_PLAYER("Compressed, x:%d, y:%d\n", arg.xres, arg.yres);
+
                 std::lock_guard lk(mDecoderMu);
                 if (mDecoder && mDecoder->isReady())
                 {
+                    DBG_PLAYER("mDecoder->pushToDecode\n");
                     mDecoder->pushToDecode(arg, cleanupCb);
                 }
             }
@@ -84,7 +97,7 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
 #if 0
     //TODO: play audio
 #else
-//    LOGW("dump audio, remaining:%d\n", remainingCount);
+//    DBG_PLAYER("dump audio, remaining:%d\n", remainingCount);
     if (frame->second)
     {
         frame->second(frame->first.opaque);

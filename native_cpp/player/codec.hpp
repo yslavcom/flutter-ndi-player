@@ -2,10 +2,17 @@
 #pragma once
 
 #include "common/frame-queue.hpp"
+#include "common/logger.hpp"
 
 #include <stdint.h>
 namespace Video
 {
+#define _DBG_DECODER
+#ifdef _DBG_DECODER
+    #define DBG_DECODER(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_DECODER(format, ...)
+#endif
 class Decoder
 {
 public:
@@ -34,6 +41,7 @@ public:
 
     bool pushToDecode(FrameQueue::VideoFrameCompressedStr& frame, FrameQueue::ReleaseCb releaseCb)
     {
+        DBG_DECODER("pushToDecode:%p (%p, %p)\n", mVidFramesToDecode, &frame, &releaseCb);
         if (mVidFramesToDecode)
         {
             return mVidFramesToDecode->push(std::make_pair(frame, releaseCb));
