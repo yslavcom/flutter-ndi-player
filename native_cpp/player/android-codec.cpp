@@ -96,6 +96,11 @@ bool AndroidDecoder::configure()
     DBG_ANDRDEC("AMediaCodec_configure result:%d\n", ret);
     mIsReady = (ret == AMEDIA_OK);
 
+    if (mIsReady)
+    {
+        mDecoderLoop->run();
+    }
+
     return mIsReady;
 }
 

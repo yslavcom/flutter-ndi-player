@@ -9,7 +9,6 @@
 #include <android/surface_texture_jni.h>
 
 #include <functional>
-#include <chrono>
 #include <memory>
 #include <cassert>
 
