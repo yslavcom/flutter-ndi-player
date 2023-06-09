@@ -13,7 +13,7 @@ public:
     bool run();
 
 private:
-    Video::Decoder* mDecoder;
+    Video::Decoder* mVideoDecoder;
     FrameQueue::VideoRx* mVidFramesToDecode;
     FrameQueue::VideoRx* mDecodedVideoFrames;
 

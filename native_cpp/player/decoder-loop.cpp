@@ -2,7 +2,7 @@
 #include "common/logger.hpp"
 
 DecoderLoop::DecoderLoop(Video::Decoder* decoder, FrameQueue::VideoRx* vidFramesToDecode, FrameQueue::VideoRx* decodedVideoFrames)
-    : mDecoder(decoder)
+    : mVideoDecoder(decoder)
     , mVidFramesToDecode(vidFramesToDecode)
     , mDecodedVideoFrames(decodedVideoFrames)
 {
@@ -16,7 +16,8 @@ DecoderLoop::~DecoderLoop()
 
 bool DecoderLoop::run()
 {
-    if (!mDecoder || !mVidFramesToDecode)
+    LOGW("DecoderLoop::run\n");
+    if (!mVideoDecoder || !mVidFramesToDecode)
     {
         return false;
     }
@@ -36,7 +37,7 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             FrameQueue::VideoFrame frame;
             mVidFramesToDecode->read(frame);
 
-            mDecoder->start();
+            mVideoDecoder->start();
         }
     }
 

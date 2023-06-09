@@ -17,7 +17,7 @@
 
 Player::Player()
     : mRenderVidFrameObserver(nullptr)
-    , mDecoder(nullptr)
+    , mVideoDecoder(nullptr)
 {
 }
 
@@ -33,13 +33,13 @@ void Player::setRenderObserver(RenderVidFrameObserver* obs)
 void Player::setDecoder(Video::Decoder* decoder)
 {
     std::lock_guard lk(mDecoderMu);
-    mDecoder = decoder;
+    mVideoDecoder = decoder;
 }
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
-    DBG_PLAYER("Player::onFrame, frame:%p, renderObs:%p, mDecoder:%p(ready:%d)\n",
-        frame, mRenderVidFrameObserver, mDecoder, (mDecoder ? mDecoder->isReady(): false));
+    DBG_PLAYER("Player::onFrame, frame:%p, renderObs:%p, mVideoDecoder:%p(ready:%d)\n",
+        frame, mRenderVidFrameObserver, mVideoDecoder, (mVideoDecoder ? mVideoDecoder->isReady(): false));
     auto cleanupVideo = [](FrameQueue::VideoFrame* inFrame){
         if (inFrame->second)
         {
@@ -76,17 +76,17 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                 DBG_PLAYER("Compressed, x:%d, y:%d\n", arg.xres, arg.yres);
 
                 std::lock_guard lk(mDecoderMu);
-                if (mDecoder)
+                if (mVideoDecoder)
                 {
-                    if (mDecoder->isReady())
+                    if (mVideoDecoder->isReady())
                     {
-                        DBG_PLAYER("mDecoder->pushToDecode\n");
-                        mDecoder->pushToDecode(arg, cleanupCb);
+                        DBG_PLAYER("mVideoDecoder->pushToDecode\n");
+                        mVideoDecoder->pushToDecode(arg, cleanupCb);
                     }
                     else
                     {
                         DBG_PLAYER("Request render/decode window setup\n");
-                        mDecoder->requestSetup();
+                        mVideoDecoder->requestSetup();
                     }
                 }
             }

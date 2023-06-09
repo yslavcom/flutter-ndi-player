@@ -64,17 +64,23 @@ bool AndroidDecoder::create()
 
 bool AndroidDecoder::configure()
 {
+    DBG_ANDRDEC("AndroidDecoder::configure, start:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
+        isValid(), mH264Type, mXRes, mYRes);
+
     if (!isValid()) return false;
 
     AMediaFormat_setString(mFormat, AMEDIAFORMAT_KEY_MIME, mH264Type);
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_WIDTH, mXRes);
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_HEIGHT, mYRes);
 
+#if 0
     // not sure about csdName in AMediaFormat_setBuffer
     AMediaFormat_setBuffer(mFormat, mCsdDataSps.name.c_str(), mCsdDataSps.data.data(), mCsdDataSps.data.size()); // Optional codec-specific data
     AMediaFormat_setBuffer(mFormat, mCsdDataPps.name.c_str(), mCsdDataPps.data.data(), mCsdDataPps.data.size()); // Optional codec-specific data
+#endif
 
     media_status_t ret = AMediaCodec_configure(mCodec, mFormat, mNativeWindow, nullptr, 0);
+    DBG_ANDRDEC("AMediaCodec_configure:%d\n", ret);
     mIsReady = (ret == AMEDIA_OK);
 
     return mIsReady;
@@ -152,6 +158,10 @@ void AndroidDecoder::requestSetup()
     if (mRequestSetupCb)
     {
         mRequestSetupCb(this);
+    }
+    else
+    {
+        LOGE("Setup request not assigned !");
     }
 }
 

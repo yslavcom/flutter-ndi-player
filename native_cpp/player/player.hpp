@@ -28,6 +28,6 @@ private:
     std::unique_ptr<ConvertScale> mConvertScale;
 
     RenderVidFrameObserver* mRenderVidFrameObserver;
-    Video::Decoder* mDecoder;
+    Video::Decoder* mVideoDecoder;
     std::mutex mDecoderMu;
 };
