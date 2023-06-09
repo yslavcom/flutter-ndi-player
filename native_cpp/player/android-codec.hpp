@@ -66,6 +66,7 @@ private:
     ANativeWindow* mNativeWindow;
 
     bool mIsStarted;
+    bool mIsDecoderLoop;
     bool mIsValid;
     bool mIsReady;
     bool isValid() const;

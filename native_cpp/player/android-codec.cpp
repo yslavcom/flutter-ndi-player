@@ -5,10 +5,18 @@
 #include <media/NdkMediaFormat.h>
 
 #define _DBG_ANDRDEC
+#define _DBG_ANDRDEC_ERR
+
 #ifdef _DBG_ANDRDEC
     #define DBG_ANDRDEC(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
     #define DBG_ANDRDEC(format, ...)
+#endif
+
+#ifdef _DBG_ANDRDEC_ERR
+    #define DBG_ANDRDEC_ERR(format, ...) LOGE(format, ## __VA_ARGS__)
+#else
+    #define DBG_ANDRDEC_ERR(format, ...)
 #endif
 
 
@@ -20,6 +28,7 @@ AndroidDecoder::AndroidDecoder(RequestSetupCb cb)
     , mCsdDataPps("csd_1")
     , mIsStarted(false)
     , mNativeWindow(nullptr)
+    , mIsDecoderLoop(false)
     , mIsValid(false)
     , mIsReady(false)
     , mDecoderLoop(nullptr)
@@ -53,10 +62,12 @@ const char* AndroidDecoder::getFormatPresentation() const
 
 bool AndroidDecoder::create()
 {
-    AMediaCodec* mCodec = AMediaCodec_createDecoderByType(mH264Type);
+    mCodec = AMediaCodec_createDecoderByType(mH264Type);
+    LOGW("mCodec:%p\n", mCodec);
     if (!mCodec) return false;
 
     mFormat = AMediaFormat_new();
+    LOGW("mFormat:%p\n", mFormat);
     if (!mFormat) return false;
 
     return true;
@@ -64,7 +75,7 @@ bool AndroidDecoder::create()
 
 bool AndroidDecoder::configure()
 {
-    DBG_ANDRDEC("AndroidDecoder::configure, start:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
+    DBG_ANDRDEC("AndroidDecoder::configure, isValid:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
         isValid(), mH264Type, mXRes, mYRes);
 
     if (!isValid()) return false;
@@ -79,8 +90,10 @@ bool AndroidDecoder::configure()
     AMediaFormat_setBuffer(mFormat, mCsdDataPps.name.c_str(), mCsdDataPps.data.data(), mCsdDataPps.data.size()); // Optional codec-specific data
 #endif
 
+
+    DBG_ANDRDEC("AMediaCodec_configure:%p, %p, %p\n", mCodec, mFormat, mNativeWindow);
     media_status_t ret = AMediaCodec_configure(mCodec, mFormat, mNativeWindow, nullptr, 0);
-    DBG_ANDRDEC("AMediaCodec_configure:%d\n", ret);
+    DBG_ANDRDEC("AMediaCodec_configure result:%d\n", ret);
     mIsReady = (ret == AMEDIA_OK);
 
     return mIsReady;
@@ -88,6 +101,7 @@ bool AndroidDecoder::configure()
 
 bool AndroidDecoder::start()
 {
+    DBG_ANDRDEC("Decoder start\n");
     media_status_t ret = AMediaCodec_start(mCodec);
     mIsStarted = ret == AMEDIA_OK;
     return mIsStarted;
@@ -95,6 +109,7 @@ bool AndroidDecoder::start()
 
 bool AndroidDecoder::stop()
 {
+    DBG_ANDRDEC("Decoder stop\n");
     media_status_t ret = AMediaCodec_stop(mCodec);
     mIsStarted = false; // regardless of the code returned, clear the started flag
     return ret == AMEDIA_OK;
@@ -102,6 +117,7 @@ bool AndroidDecoder::stop()
 
 bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 {
+    DBG_ANDRDEC("Enqueue frame:%p, %d\n", frameBuf, frameSize);
     auto timeoutUs = 40000;
     auto presentationTimeUs = 40000;
     // Submit input data to codec
@@ -121,6 +137,8 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 
 bool AndroidDecoder::retrieveFrame()
 {
+    DBG_ANDRDEC("Retrieve frame\n");
+
     // Retrieve decoded output frames
     AMediaCodecBufferInfo bufferInfo{};
     auto timeoutUs = 40000;
@@ -142,26 +160,33 @@ bool AndroidDecoder::retrieveFrame()
 
 void AndroidDecoder::init(unsigned xRes, unsigned yRes, void* nativeWindow)
 {
-    mXRes = xRes;
-    mYRes = yRes;
-    mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
+    if (!mIsDecoderLoop)
+    {
+        DBG_ANDRDEC("AndroidDecoder::init:%d, %d, %p\n", xRes, yRes, nativeWindow);
+        mXRes = xRes;
+        mYRes = yRes;
+        mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
 
-    mDecoderLoop.reset(new DecoderLoop(this, mVidFramesToDecode, mDecodedVideoFrames));
+        mDecoderLoop.reset(new DecoderLoop(this, mVidFramesToDecode, mDecodedVideoFrames));
 
-    DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
+        DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
 
-    mIsValid = true;
+        mIsValid = true;
+
+        mIsDecoderLoop = true;
+    }
 }
 
 void AndroidDecoder::requestSetup()
 {
+    DBG_ANDRDEC("AndroidDecoder::requestSetup set: %d\n", mRequestSetupCb ? true : false);
     if (mRequestSetupCb)
     {
         mRequestSetupCb(this);
     }
     else
     {
-        LOGE("Setup request not assigned !");
+        DBG_ANDRDEC_ERR("Setup request not assigned !");
     }
 }
 
