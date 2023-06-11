@@ -49,15 +49,21 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 
     if (!frame)
     {
+        DBG_PLAYER("Missing frame\n");
         return;
     }
 
     if (!mRenderVidFrameObserver)
     {
+        DBG_PLAYER("Missing frame observer\n");
         cleanupVideo(frame);
         return;
     }
     auto [xRes, yRes] = mRenderVidFrameObserver->getOutDim();
+    if (!xRes || !yRes)
+    {
+        DBG_PLAYER("Bad dimensions\n");
+    }
     // render the frame
     if (xRes && yRes)
     {
@@ -69,6 +75,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
             {
                 size_t size = 0;
                 auto scaledFrame = convScaleFrame(arg, x, y, size);
+                DBG_PLAYER("Render uncompressed\n");
                 mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
             },
             [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)

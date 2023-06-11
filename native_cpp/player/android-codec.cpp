@@ -1,7 +1,6 @@
 #include "android-codec.hpp"
 #include "common/logger.hpp"
 
-#include <media/NdkMediaCodec.h>
 #include <media/NdkMediaFormat.h>
 
 #define _DBG_ANDRDEC
@@ -60,11 +59,77 @@ const char* AndroidDecoder::getFormatPresentation() const
     return nullptr;
 }
 
+void AndroidDecoder::onAsyncInputAvailable(AMediaCodec *codec, void *userdata, int32_t index)
+{
+    assert(codec);
+    assert(userdata);
+    reinterpret_cast<AndroidDecoder*>(userdata)->onAsyncInputAvailable(codec, index);
+}
+
+void AndroidDecoder::onAsyncInputAvailable(AMediaCodec *codec, int32_t index)
+{
+    assert(mCodec == codec);
+
+    LOGW("OnAsyncInputAvailable, index:%d\n", index);
+    mInputAvailableBufferIdx.emplace(index);
+}
+
+void AndroidDecoder::onAsyncOutputAvailable(AMediaCodec *codec, void *userdata, int32_t index, AMediaCodecBufferInfo *bufferInfo)
+{
+    assert(codec);
+    assert(userdata);
+    reinterpret_cast<AndroidDecoder*>(userdata)->onAsyncOutputAvailable(codec, index, bufferInfo);
+}
+
+void AndroidDecoder::onAsyncOutputAvailable(AMediaCodec *codec, int32_t index, AMediaCodecBufferInfo *bufferInfo)
+{
+    assert(mCodec == codec);
+
+    LOGW("OnAsyncOutputAvailable, index:%d, bufferInfo:%p\n", index, bufferInfo);
+}
+
+void AndroidDecoder::onAsyncFormatChanged(AMediaCodec *codec, void *userdata, AMediaFormat *format)
+{
+    assert(codec);
+    assert(userdata);
+    reinterpret_cast<AndroidDecoder*>(userdata)->onAsyncFormatChanged(codec, format);
+}
+
+void AndroidDecoder::onAsyncFormatChanged(AMediaCodec *codec, AMediaFormat *format)
+{
+    assert(mCodec == codec);
+
+    LOGW("OnAsyncFormatChanged, format:%d\n", format);
+}
+
+void AndroidDecoder::onAsyncError(AMediaCodec *codec, void *userdata, media_status_t error, int32_t actionCode, const char *detail)
+{
+    assert(codec);
+    assert(userdata);
+    reinterpret_cast<AndroidDecoder*>(userdata)->onAsyncError(codec, error, actionCode, detail);
+}
+
+void AndroidDecoder::onAsyncError(AMediaCodec *codec, media_status_t error, int32_t actionCode, const char *detail)
+{
+    assert(mCodec == codec);
+
+    LOGW("OnAsyncError, error:%d, actionCode:%d, detail:%s\n", error, actionCode, detail);
+}
+
 bool AndroidDecoder::create()
 {
     mCodec = AMediaCodec_createDecoderByType(mH264Type);
     LOGW("mCodec:%p\n", mCodec);
     if (!mCodec) return false;
+
+    AMediaCodecOnAsyncNotifyCallback callback{};
+#if 1
+    callback.onAsyncInputAvailable = &AndroidDecoder::onAsyncInputAvailable;
+#endif
+    callback.onAsyncOutputAvailable = &AndroidDecoder::onAsyncOutputAvailable;
+    callback.onAsyncFormatChanged = &AndroidDecoder::onAsyncFormatChanged;
+    callback.onAsyncError = &AndroidDecoder::onAsyncError;
+    AMediaCodec_setAsyncNotifyCallback(mCodec, callback, this);
 
     mFormat = AMediaFormat_new();
     LOGW("mFormat:%p\n", mFormat);
@@ -106,6 +171,7 @@ bool AndroidDecoder::configure()
 
 bool AndroidDecoder::start()
 {
+
     DBG_ANDRDEC("Decoder start\n");
     media_status_t ret = AMediaCodec_start(mCodec);
     mIsStarted = ret == AMEDIA_OK;
@@ -122,22 +188,59 @@ bool AndroidDecoder::stop()
 
 bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 {
-    DBG_ANDRDEC("Enqueue frame:%p, %d\n", frameBuf, frameSize);
-    auto timeoutUs = 40000;
-    auto presentationTimeUs = 40000;
-    // Submit input data to codec
-    auto inputIndex = AMediaCodec_dequeueInputBuffer(mCodec, timeoutUs);
-    if (inputIndex >= 0)
+#if 0
+    if (mIsStarted)
     {
-        AMediaCodecBufferInfo bufferInfo;
-        size_t bufferSize = 0;
-        uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mCodec, inputIndex, &bufferSize);
-        // Copy the H.264 frame to the input buffer
-        memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
-        AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
+        auto timeoutUs = 40000;
+        auto presentationTimeUs = 40000;
+        // Submit input data to codec
+        auto inputIndex = AMediaCodec_dequeueInputBuffer(mCodec, timeoutUs);
+        if (inputIndex >= 0)
+        {
+            AMediaCodecBufferInfo bufferInfo;
+            size_t bufferSize = 0;
+            uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mCodec, inputIndex, &bufferSize);
+            if (inputBuffer)
+            {
+                // Copy the H.264 frame to the input buffer
+                memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
+                DBG_ANDRDEC("Enqueue input buffer, codec:%p, idx:%d, size:%d, presentationTimeUs:%d\n", mCodec, inputIndex, frameSize, presentationTimeUs);
+                media_status_t ret = AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
+                return ret == AMEDIA_OK;
+            }
+        }
+    }
+    return false;
+
+#else
+    if (mIsStarted)
+    {
+        auto timeoutUs = 40000;
+        auto presentationTimeUs = 40000;
+        // Submit input data to codec
+
+        if (mInputAvailableBufferIdx.size())
+        {
+            auto inputIndex = mInputAvailableBufferIdx.front();
+            mInputAvailableBufferIdx.pop();
+
+            AMediaCodecBufferInfo bufferInfo;
+            size_t bufferSize = 0;
+            uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mCodec, inputIndex, &bufferSize);
+            if (inputBuffer)
+            {
+                // Copy the H.264 frame to the input buffer
+                memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
+                DBG_ANDRDEC("Enqueue input buffer, codec:%p, idx:%d, size:%d, presentationTimeUs:%d\n", mCodec, inputIndex, frameSize, presentationTimeUs);
+                media_status_t ret = AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
+                return ret == AMEDIA_OK;
+            }
+        }
     }
 
-    return true;
+    return false;
+#endif
+
 }
 
 bool AndroidDecoder::retrieveFrame()

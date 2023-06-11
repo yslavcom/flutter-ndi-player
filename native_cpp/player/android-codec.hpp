@@ -3,10 +3,13 @@
 #include "codec.hpp"
 #include "decoder-loop.hpp"
 
+#include <media/NdkMediaCodec.h>
+
 #include <vector>
 #include <string>
 #include <memory>
 #include <functional>
+#include <queue>
 
 class AMediaCodec;
 class AMediaFormat;
@@ -46,6 +49,18 @@ private:
     unsigned mXRes;
     unsigned mYRes;
 
+    static void onAsyncInputAvailable(AMediaCodec *codec, void *userdata, int32_t index);
+    void onAsyncInputAvailable(AMediaCodec *codec, int32_t index);
+
+    static void onAsyncOutputAvailable(AMediaCodec *codec, void *userdata, int32_t index, AMediaCodecBufferInfo *bufferInfo);
+    void onAsyncOutputAvailable(AMediaCodec *codec, int32_t index, AMediaCodecBufferInfo *bufferInfo);
+
+    static void onAsyncFormatChanged(AMediaCodec *codec, void *userdata, AMediaFormat *format);
+    void onAsyncFormatChanged(AMediaCodec *codec, AMediaFormat *format);
+
+    static void onAsyncError(AMediaCodec *codec, void *userdata, media_status_t error, int32_t actionCode, const char *detail);
+    void onAsyncError(AMediaCodec *codec, media_status_t error, int32_t actionCode, const char *detail);
+
     AMediaCodec* mCodec;
     AMediaFormat* mFormat;
 
@@ -74,4 +89,5 @@ private:
     std::unique_ptr<DecoderLoop> mDecoderLoop;
 
     RequestSetupCb mRequestSetupCb;
+    std::queue<int32_t> mInputAvailableBufferIdx;
 };
