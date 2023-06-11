@@ -35,19 +35,18 @@ public:
     const char* getFormatPresentation() const;
 
     // class Decoder
-    virtual bool create() override;
+    virtual bool create(uint32_t fourcc) override;
     virtual bool configure() override;
     virtual bool start() override;
     virtual bool stop() override;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) override;
     virtual bool isReady() const override;
     virtual bool retrieveFrame() override;
-    virtual void init(unsigned xRes, unsigned yRes, void* nativeWindow) override;
+    virtual void init(void* nativeWindow) override;
     virtual void requestSetup() override;
+    virtual void setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps) override;
 
 private:
-    unsigned mXRes;
-    unsigned mYRes;
 
     static void onAsyncInputAvailable(AMediaCodec *codec, void *userdata, int32_t index);
     void onAsyncInputAvailable(AMediaCodec *codec, int32_t index);
@@ -65,18 +64,6 @@ private:
     AMediaFormat* mFormat;
 
     const char* mH264Type = "video/avc";
-
-    struct CsdData
-    {
-        CsdData(const char* _name)
-            : name(_name)
-        {
-        }
-        std::vector<uint8_t> data;
-        std::string name;
-    };
-    CsdData mCsdDataSps;
-    CsdData mCsdDataPps;
 
     ANativeWindow* mNativeWindow;
 

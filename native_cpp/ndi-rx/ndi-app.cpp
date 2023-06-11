@@ -8,6 +8,16 @@
 #include <iostream>
 #include <type_traits>
 
+
+#define _DBG_NDI_APP
+
+#ifdef _DBG_NDI_APP
+    #define DBG_NDI_APP(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_NDI_APP(format, ...)
+#endif
+
+
 NdiApp::NdiApp()
 {
 }
@@ -15,7 +25,6 @@ NdiApp::NdiApp()
 NdiApp::~NdiApp()
 {
 }
-
 
 bool NdiApp::createReceiver(const std::string& name, const std::string& url, Quality quality)
 {
@@ -71,6 +80,7 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 
         case NDIlib_frame_type_video:
         {
+//            DBG_NDI_APP("New Ndi vid pack\n");
             if (video->p_data)
             {
                 // push video to queue after checking for audio !!!

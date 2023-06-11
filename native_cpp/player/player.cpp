@@ -93,6 +93,8 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                     else
                     {
                         DBG_PLAYER("Request render/decode window setup\n");
+                        mVideoDecoder->setDimensions(arg.xres, arg.yres);
+                        mVideoDecoder->setCodecFourCC(H26x::FourCC{arg.fourCC});
                         mVideoDecoder->requestSetup();
                     }
                 }

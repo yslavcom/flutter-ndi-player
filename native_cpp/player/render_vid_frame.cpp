@@ -122,8 +122,8 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
 
     LOGW("NativeWindowType:%p\n", mWindow);
 
-    getVideoDecoder()->init(resolution.first, resolution.second, mWindow);
-    getVideoDecoder()->create();
+    getVideoDecoder()->init(mWindow);
+    getVideoDecoder()->create(getVideoDecoder()->getCodecFourCC());
     getVideoDecoder()->configure();
 }
 

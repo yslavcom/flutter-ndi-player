@@ -65,6 +65,7 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             DBG_DECLOOP("Decode frame:%d\n", compressedFrame.dataSizeBytes);
             auto buf = compressedFrame.p_data;
 
+            mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
             // keep pushing the rame while decoder is rerady to accept it
             while(!mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
         }

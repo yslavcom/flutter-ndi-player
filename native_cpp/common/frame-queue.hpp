@@ -3,6 +3,7 @@
 #include "safe-queue.hpp"
 #include <functional>
 #include <variant>
+#include <vector>
 
 namespace FrameQueue
 {
@@ -43,6 +44,9 @@ struct VideoFrameCompressedStr
 	// The video data itself.
 	uint8_t* p_data;
 	size_t dataSizeBytes;
+
+    std::vector<uint8_t> sps;
+    std::vector<uint8_t> pps;
 };
 
 struct AudioFrameStr

@@ -20,11 +20,7 @@
 
 
 AndroidDecoder::AndroidDecoder(RequestSetupCb cb)
-    : mXRes(0)
-    , mYRes(0)
-    , mCodec(nullptr)
-    , mCsdDataSps("csd_0")
-    , mCsdDataPps("csd_1")
+    : mCodec(nullptr)
     , mIsStarted(false)
     , mNativeWindow(nullptr)
     , mIsDecoderLoop(false)
@@ -85,7 +81,14 @@ void AndroidDecoder::onAsyncOutputAvailable(AMediaCodec *codec, int32_t index, A
 {
     assert(mCodec == codec);
 
-    LOGW("OnAsyncOutputAvailable, index:%d, bufferInfo:%p\n", index, bufferInfo);
+    DBG_ANDRDEC("OnAsyncOutputAvailable, index:%d, offset:%d, size:%d, presentationTimeUs:%d, flags:%d\n",
+        index,
+        bufferInfo->offset, bufferInfo->size, bufferInfo->presentationTimeUs, bufferInfo->flags);
+
+    // ?????
+    // Release the output buffer
+    bool renderBuffer = true;
+    AMediaCodec_releaseOutputBuffer(mCodec, index, renderBuffer);
 }
 
 void AndroidDecoder::onAsyncFormatChanged(AMediaCodec *codec, void *userdata, AMediaFormat *format)
@@ -99,7 +102,17 @@ void AndroidDecoder::onAsyncFormatChanged(AMediaCodec *codec, AMediaFormat *form
 {
     assert(mCodec == codec);
 
-    LOGW("OnAsyncFormatChanged, format:%d\n", format);
+    LOGW("OnAsyncFormatChanged:%s\n", AMediaFormat_toString(format));
+
+    const char *outMime;
+    int32_t w = 0, h = 0;
+    AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &outMime);
+    AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_WIDTH, &w);
+    AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_HEIGHT, &h);
+
+    LOGW("AMEDIAFORMAT_KEY_MIME:%s\n", outMime);
+    LOGW("AMEDIAFORMAT_KEY_WIDTH:%d\n", w);
+    LOGW("AMEDIAFORMAT_KEY_HEIGHT:%d\n", h);
 }
 
 void AndroidDecoder::onAsyncError(AMediaCodec *codec, void *userdata, media_status_t error, int32_t actionCode, const char *detail)
@@ -116,8 +129,16 @@ void AndroidDecoder::onAsyncError(AMediaCodec *codec, media_status_t error, int3
     LOGW("OnAsyncError, error:%d, actionCode:%d, detail:%s\n", error, actionCode, detail);
 }
 
-bool AndroidDecoder::create()
+bool AndroidDecoder::create(uint32_t fourcc)
 {
+    H26x::FourCC fourCC(fourcc);
+    if (fourCC != "H264")
+    {
+        LOGE("Unknown codec 4cc:%lx\n", fourcc);
+        assert(0 && "Unknown codec 4cc");
+        return false;
+    }
+
     mCodec = AMediaCodec_createDecoderByType(mH264Type);
     LOGW("mCodec:%p\n", mCodec);
     if (!mCodec) return false;
@@ -138,16 +159,29 @@ bool AndroidDecoder::create()
     return true;
 }
 
+void AndroidDecoder::setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps)
+{
+    if (sps.size())
+    {
+        AMediaFormat_setBuffer(mFormat, "csd_0", sps.data(), sps.size());
+    }
+
+    if (pps.size())
+    {
+        AMediaFormat_setBuffer(mFormat, "csd_1", pps.data(), pps.size());
+    }
+}
+
 bool AndroidDecoder::configure()
 {
     DBG_ANDRDEC("AndroidDecoder::configure, isValid:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
-        isValid(), mH264Type, mXRes, mYRes);
+        isValid(), mH264Type, mXres, mYres);
 
     if (!isValid()) return false;
 
     AMediaFormat_setString(mFormat, AMEDIAFORMAT_KEY_MIME, mH264Type);
-    AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_WIDTH, mXRes);
-    AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_HEIGHT, mYRes);
+    AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_WIDTH, mXres);
+    AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_HEIGHT, mYres);
 
 #if 0
     // not sure about csdName in AMediaFormat_setBuffer
@@ -215,8 +249,8 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 #else
     if (mIsStarted)
     {
-        auto timeoutUs = 40000;
-        auto presentationTimeUs = 40000;
+        //auto presentationTimeUs = 40000;
+        auto presentationTimeUs = 0;
         // Submit input data to codec
 
         if (mInputAvailableBufferIdx.size())
@@ -266,13 +300,11 @@ bool AndroidDecoder::retrieveFrame()
     return true;
 }
 
-void AndroidDecoder::init(unsigned xRes, unsigned yRes, void* nativeWindow)
+void AndroidDecoder::init(void* nativeWindow)
 {
     if (!mIsDecoderLoop)
     {
-        DBG_ANDRDEC("AndroidDecoder::init:%d, %d, %p\n", xRes, yRes, nativeWindow);
-        mXRes = xRes;
-        mYRes = yRes;
+        DBG_ANDRDEC("AndroidDecoder::init:%p\n", nativeWindow);
         mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
 
         mDecoderLoop.reset(new DecoderLoop(this, mVidFramesToDecode, mDecodedVideoFrames));
