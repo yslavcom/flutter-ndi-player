@@ -88,7 +88,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                     if (mVideoDecoder->isReady())
                     {
                         auto res = mVideoDecoder->pushToDecode(arg, cleanupCb);
-                        DBG_PLAYER("mVideoDecoder->pushToDecode:%d\n", res);
+                        DBG_PLAYER("mVideoDecoder->pushToDecode:%d, rate:%d/%d\n", res, arg.frameRateN, arg.frameRateD);
                     }
                     else
                     {

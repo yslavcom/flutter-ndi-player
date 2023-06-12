@@ -3,6 +3,8 @@
 
 #include <media/NdkMediaFormat.h>
 
+#include <chrono>
+
 #define _DBG_ANDRDEC
 #define _DBG_ANDRDEC_ERR
 
@@ -143,15 +145,14 @@ bool AndroidDecoder::create(uint32_t fourcc)
     LOGW("mCodec:%p\n", mCodec);
     if (!mCodec) return false;
 
+#if 0
     AMediaCodecOnAsyncNotifyCallback callback{};
-#if 1
     callback.onAsyncInputAvailable = &AndroidDecoder::onAsyncInputAvailable;
-#endif
     callback.onAsyncOutputAvailable = &AndroidDecoder::onAsyncOutputAvailable;
     callback.onAsyncFormatChanged = &AndroidDecoder::onAsyncFormatChanged;
     callback.onAsyncError = &AndroidDecoder::onAsyncError;
     AMediaCodec_setAsyncNotifyCallback(mCodec, callback, this);
-
+#endif
     mFormat = AMediaFormat_new();
     LOGW("mFormat:%p\n", mFormat);
     if (!mFormat) return false;
@@ -222,11 +223,14 @@ bool AndroidDecoder::stop()
 
 bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 {
-#if 0
+    std::chrono::microseconds us = std::chrono::duration_cast< std::chrono::microseconds >(
+        std::chrono::system_clock::now().time_since_epoch()
+    );
+#if 1
     if (mIsStarted)
     {
         auto timeoutUs = 40000;
-        auto presentationTimeUs = 40000;
+        auto presentationTimeUs = us.count();
         // Submit input data to codec
         auto inputIndex = AMediaCodec_dequeueInputBuffer(mCodec, timeoutUs);
         if (inputIndex >= 0)
@@ -250,7 +254,7 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
     if (mIsStarted)
     {
         //auto presentationTimeUs = 40000;
-        auto presentationTimeUs = 0;
+        uint64_t presentationTimeUs = us.count();
         // Submit input data to codec
 
         if (mInputAvailableBufferIdx.size())
@@ -295,6 +299,8 @@ bool AndroidDecoder::retrieveFrame()
         // Release the output buffer
         bool renderBuffer = true;
         AMediaCodec_releaseOutputBuffer(mCodec, outputIndex, renderBuffer);
+
+        DBG_ANDRDEC("retrieveFrame, idx:%d, size:%d\n", outputIndex, bufferSize);
     }
 
     return true;

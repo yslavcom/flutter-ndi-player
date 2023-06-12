@@ -54,6 +54,8 @@ public:
             else
             {
                 auto si = H26x::tryParseServiceInfo(video->p_data+4, video->data_size_in_bytes-4, hdrSize-4);
+                std::vector<uint8_t> sps;
+                std::vector<uint8_t> pps;
 
                 bool pushFrames = true;
                 if (mIsFirstFrame)
@@ -67,6 +69,15 @@ public:
                             pushFrames = true;
 
                             LOGW("The 1st key frame\n");
+                        }
+
+                        if (si->sps.size())
+                        {
+                            sps = std::move(si->sps);
+                        }
+                        if (si->pps.size())
+                        {
+                            pps = std::move(si->pps);
                         }
                     }
                 }
@@ -85,6 +96,10 @@ public:
 #endif
 
                     FrameQueue::VideoFrameCompressedStr frame;
+
+                    frame.sps = std::move(sps);
+                    frame.pps = std::move(pps);
+
                     frame.opaque = (void*)video;
                     frame.xres = video->xres;
                     frame.yres = video->yres;
@@ -92,8 +107,8 @@ public:
                     frame.frameRateN = video->frame_rate_N;
                     frame.frameRateD = video->frame_rate_D;
                     frame.aspectRatio = video->picture_aspect_ratio;
-                    frame.p_data = video->p_data + hdrSize;
-                    frame.dataSizeBytes = video->data_size_in_bytes - hdrSize;
+                    frame.p_data = video->p_data + hdrSize + frame.sps.size() + frame.pps.size();
+                    frame.dataSizeBytes = video->data_size_in_bytes - hdrSize - (frame.sps.size() + frame.pps.size());
 
                     switch(video->frame_format_type)
                     {
@@ -116,15 +131,6 @@ public:
                     case NDIlib_frame_format_type_max:
                         frame.frameFormatType = FrameQueue::FrameFormatType::unknown;
                     break;
-                    }
-
-                    if (si->sps.size())
-                    {
-                        frame.sps = std::move(si->sps);
-                    }
-                    if (si->pps.size())
-                    {
-                        frame.pps = std::move(si->pps);
                     }
 
                     mVideoRxQueue.push(std::make_pair(frame, releaseCb));

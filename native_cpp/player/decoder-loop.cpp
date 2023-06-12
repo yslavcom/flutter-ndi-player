@@ -69,6 +69,7 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             // keep pushing the rame while decoder is rerady to accept it
             while(!mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
         }
+        mVideoDecoder->retrieveFrame();
     }
 
     return stats;
