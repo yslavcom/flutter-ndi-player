@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-// #define _DBG_RX
+#define _DBG_RX
 
 #ifdef _DBG_RX
     #define DBG_RX LOGW
@@ -147,40 +147,38 @@ void NdiRx::removeObserver(InputObserver* obs)
 
 bool NdiRx::scanNdiSources()
 {
-    if (!mShadowsourceTrackThread.joinable())
-    {
-        mShadowsourceTrackThread = std::thread([this]()
+    mShadowsourceTrackThread.start([this](bool stop){
+        if (!start())
         {
-            if (!start())
+            return false;
+        }
+        while(!stop)
+        {
+            bool isContentsChanged = false; // must be preset to false
+            auto count = trackNdiSourcesBackgroundBlock(isContentsChanged);
+            DBG_RX("scanNdiSources[%s]:%d\n", __func__, count);
+            bool countChanged = (mSourceCount != count);
+            if (countChanged || isContentsChanged)
             {
-                return false;
-            }
-            for (;;)
-            {
-                bool isContentsChanged = false; // must be preset to false
-                auto count = trackNdiSourcesBackgroundBlock(isContentsChanged);
-                DBG_RX("scanNdiSources[%s]:%d\n", __func__, count);
-                bool countChanged = (mSourceCount != count);
-                if (countChanged || isContentsChanged)
+                std::vector<std::string> sources;
                 {
-                    std::vector<std::string> sources;
+                    std::lock_guard lk(mSourceMutex);
+                    auto count = mSourceContainer.getSourceCount();
+                    for (unsigned i = 0; i < count; i ++)
                     {
-                        std::lock_guard lk(mSourceMutex);
-                        auto count = mSourceContainer.getSourceCount();
-                        for (unsigned i = 0; i < count; i ++)
-                        {
-                            auto source = mSourceContainer.getSource(i);
-                            sources.push_back({source.mSourceName});
-                        }
+                        auto source = mSourceContainer.getSource(i);
+                        sources.push_back({source.mSourceName});
                     }
-                    mSourceCount = count;
-                    LOGW("NDI Source Count changed:%d\n", count);
-                    updateObserversAboutInputState(sources);
-
                 }
+                mSourceCount = count;
+                LOGW("NDI Source Count changed:%d\n", count);
+                updateObserversAboutInputState(sources);
+
             }
-            return true;
-        });
-    }
+            std::this_thread::yield();
+        }
+        return true;
+    });
+
     return true;
 }

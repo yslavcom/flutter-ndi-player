@@ -1,15 +1,15 @@
 #pragma once
 
-#include <cstddef>
-#include <stdint.h>
+#include "source-container.hpp"
+#include "interfaces/input-observer.hpp"
+#include "common/custom_thread.hpp"
 
 //#include <Processing.NDI.Lib.h>
 #include <Processing.NDI.Advanced.h>
 
-#include "source-container.hpp"
-#include "interfaces/input-observer.hpp"
 
-#include <thread>
+#include <cstddef>
+#include <stdint.h>
 #include <mutex>
 
 class NdiRx
@@ -43,7 +43,7 @@ private:
     unsigned mSourceCount;
     SourceContainer mSourceContainer;
     unsigned trackNdiSourcesBackgroundBlock(bool& risChanged); // a blocking function
-    std::thread mShadowsourceTrackThread;
+    CustomThread mShadowsourceTrackThread;
 
     void updateObserversAboutInputState(std::vector<std::string> sources);
     std::set<InputObserver*> mInputSinkObservers;
