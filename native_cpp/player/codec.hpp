@@ -48,7 +48,6 @@ public:
 
     bool pushToDecode(FrameQueue::VideoFrameCompressedStr& frame, FrameQueue::ReleaseCb releaseCb)
     {
-//        DBG_DECODER("pushToDecode:%p (%p, %p)\n", mVidFramesToDecode, &frame, &releaseCb);
         if (mVidFramesToDecode)
         {
             return mVidFramesToDecode->push(std::make_pair(frame, releaseCb));

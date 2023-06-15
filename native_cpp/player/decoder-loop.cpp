@@ -45,14 +45,6 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             mVideoDecoder->start();
             break;
         }
-#if 0
-            FrameQueue::VideoFrame frame;
-            mVidFramesToDecode->read(frame);
-            auto& compressedFrame = std::get<FrameQueue::VideoFrameCompressedStr>(frame.first);
-            // DBG_DECLOOP("Decode frame:%d\n", compressedFrame.dataSizeBytes);
-            auto buf = compressedFrame.p_data;
-            mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes);
-#endif
     }
 
     for(;;)

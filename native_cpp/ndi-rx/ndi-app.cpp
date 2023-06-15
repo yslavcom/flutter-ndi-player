@@ -80,7 +80,6 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 
         case NDIlib_frame_type_video:
         {
-//            DBG_NDI_APP("New Ndi vid pack\n");
             if (video->p_data)
             {
                 // push video to queue after checking for audio !!!

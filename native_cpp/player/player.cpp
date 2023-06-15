@@ -40,12 +40,6 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
     DBG_PLAYER("Player::onFrame, frame:%p, renderObs:%p, mVideoDecoder:%p(ready:%d)\n",
         frame, mRenderVidFrameObserver, mVideoDecoder, (mVideoDecoder ? mVideoDecoder->isReady(): false));
-    auto cleanupVideo = [](FrameQueue::VideoFrame* inFrame){
-        if (inFrame->second)
-        {
-            FrameQueue::release(inFrame->first, inFrame->second);
-        }
-    };
 
     if (!frame)
     {
@@ -56,7 +50,6 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
     if (!mRenderVidFrameObserver)
     {
         DBG_PLAYER("Missing frame observer\n");
-        cleanupVideo(frame);
         return;
     }
     auto [xRes, yRes] = mRenderVidFrameObserver->getOutDim();
@@ -73,6 +66,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
         std::visit(FrameQueue::overloaded {
             [this, x, y](FrameQueue::VideoFrameStr& arg)
             {
+                // uncompressed frame
                 size_t size = 0;
                 auto scaledFrame = convScaleFrame(arg, x, y, size);
                 DBG_PLAYER("Render uncompressed\n");
@@ -80,28 +74,25 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
             },
             [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)
             {
+                // compressed frame, must be cleaned up after decoding
                 DBG_PLAYER("Compressed, x:%d, y:%d\n", arg.xres, arg.yres);
 
                 std::lock_guard lk(mDecoderMu);
                 if (mVideoDecoder)
                 {
-                    if (mVideoDecoder->isReady())
-                    {
-                        auto res = mVideoDecoder->pushToDecode(arg, cleanupCb);
-                        DBG_PLAYER("mVideoDecoder->pushToDecode:%d, rate:%d/%d\n", res, arg.frameRateN, arg.frameRateD);
-                    }
-                    else
+                    if (!mVideoDecoder->isReady())
                     {
                         DBG_PLAYER("Request render/decode window setup\n");
                         mVideoDecoder->setDimensions(arg.xres, arg.yres);
                         mVideoDecoder->setCodecFourCC(H26x::FourCC{arg.fourCC});
                         mVideoDecoder->requestSetup();
                     }
+                    auto res = mVideoDecoder->pushToDecode(arg, cleanupCb);
+                    DBG_PLAYER("mVideoDecoder->pushToDecode:%d, rate:%d/%d\n", res, arg.frameRateN, arg.frameRateD);
                 }
             }
         }, frame->first);
     }
-    cleanupVideo(frame);
 }
 
 void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
