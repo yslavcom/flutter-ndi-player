@@ -39,6 +39,7 @@ public:
     virtual bool configure() override;
     virtual bool start() override;
     virtual bool stop() override;
+    virtual void release() override;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) override;
     virtual bool isReady() const override;
     virtual bool retrieveFrame() override;
@@ -69,12 +70,11 @@ private:
 
     bool mIsStarted;
     bool mIsDecoderLoop;
-    bool mIsValid;
+    bool mIsSurfaceWindow;
     bool mIsReady;
     bool isValid() const;
 
     std::unique_ptr<DecoderLoop> mDecoderLoop;
 
     RequestSetupCb mRequestSetupCb;
-    std::queue<int32_t> mInputAvailableBufferIdx;
 };

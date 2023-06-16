@@ -23,10 +23,10 @@
 
 AndroidDecoder::AndroidDecoder(RequestSetupCb cb)
     : mCodec(nullptr)
+    , mFormat(nullptr)
     , mIsStarted(false)
     , mNativeWindow(nullptr)
-    , mIsDecoderLoop(false)
-    , mIsValid(false)
+    , mIsSurfaceWindow(false)
     , mIsReady(false)
     , mDecoderLoop(nullptr)
     , mRequestSetupCb(cb)
@@ -34,18 +34,37 @@ AndroidDecoder::AndroidDecoder(RequestSetupCb cb)
 
 AndroidDecoder::~AndroidDecoder()
 {
+    release();
+}
+
+void AndroidDecoder::release()
+{
+//    std::lock_guard lk(mDecMu);
+
+    DBG_ANDRDEC("Codec release START, codec:%p, format:%p, decLoop:%p\n", mCodec, mFormat, mDecoderLoop.get());
+    mDecoderLoop = nullptr;
     if (mCodec)
     {
         if (mIsStarted)
         {
             stop();
+            AMediaCodec_flush(mCodec);
         }
         AMediaCodec_delete(mCodec);
+        mCodec = nullptr;
     }
     if (mFormat)
     {
         AMediaFormat_delete(mFormat);
+        mFormat = nullptr;
     }
+
+    mNativeWindow = nullptr;
+
+    mIsStarted = false;
+    mIsSurfaceWindow = false;
+    mIsReady = false;
+    DBG_ANDRDEC("Codec release END\n");
 }
 
 const char* AndroidDecoder::getFormatPresentation() const
@@ -69,7 +88,6 @@ void AndroidDecoder::onAsyncInputAvailable(AMediaCodec *codec, int32_t index)
     assert(mCodec == codec);
 
     LOGW("OnAsyncInputAvailable, index:%d\n", index);
-    mInputAvailableBufferIdx.emplace(index);
 }
 
 void AndroidDecoder::onAsyncOutputAvailable(AMediaCodec *codec, void *userdata, int32_t index, AMediaCodecBufferInfo *bufferInfo)
@@ -142,7 +160,7 @@ bool AndroidDecoder::create(uint32_t fourcc)
     }
 
     mCodec = AMediaCodec_createDecoderByType(mH264Type);
-    LOGW("mCodec:%p\n", mCodec);
+    DBG_ANDRDEC("mCodec:%p\n", mCodec);
     if (!mCodec) return false;
 
 #if 0
@@ -154,7 +172,7 @@ bool AndroidDecoder::create(uint32_t fourcc)
     AMediaCodec_setAsyncNotifyCallback(mCodec, callback, this);
 #endif
     mFormat = AMediaFormat_new();
-    LOGW("mFormat:%p\n", mFormat);
+    DBG_ANDRDEC("mFormat:%p\n", mFormat);
     if (!mFormat) return false;
 
     return true;
@@ -242,7 +260,7 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
             {
                 // Copy the H.264 frame to the input buffer
                 memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
-                DBG_ANDRDEC("Enqueue input buffer, codec:%p, idx:%d, size:%d, presentationTimeUs:%d\n", mCodec, inputIndex, frameSize, presentationTimeUs);
+                // DBG_ANDRDEC("Enqueue input buffer, codec:%p, idx:%d, size:%d, presentationTimeUs:%d\n", mCodec, inputIndex, frameSize, presentationTimeUs);
                 media_status_t ret = AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
                 return ret == AMEDIA_OK;
             }
@@ -283,7 +301,7 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 
 bool AndroidDecoder::retrieveFrame()
 {
-    DBG_ANDRDEC("Retrieve frame\n");
+//    DBG_ANDRDEC("Retrieve frame\n");
 
     // Retrieve decoded output frames
     AMediaCodecBufferInfo bufferInfo{};
@@ -300,7 +318,7 @@ bool AndroidDecoder::retrieveFrame()
         bool renderBuffer = true;
         AMediaCodec_releaseOutputBuffer(mCodec, outputIndex, renderBuffer);
 
-        DBG_ANDRDEC("retrieveFrame, idx:%d, size:%d\n", outputIndex, bufferSize);
+//        DBG_ANDRDEC("retrieveFrame, idx:%d, size:%d\n", outputIndex, bufferSize);
     }
 
     return true;
@@ -308,7 +326,7 @@ bool AndroidDecoder::retrieveFrame()
 
 void AndroidDecoder::init(void* nativeWindow)
 {
-    if (!mIsDecoderLoop)
+    if (!mDecoderLoop)
     {
         DBG_ANDRDEC("AndroidDecoder::init:%p\n", nativeWindow);
         mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
@@ -317,9 +335,7 @@ void AndroidDecoder::init(void* nativeWindow)
 
         DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
 
-        mIsValid = true;
-
-        mIsDecoderLoop = true;
+        mIsSurfaceWindow = true;
     }
 }
 
@@ -343,5 +359,5 @@ bool AndroidDecoder::isReady() const
 
 bool AndroidDecoder::isValid() const
 {
-    return mIsValid;
+    return mIsSurfaceWindow;
 }

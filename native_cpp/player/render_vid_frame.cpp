@@ -101,6 +101,9 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_disposeTexture(JNIEnv* env, jobject)
 {
+    LOGW("Clear surface\n");
+    getVideoDecoder()->release();
+
     {
         std::lock_guard lk(mRenderMutex);
         getRenderVidFrame()->setOutDim(0, 0);
@@ -109,7 +112,6 @@ Java_com_example_ndi_1player_TextureHelper_disposeTexture(JNIEnv* env, jobject)
 #endif
         mWindow = nullptr;
     }
-    LOGW("Clear surface\n");
 }
 
 extern "C"

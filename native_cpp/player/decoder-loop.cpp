@@ -13,14 +13,21 @@ DecoderLoop::DecoderLoop(Video::Decoder* decoder, FrameQueue::VideoRx* vidFrames
     : mVideoDecoder(decoder)
     , mVidFramesToDecode(vidFramesToDecode)
     , mDecodedVideoFrames(decodedVideoFrames)
+    , mTerminateProcessFrames{false}
 {
     DBG_DECLOOP("DecoderLoop:%p, %p, %p\n", mVideoDecoder, mVidFramesToDecode, mDecodedVideoFrames);
 }
 
 DecoderLoop::~DecoderLoop()
 {
+    DBG_DECLOOP("~DecoderLoop START\n");
     mTerminateProcessFrames = true;
     mProcessFramesRes.get();
+    if (mDecodedVideoFrames)
+    {
+        mDecodedVideoFrames->flush();
+    }
+    DBG_DECLOOP("~DecoderLoop END\n");
 }
 
 bool DecoderLoop::run()
@@ -38,7 +45,7 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 {
     Statistics stats{};
 
-    for (;;)
+    while(!mTerminateProcessFrames)
     {
         if (mVidFramesToDecode->getCount())
         {
@@ -47,21 +54,29 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
         }
     }
 
-    for(;;)
+    while(!mTerminateProcessFrames)
     {
         if (mVidFramesToDecode->getCount())
         {
             FrameQueue::VideoFrame frame;
             mVidFramesToDecode->read(frame);
             auto& compressedFrame = std::get<FrameQueue::VideoFrameCompressedStr>(frame.first);
-            DBG_DECLOOP("Decode frame:%d\n", compressedFrame.dataSizeBytes);
+//            DBG_DECLOOP("Decode frame:%d\n", compressedFrame.dataSizeBytes);
             auto buf = compressedFrame.p_data;
 
-            mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
-            // keep pushing the rame while decoder is rerady to accept it
-            while(!mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
+            if (!mTerminateProcessFrames)
+            {
+                mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
+
+                // keep pushing the rame while decoder is rerady to accept it
+                while(!mTerminateProcessFrames && !mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
+            }
         }
-        mVideoDecoder->retrieveFrame();
+
+        if (!mTerminateProcessFrames)
+        {
+            mVideoDecoder->retrieveFrame();
+        }
     }
 
     return stats;

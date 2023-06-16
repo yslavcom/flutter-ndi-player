@@ -33,6 +33,7 @@ public:
     virtual bool configure() = 0;
     virtual bool start() = 0;
     virtual bool stop() = 0;
+    virtual void release() = 0;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) = 0;
     virtual bool isReady() const = 0;
     virtual void requestSetup() = 0;

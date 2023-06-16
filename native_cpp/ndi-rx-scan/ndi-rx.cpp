@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-#define _DBG_RX
+// #define _DBG_RX
 
 #ifdef _DBG_RX
     #define DBG_RX LOGW
@@ -79,7 +79,7 @@ unsigned NdiRx::trackNdiSourcesBackgroundBlock(bool& risChanged) // a blocking f
             std::lock_guard lk(mSourceMutex);
 
             auto ndiSources = NDIlib_find_get_current_sources(pNDI_find, &sourcesCount);
-            DBG_RX("%s:sources:%p, count:%d", __func__, ndiSources, sourcesCount);
+//            DBG_RX("%s:sources:%p, count:%d", __func__, ndiSources, sourcesCount);
             if (sourcesCount && ndiSources)
             {
                 if (mSourceContainer.getSourceCount() != sourcesCount)
