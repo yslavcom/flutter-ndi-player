@@ -12,11 +12,11 @@
 
 #include "common/logger.hpp"
 #include "common/frame-queue.hpp"
+#include "common/custom_thread.hpp"
 
 #include <memory>
 #include <mutex>
 #include <vector>
-#include <thread>
 
 #include <iostream>
 
@@ -73,7 +73,7 @@ std::unique_ptr<NdiApp> NdiRxProg::mNdiApp;
 std::once_flag NdiRxProg::mInitFlag;
 
 auto ProgramRx = NdiRxProg::getInstance();
-std::thread mCapturePacketsThread;
+CustomThread mCapturePacketsThread;
 
 std::mutex mFrameRxMutex;
 FrameQueue::VideoRx mVideoRxQueue(mFrameRxMutex);
@@ -135,7 +135,7 @@ void sendMsgToFlutter(std::vector<std::string> sources)
 
     std::unique_ptr<Player> mPlayer;
     RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
-    std::thread mRxFrameControllerThread;
+    CustomThread mRxFrameControllerThread;
     std::mutex mVideoDecoderFrameMutex;
     FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
     FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
@@ -190,25 +190,19 @@ void startProgram(int64_t progrIdx)
             mRxFrameController.setDecodedFramesQueue(&mVidFramesDecoded);
         }
 
-        if (!mCapturePacketsThread.joinable())
-        {
-            mCapturePacketsThread = std::thread([](){
+        mCapturePacketsThread.start([](bool stop){
                 for (;;)
                 {
                     ProgramRx->capturePackets();
                 }
             });
-        }
 
-        if (!mRxFrameControllerThread.joinable())
-        {
-            mRxFrameControllerThread = std::thread([](){
-                for (;;)
-                {
-                    mRxFrameController.run();
-                }
-            });
-        }
+        mRxFrameControllerThread.start([](bool stop){
+            for (;;)
+            {
+                mRxFrameController.run();
+            }
+        });
     }
 }
 

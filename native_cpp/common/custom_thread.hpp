@@ -15,6 +15,7 @@ public:
     template <typename Callback, typename... Args>
     bool start(Callback cb, Args ...arg)
     {
+#if 0
         if (mThread.joinable())
         {
             mStop = true;
@@ -22,6 +23,7 @@ public:
         }
 
         mStop = false;
+#endif
         if (!mThread.joinable())
         {
             auto lambda = [this](Callback cb, Args... arg){
