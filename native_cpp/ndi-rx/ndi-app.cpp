@@ -64,18 +64,17 @@ bool NdiApp::capturePackets()
 
 bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 {
-    NDIlib_video_frame_v2_t* video = (NDIlib_video_frame_v2_t*)malloc(sizeof(NDIlib_video_frame_v2_t));
-    NDIlib_audio_frame_v3_t* audio = (NDIlib_audio_frame_v3_t*)malloc(sizeof(NDIlib_audio_frame_v3_t));
-    NDIlib_metadata_frame_t* meta = (NDIlib_metadata_frame_t*)malloc(sizeof(NDIlib_metadata_frame_t));
+    //NDIlib_video_frame_v2_t* video = (NDIlib_video_frame_v2_t*)malloc(sizeof(NDIlib_video_frame_v2_t));
 
-    NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video, audio, meta, 1000);
+    std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
+    std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
+    std::unique_ptr<NDIlib_metadata_frame_t> meta = std::make_unique<NDIlib_metadata_frame_t>();
+
+    NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 1000);
 
     switch (ret)
     {
         case NDIlib_frame_type_none:
-            free(video);
-            free(audio);
-            free(meta);
             break;
 
         case NDIlib_frame_type_video:
@@ -89,18 +88,14 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
                     if (!userData) { return; }
                     auto video = (NDIlib_video_frame_v2_t*)userData;
                     NDIlib_recv_free_video_v2(rxInst->src(), video);
-                    free(video);
+                    delete(video);
                 };
-                receivedPack(video, releaseCb);
-                free(audio);
+                receivedPack(std::move(video), releaseCb);
             }
             else
             {
-                NDIlib_recv_free_video_v2(rxInst->src(), video);
-                free(video);
-                free(audio);
+                NDIlib_recv_free_video_v2(rxInst->src(), video.get());
             }
-            free(meta);
             break;
         }
 
@@ -112,19 +107,14 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
                 if (!userData) { return; }
                 auto audio = (NDIlib_audio_frame_v3_t*)userData;
                 NDIlib_recv_free_audio_v3(rxInst->src(), audio);
-                free(audio);
+                delete(audio);
             };
-            receivedPack(audio, releaseCb);
-            free(video);
-            free(meta);
+            receivedPack(std::move(audio), releaseCb);
             break;
         }
 
         case NDIlib_frame_type_metadata:
-            NDIlib_recv_free_metadata(rxInst->src(), meta);
-            free(video);
-            free(audio);
-            free(meta);
+            NDIlib_recv_free_metadata(rxInst->src(), meta.get());
             break;
 
         case NDIlib_frame_type_error:
@@ -132,9 +122,6 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
             break;
 
         default:
-            free(video);
-            free(audio);
-            free(meta);
             break;
     }
     return true;
@@ -165,20 +152,20 @@ void NdiApp::removeObserver(InputPacketsObserver* obs)
 }
 
 template <typename T>
-void NdiApp::receivedPack(T *pack, std::function<void(void* userData)> releaseCb)
+void NdiApp::receivedPack(std::unique_ptr<T> pack, std::function<void(void* userData)> releaseCb)
 {
     if constexpr (std::is_same_v<T, NDIlib_video_frame_v2_t>)
     {
         for (auto& el: mInputPacketsObservers)
         {
-            el->receivedVideoPack(pack, releaseCb);
+            el->receivedVideoPack(std::move(pack), releaseCb);
         }
     }
     else if constexpr (std::is_same_v<T, NDIlib_audio_frame_v3_t>)
     {
         for (auto& el: mInputPacketsObservers)
         {
-            el->receivedAudioPack(pack, releaseCb);
+            el->receivedAudioPack(std::move(pack), releaseCb);
         }
     }
 }

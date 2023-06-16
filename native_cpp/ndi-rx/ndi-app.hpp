@@ -92,6 +92,6 @@ private:
     bool captureBlock(std::shared_ptr<RecvClass> rxInst); // a blocking function
 
     template<typename T>
-    void receivedPack(T *pack, std::function<void(void* userData)>);
+    void receivedPack(std::unique_ptr<T> pack, std::function<void(void* userData)>);
     std::set<InputPacketsObserver*> mInputPacketsObservers;
 };

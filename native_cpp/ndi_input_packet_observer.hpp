@@ -24,10 +24,8 @@ public:
         , mIsFirstFrame(true)
     {}
 
-    void receivedVideoPack(NDIlib_video_frame_v2_t *video, std::function<void(void* userData)> releaseCb) override
+    void receivedVideoPack(std::unique_ptr<NDIlib_video_frame_v2_t> video, std::function<void(void* userData)> releaseCb) override
     {
-//        DBG_NDI_INP_OBS("receivedVideoPack:%p\n", video);
-
         if (!video)
         {
             return;
@@ -48,8 +46,9 @@ public:
                 DBG_NDI_INP_OBS("Empty payload\n");
                 if (releaseCb)
                 {
-                    releaseCb(video);
+                    releaseCb(video.release());
                 }
+                return;
             }
             else
             {
@@ -100,7 +99,6 @@ public:
                     frame.sps = std::move(sps);
                     frame.pps = std::move(pps);
 
-                    frame.opaque = (void*)video;
                     frame.xres = video->xres;
                     frame.yres = video->yres;
                     frame.fourCC = __builtin_bswap32(video->FourCC);
@@ -133,6 +131,8 @@ public:
                     break;
                     }
 
+                    frame.opaque = (void*)video.release();
+
                     mVideoRxQueue.push(std::make_pair(frame, releaseCb));
                 }
             }
@@ -140,26 +140,28 @@ public:
         else
         {
             FrameQueue::VideoFrameStr frame;
-            frame.opaque = (void*)video;
             frame.data = video->p_data;
             frame.fourCC = video->FourCC;
             frame.stride = video->line_stride_in_bytes;
             frame.xres = video->xres;
             frame.yres = video->yres;
+            frame.opaque = (void*)video.release();
+
             mVideoRxQueue.push(std::make_pair(frame, releaseCb));
         }
     }
 
-    void receivedAudioPack(NDIlib_audio_frame_v3_t *audio, std::function<void(void* userData)> releaseCb) override
+    void receivedAudioPack(std::unique_ptr<NDIlib_audio_frame_v3_t> audio, std::function<void(void* userData)> releaseCb) override
     {
 
         FrameQueue::AudioFrameStr frame;
-        frame.opaque = (void*)audio;
         frame.chanNo = audio->no_channels;
         frame.samplesNo = audio->no_samples;
         frame.samples = audio->p_data;
         // TODO: check FOURCC here to figure out the right stride
         frame.stride = audio->channel_stride_in_bytes;
+        frame.opaque = (void*)audio.release();
+
         mAudioRxQueue.push(std::make_pair(frame, releaseCb));
     }
 
