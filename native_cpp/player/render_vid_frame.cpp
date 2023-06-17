@@ -12,6 +12,13 @@
 #include <memory>
 #include <cassert>
 
+#define _DBG_RENDER
+#ifdef _DBG_RENDER
+    #define DBG_RENDER(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_RENDER(format, ...)
+#endif
+
 namespace
 {
 // candidate to be removed
@@ -27,10 +34,12 @@ namespace
         reqTextCb = cb;
     }
 
-    void requestTexture(void* userData)
+    bool mIsCompressed = false;
+    void requestTexture(void* userData, bool isCompressed)
     {
         LOGW("requestTexture:%p\n", userData);
         // It is important to request the texture form the same thread which will be used for rendering
+        mIsCompressed = isCompressed;
         if (reqTextCb)
         {
             reqTextCb();
@@ -118,15 +127,24 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj, jobject surfaceTexture)
 {
+#if 0
     auto resolution = getRenderVidFrame()->getOutDim();
+#endif
     mWindow = ANativeWindow_fromSurface(env, surfaceTexture);
-    ANativeWindow_setBuffersGeometry(mWindow, resolution.first, resolution.second, WINDOW_FORMAT_RGBA_8888);
+    auto xRes = ANativeWindow_getWidth(mWindow);
+    auto yRes = ANativeWindow_getHeight(mWindow);
+    getRenderVidFrame()->setOutDim(xRes, yRes);
+
+    ANativeWindow_setBuffersGeometry(mWindow, xRes, yRes, WINDOW_FORMAT_RGBA_8888);
 
     LOGW("NativeWindowType:%p\n", mWindow);
 
-    getVideoDecoder()->init(mWindow);
-    getVideoDecoder()->create(getVideoDecoder()->getCodecFourCC());
-    getVideoDecoder()->configure();
+    if (mIsCompressed)
+    {
+        getVideoDecoder()->init(mWindow);
+        getVideoDecoder()->create(getVideoDecoder()->getCodecFourCC());
+        getVideoDecoder()->configure();
+    }
 }
 
 //////////////////////////////////////////////////
@@ -134,6 +152,8 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
 
 void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size)
 {
+    DBG_RENDER("onRender, mWindow:%p, frameBytes:%p, size:%d\n", mWindow, frameBytes.get(), size);
+
     if (!frameBytes || !size)
     {
         //nothing to do
@@ -142,18 +162,15 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
 
     {
         std::lock_guard lk(mRenderMutex);
-        if (!mWindow)
+        if (!::mWindow)
         {
-            if (auto [w, h] = getOutDim(); w != 0 && h != 0)
-            {
-                requestTexture(this);
-            }
+            requestTexture(this, false);
         }
-        if (mWindow)
+        if (::mWindow)
         {
             ANativeWindow_Buffer buffer;
             ARect inOutDirtyBounds;
-            auto ret = ANativeWindow_lock(mWindow, &buffer, &inOutDirtyBounds);
+            auto ret = ANativeWindow_lock(::mWindow, &buffer, &inOutDirtyBounds);
             if (0 != ret)
             {
                 LOGE("ANativeWindow_lock fail:0x%lx\n", ret);
@@ -169,7 +186,7 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
                 }
                 LOGW("buffer.width:%d, buffer.height:%d\n", buffer.width, buffer.height);
                 // Unlock ANativeWindow
-                ANativeWindow_unlockAndPost(mWindow);
+                ANativeWindow_unlockAndPost(::mWindow);
             }
         }
     }

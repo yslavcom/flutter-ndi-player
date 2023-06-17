@@ -25,7 +25,7 @@ typedef struct AMediaCodecOnAsyncNotifyCallback {
 } AMediaCodecOnAsyncNotifyCallback;
 */
 
-using RequestSetupCb = std::function<void(void*)>;
+using RequestSetupCb = std::function<void(void*, bool isCompressed)>;
 
 class AndroidDecoder final: public Video::Decoder
 {

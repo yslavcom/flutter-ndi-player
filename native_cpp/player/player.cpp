@@ -55,7 +55,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
     auto [xRes, yRes] = mRenderVidFrameObserver->getOutDim();
     if (!xRes || !yRes)
     {
-        DBG_PLAYER("Bad dimensions\n");
+        DBG_PLAYER("Bad dimensions: %d/%d\n", xRes, yRes);
     }
     // render the frame
     if (xRes && yRes)

@@ -53,11 +53,6 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
     while(!mTerminateProcessFrames)
     {
-        //std::unique_lock<std::mutex> lock(mDecMu, std::try_to_lock);
-        //if (!lock.owns_lock())
-        //{
-        //    continue;
-        //}
         if (!mVideoDecoder->isStarted())
         {
             mVideoDecoder->start();
@@ -72,22 +67,10 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             FrameQueue::VideoFrame frame;
             mVidFramesToDecode->read(frame);
             auto& compressedFrame = std::get<FrameQueue::VideoFrameCompressedStr>(frame.first);
-//            DBG_DECLOOP("Decode frame:%d\n", compressedFrame.dataSizeBytes);
             auto buf = compressedFrame.p_data;
 
             if (!mTerminateProcessFrames)
             {
-//relock1:
-//                std::unique_lock<std::mutex> lock(mDecMu, std::try_to_lock);
-//                if (!lock.owns_lock())
-//                {
-//                    if (!mTerminateProcessFrames)
-//                    {
-//                        break;
-//                    }
-//                    else goto relock1;
-//                }
-//
                 mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
 
                 // keep pushing the rame while decoder is rerady to accept it
@@ -98,16 +81,6 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
         if (!mTerminateProcessFrames)
         {
-//relock2:
-//                std::unique_lock<std::mutex> lock(mDecMu, std::try_to_lock);
-//                if (!lock.owns_lock())
-//                {
-//                    if (!mTerminateProcessFrames)
-//                    {
-//                        break;
-//                    }
-//                    else goto relock2;
-//                }
             mVideoDecoder->retrieveFrame();
         }
     }

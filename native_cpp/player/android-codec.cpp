@@ -359,7 +359,7 @@ void AndroidDecoder::requestSetup()
     DBG_ANDRDEC("AndroidDecoder::requestSetup set: %d\n", mRequestSetupCb ? true : false);
     if (mRequestSetupCb)
     {
-        mRequestSetupCb(this);
+        mRequestSetupCb(this, true);
     }
     else
     {
