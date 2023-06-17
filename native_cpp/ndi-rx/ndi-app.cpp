@@ -58,6 +58,9 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
     // Connect to our sources
     NDIlib_recv_connect(mRecvInst->src(), &ndiSources);
 
+    // Request the key frame
+    NDIlib_recv_request_keyframe(mRecvInst->src());
+
     return true;
 }
 
