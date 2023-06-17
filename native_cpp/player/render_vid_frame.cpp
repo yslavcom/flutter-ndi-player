@@ -127,9 +127,6 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj, jobject surfaceTexture)
 {
-#if 0
-    auto resolution = getRenderVidFrame()->getOutDim();
-#endif
     mWindow = ANativeWindow_fromSurface(env, surfaceTexture);
     auto xRes = ANativeWindow_getWidth(mWindow);
     auto yRes = ANativeWindow_getHeight(mWindow);
@@ -195,17 +192,6 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
 std::pair<unsigned, unsigned> RenderVidFrame::getOutDim() const
 {
     return {mXres, mYres};
-}
-
-void RenderVidFrame::cleanup(uint8_t* ptr)
-{
-    //TODO: call 'cleanup' from kotlin when done rendering the frame
-    auto it = mCleanupMemPtr.find(ptr);
-    if (it != mCleanupMemPtr.cend())
-    {
-        LOGW("Cleanup:%p\n", ptr);
-        delete [] *it;
-    }
 }
 
 void RenderVidFrame::setDecoder(Video::Decoder* decoder)

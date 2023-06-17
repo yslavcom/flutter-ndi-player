@@ -15,7 +15,6 @@ public:
         , mVideoDecoder(nullptr)
     {}
 
-    void cleanup(uint8_t* ptr);
     void setOutDim(unsigned xRes, unsigned yRes)
     {
         mXres = xRes;

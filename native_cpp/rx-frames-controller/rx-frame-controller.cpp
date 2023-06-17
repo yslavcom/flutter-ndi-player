@@ -40,15 +40,26 @@ void RxFrameController::uninstallAudioFrameObs(AudioFrameObserver* obs)
 void RxFrameController::run()
 {
     processVideoQueue();
-    processDecodedVideoQueue();
-
     processAudioQueue();
+
+    checkFramesCountInTime();
 }
 
-void RxFrameController::setDecodedFramesQueue(FrameQueue::VideoRx* decodedFramesQueue)
+void RxFrameController::checkFramesCountInTime()
 {
-    std::lock_guard lk(mDecodedQueueInstallMu);
-    mVidFramesDecoded = decodedFramesQueue;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
+    if (elapsed.count() >= 1000.0)
+    {
+        mTimeRefr = now;
+
+        if (!mFrameCount)
+        {
+            //request key frame
+            //xxx;
+        }
+        mFrameCount = 0;
+    }
 }
 
 void RxFrameController::processVideoQueue()
@@ -63,33 +74,14 @@ void RxFrameController::processVideoQueue()
             {
                 el->onFrame(&frame, queue.getCount());
             }
-        }
 
-        // It must be cleaned after all observers had a chance to process the frame
-        if (frame.second)
-        {
-            FrameQueue::release(frame.first, frame.second);
-        }
-    }
-}
-
-void RxFrameController::processDecodedVideoQueue()
-{
-    std::lock_guard lk(mDecodedQueueInstallMu);
-    if (!mVidFramesDecoded)
-    {
-        return;
-    }
-    auto& queue = *mVidFramesDecoded;
-    if (queue.getCount())
-    {
-        FrameQueue::VideoFrame frame;
-        if (queue.read(frame))
-        {
-            for (auto& el: mVideoFrameObservers)
+            // It must be cleaned after all observers had a chance to process the frame
+            if (frame.second)
             {
-                el->onFrame(&frame, queue.getCount());
+                FrameQueue::release(frame.first, frame.second);
             }
+
+            mFrameCount++;
         }
     }
 }

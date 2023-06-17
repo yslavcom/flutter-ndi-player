@@ -26,12 +26,6 @@ std::optional<ServiceInfo> tryParseServiceInfo(const uint8_t * data, size_t sz, 
         ServiceInfo si{};
         si.fourcc = fourcc;
 
-#if 0
-        printBuf(data, hdrSz);
-        printBuf(data+hdrSz, 128);
-        printBuf(data+hdrSz+128, 128);
-#endif
-
         // save each NAL in vector
         auto buffer = data + hdrSz;
         auto bufferSize = sz - hdrSz;

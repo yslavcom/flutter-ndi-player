@@ -187,7 +187,6 @@ void startProgram(int64_t progrIdx)
             getRenderVidFrame()->setDecoder(videoDecoder);
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());
-            mRxFrameController.setDecodedFramesQueue(&mVidFramesDecoded);
         }
 
         mCapturePacketsThread.start([](bool stop){

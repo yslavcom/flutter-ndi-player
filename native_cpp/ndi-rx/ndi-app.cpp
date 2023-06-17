@@ -17,8 +17,8 @@
     #define DBG_NDI_APP(format, ...)
 #endif
 
-static constexpr bool mUncompressed = true;
-//static constexpr bool mUncompressed = false;
+//static constexpr bool mUncompressed = true;
+static constexpr bool mUncompressed = false;
 
 NdiApp::NdiApp()
 {

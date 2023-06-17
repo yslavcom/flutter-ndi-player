@@ -210,13 +210,6 @@ bool AndroidDecoder::configure()
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_WIDTH, mXres);
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_HEIGHT, mYres);
 
-#if 0
-    // not sure about csdName in AMediaFormat_setBuffer
-    AMediaFormat_setBuffer(mFormat, mCsdDataSps.name.c_str(), mCsdDataSps.data.data(), mCsdDataSps.data.size()); // Optional codec-specific data
-    AMediaFormat_setBuffer(mFormat, mCsdDataPps.name.c_str(), mCsdDataPps.data.data(), mCsdDataPps.data.size()); // Optional codec-specific data
-#endif
-
-
     DBG_ANDRDEC("AMediaCodec_configure:%p, %p, %p\n", mCodec, mFormat, mNativeWindow);
     media_status_t ret = AMediaCodec_configure(mCodec, mFormat, mNativeWindow, nullptr, 0);
     DBG_ANDRDEC("AMediaCodec_configure result:%d\n", ret);
