@@ -82,4 +82,7 @@ private:
     RequestSetupCb mRequestSetupCb;
 
     std::mutex mDecMu;
+
+    static void AMediaCodecOnFrameRendered(AMediaCodec *codec, void *userdata, int64_t mediaTimeUs, int64_t systemNano);
+    void MediaCodecOnFrameRendered(AMediaCodec *codec, int64_t mediaTimeUs, int64_t systemNano);
 };

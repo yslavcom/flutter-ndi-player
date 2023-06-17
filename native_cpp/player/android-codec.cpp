@@ -163,7 +163,7 @@ bool AndroidDecoder::create(uint32_t fourcc)
     }
 
     mCodec = AMediaCodec_createDecoderByType(mH264Type);
-    DBG_ANDRDEC("mCodec:%p\n", mCodec);
+    DBG_ANDRDEC("mCodec:%p, fourcc:%lx\n", mCodec, fourcc);
     if (!mCodec) return false;
 
 #if 0
@@ -174,6 +174,9 @@ bool AndroidDecoder::create(uint32_t fourcc)
     callback.onAsyncError = &AndroidDecoder::onAsyncError;
     AMediaCodec_setAsyncNotifyCallback(mCodec, callback, this);
 #endif
+
+//    AMediaCodec_setOnFrameRenderedCallback(mCodec, &AndroidDecoder::AMediaCodecOnFrameRendered, this);
+
     mFormat = AMediaFormat_new();
     DBG_ANDRDEC("mFormat:%p\n", mFormat);
     if (!mFormat) return false;
@@ -389,6 +392,22 @@ void AndroidDecoder::diagnostics(void* userData)
     auto self = (AndroidDecoder*)userData;
     auto isRecoverable = AMediaCodecActionCode_isRecoverable(self->mCodec);
     auto isTransient =  AMediaCodecActionCode_isTransient(self->mCodec);
-#endif
     DBG_ANDRDEC("isRecoverable:%d, isTransient:%d\n", 0, 0);
+#endif
+}
+
+void AndroidDecoder::AMediaCodecOnFrameRendered(AMediaCodec *codec, void *userdata, int64_t mediaTimeUs, int64_t systemNano)
+{
+    if (userdata)
+    {
+        reinterpret_cast<AndroidDecoder*>(userdata)->MediaCodecOnFrameRendered(codec, mediaTimeUs, systemNano);
+    }
+}
+
+void AndroidDecoder::MediaCodecOnFrameRendered(AMediaCodec *codec, int64_t mediaTimeUs, int64_t systemNano)
+{
+    if (codec)
+    {
+        DBG_ANDRDEC("MediaCodecOnFrameRendered, mediaTimeUs:%d, systemNano:%d\n", mediaTimeUs, systemNano);
+    }
 }
