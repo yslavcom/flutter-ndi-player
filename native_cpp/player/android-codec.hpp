@@ -10,6 +10,7 @@
 #include <memory>
 #include <functional>
 #include <queue>
+#include <mutex>
 
 class AMediaCodec;
 class AMediaFormat;
@@ -42,10 +43,12 @@ public:
     virtual void release() override;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) override;
     virtual bool isReady() const override;
+    virtual bool isStarted() const override;
     virtual bool retrieveFrame() override;
     virtual void init(void* nativeWindow) override;
     virtual void requestSetup() override;
     virtual void setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps) override;
+    virtual void diagnostics(void* userData) override;
 
 private:
 
@@ -77,4 +80,6 @@ private:
     std::unique_ptr<DecoderLoop> mDecoderLoop;
 
     RequestSetupCb mRequestSetupCb;
+
+    std::mutex mDecMu;
 };

@@ -4,11 +4,12 @@
 #include "common/frame-queue.hpp"
 
 #include <future>
+#include <mutex>
 
 class DecoderLoop
 {
 public:
-    DecoderLoop(Video::Decoder* decoder, FrameQueue::VideoRx* vidFramesToDecode, FrameQueue::VideoRx* decodedVideoFrames);
+    DecoderLoop(Video::Decoder* decoder, std::mutex& decMu, FrameQueue::VideoRx* vidFramesToDecode, FrameQueue::VideoRx* decodedVideoFrames);
     ~DecoderLoop();
     bool run();
 
@@ -26,5 +27,11 @@ private:
 
     Statistics processFrames();
     std::future<Statistics> mProcessFramesRes;
+
+    void diagnostics();
+    std::future<void> mDiagnostics;
+
     std::atomic<bool> mTerminateProcessFrames;
+
+    std::mutex& mDecMu;
 };

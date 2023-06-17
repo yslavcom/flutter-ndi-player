@@ -36,11 +36,13 @@ public:
     virtual void release() = 0;
     virtual bool enqueueFrame(const uint8_t* frameBuf, size_t frameSize) = 0;
     virtual bool isReady() const = 0;
+    virtual bool isStarted() const = 0;
     virtual void requestSetup() = 0;
 
     virtual bool retrieveFrame() = 0;
 
     virtual void init(void* nativeWindow) = 0;
+    virtual void diagnostics(void* userData) = 0;
 
     void setVidFramesToDecode(FrameQueue::VideoRx* vidFramesToDecode)
     {

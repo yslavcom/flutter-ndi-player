@@ -1,6 +1,8 @@
 #include "decoder-loop.hpp"
 #include "common/logger.hpp"
 
+#include <chrono>
+
 #define _DBG_DECLOOP
 
 #ifdef _DBG_DECLOOP
@@ -9,11 +11,12 @@
     #define DBG_DECLOOP(format, ...)
 #endif
 
-DecoderLoop::DecoderLoop(Video::Decoder* decoder, FrameQueue::VideoRx* vidFramesToDecode, FrameQueue::VideoRx* decodedVideoFrames)
+DecoderLoop::DecoderLoop(Video::Decoder* decoder, std::mutex& decMu, FrameQueue::VideoRx* vidFramesToDecode, FrameQueue::VideoRx* decodedVideoFrames)
     : mVideoDecoder(decoder)
     , mVidFramesToDecode(vidFramesToDecode)
     , mDecodedVideoFrames(decodedVideoFrames)
     , mTerminateProcessFrames{false}
+    , mDecMu(decMu)
 {
     DBG_DECLOOP("DecoderLoop:%p, %p, %p\n", mVideoDecoder, mVidFramesToDecode, mDecodedVideoFrames);
 }
@@ -22,11 +25,13 @@ DecoderLoop::~DecoderLoop()
 {
     DBG_DECLOOP("~DecoderLoop START\n");
     mTerminateProcessFrames = true;
-    mProcessFramesRes.get();
+    auto stats = mProcessFramesRes.get();
+    LOGW("stats, frames decoded:%d\n", stats.framesDecoded);
     if (mDecodedVideoFrames)
     {
         mDecodedVideoFrames->flush();
     }
+    mDiagnostics.get();
     DBG_DECLOOP("~DecoderLoop END\n");
 }
 
@@ -38,6 +43,7 @@ bool DecoderLoop::run()
         return false;
     }
     mProcessFramesRes = std::async(std::launch::async, &DecoderLoop::processFrames, this);
+    mDiagnostics = std::async(std::launch::async, &DecoderLoop::diagnostics, this);
     return true;
 }
 
@@ -47,7 +53,12 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
     while(!mTerminateProcessFrames)
     {
-        if (mVidFramesToDecode->getCount())
+        //std::unique_lock<std::mutex> lock(mDecMu, std::try_to_lock);
+        //if (!lock.owns_lock())
+        //{
+        //    continue;
+        //}
+        if (!mVideoDecoder->isStarted())
         {
             mVideoDecoder->start();
             break;
@@ -66,18 +77,55 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
             if (!mTerminateProcessFrames)
             {
+//relock1:
+//                std::unique_lock<std::mutex> lock(mDecMu, std::try_to_lock);
+//                if (!lock.owns_lock())
+//                {
+//                    if (!mTerminateProcessFrames)
+//                    {
+//                        break;
+//                    }
+//                    else goto relock1;
+//                }
+//
                 mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
 
                 // keep pushing the rame while decoder is rerady to accept it
                 while(!mTerminateProcessFrames && !mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
+                stats.framesDecoded ++;
             }
         }
 
         if (!mTerminateProcessFrames)
         {
+//relock2:
+//                std::unique_lock<std::mutex> lock(mDecMu, std::try_to_lock);
+//                if (!lock.owns_lock())
+//                {
+//                    if (!mTerminateProcessFrames)
+//                    {
+//                        break;
+//                    }
+//                    else goto relock2;
+//                }
             mVideoDecoder->retrieveFrame();
         }
     }
 
     return stats;
+}
+
+void DecoderLoop::diagnostics()
+{
+    for(;;)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+        mVideoDecoder->diagnostics(mVideoDecoder);
+
+        if (mTerminateProcessFrames)
+        {
+            return;
+        }
+    }
 }

@@ -47,6 +47,7 @@ void AndroidDecoder::release()
     {
         if (mIsStarted)
         {
+            AMediaCodec_signalEndOfInputStream(mCodec);
             stop();
             AMediaCodec_flush(mCodec);
         }
@@ -151,6 +152,8 @@ void AndroidDecoder::onAsyncError(AMediaCodec *codec, media_status_t error, int3
 
 bool AndroidDecoder::create(uint32_t fourcc)
 {
+//    std::lock_guard lk(mDecMu);
+
     H26x::FourCC fourCC(fourcc);
     if (fourCC != "H264")
     {
@@ -193,6 +196,8 @@ void AndroidDecoder::setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pp
 
 bool AndroidDecoder::configure()
 {
+//    std::lock_guard lk(mDecMu);
+
     DBG_ANDRDEC("AndroidDecoder::configure, isValid:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
         isValid(), mH264Type, mXres, mYres);
 
@@ -224,7 +229,6 @@ bool AndroidDecoder::configure()
 
 bool AndroidDecoder::start()
 {
-
     DBG_ANDRDEC("Decoder start\n");
     media_status_t ret = AMediaCodec_start(mCodec);
     mIsStarted = ret == AMEDIA_OK;
@@ -233,6 +237,8 @@ bool AndroidDecoder::start()
 
 bool AndroidDecoder::stop()
 {
+//    std::lock_guard lk(mDecMu);
+
     DBG_ANDRDEC("Decoder stop\n");
     media_status_t ret = AMediaCodec_stop(mCodec);
     mIsStarted = false; // regardless of the code returned, clear the started flag
@@ -262,6 +268,10 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
                 memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
                 // DBG_ANDRDEC("Enqueue input buffer, codec:%p, idx:%d, size:%d, presentationTimeUs:%d\n", mCodec, inputIndex, frameSize, presentationTimeUs);
                 media_status_t ret = AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
+                if (ret != AMEDIA_OK)
+                {
+                    DBG_ANDRDEC_ERR("Fail AMediaCodec_queueInputBuffertIndex:%d\n", ret);
+                }
                 return ret == AMEDIA_OK;
             }
         }
@@ -326,12 +336,14 @@ bool AndroidDecoder::retrieveFrame()
 
 void AndroidDecoder::init(void* nativeWindow)
 {
+//    std::lock_guard lk(mDecMu);
+
     if (!mDecoderLoop)
     {
         DBG_ANDRDEC("AndroidDecoder::init:%p\n", nativeWindow);
         mNativeWindow = reinterpret_cast<ANativeWindow *>(nativeWindow);
 
-        mDecoderLoop.reset(new DecoderLoop(this, mVidFramesToDecode, mDecodedVideoFrames));
+        mDecoderLoop.reset(new DecoderLoop(this, mDecMu, mVidFramesToDecode, mDecodedVideoFrames));
 
         DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
 
@@ -360,4 +372,23 @@ bool AndroidDecoder::isReady() const
 bool AndroidDecoder::isValid() const
 {
     return mIsSurfaceWindow;
+}
+
+bool AndroidDecoder::isStarted() const
+{
+    return mIsStarted;
+}
+
+void AndroidDecoder::diagnostics(void* userData)
+{
+    if (!userData)
+    {
+        return;
+    }
+#if 0
+    auto self = (AndroidDecoder*)userData;
+    auto isRecoverable = AMediaCodecActionCode_isRecoverable(self->mCodec);
+    auto isTransient =  AMediaCodecActionCode_isTransient(self->mCodec);
+#endif
+    DBG_ANDRDEC("isRecoverable:%d, isTransient:%d\n", 0, 0);
 }
