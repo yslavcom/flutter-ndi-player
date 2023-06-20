@@ -1,5 +1,6 @@
 import 'texture_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class PlayerTex extends StatefulWidget {
   const PlayerTex({super.key});
@@ -19,6 +20,10 @@ class _PlayerTexState extends State<PlayerTex> {
   @override
   initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
 
     initializeController();
   }
@@ -27,6 +32,12 @@ class _PlayerTexState extends State<PlayerTex> {
   void dispose() {
     _controller.dispose();
 
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     super.dispose();
   }
 
