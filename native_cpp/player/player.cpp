@@ -8,7 +8,7 @@
 #include <type_traits>
 
 
-// #define _DBG_PLAYER
+#define _DBG_PLAYER
 #ifdef _DBG_PLAYER
     #define DBG_PLAYER(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
@@ -52,6 +52,8 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
         DBG_PLAYER("Missing frame observer\n");
         return;
     }
+    // Apple test pattern generator sends frame just once when the dimensions are still unknown.
+    // It should be resolved after refactoring the GUI
     auto [xRes, yRes] = mRenderVidFrameObserver->getOutDim();
     if (!xRes || !yRes)
     {
