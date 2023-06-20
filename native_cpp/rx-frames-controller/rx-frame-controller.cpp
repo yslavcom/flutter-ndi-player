@@ -56,7 +56,10 @@ void RxFrameController::checkFramesCountInTime()
         if (!mFrameCount)
         {
             //request key frame
-            //xxx;
+            if (mInputControl)
+            {
+                mInputControl->restart();
+            }
         }
         mFrameCount = 0;
     }

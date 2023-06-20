@@ -27,6 +27,8 @@ public:
     bool createReceiver(const std::string& name, const std::string& url, Quality quality);
     bool capturePackets();
 
+    void requestKeyFrame();
+
     void addObserver(InputPacketsObserver* obs);
     void removeObserver(InputPacketsObserver* obs);
 

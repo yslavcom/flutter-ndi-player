@@ -17,8 +17,8 @@
     #define DBG_NDI_APP(format, ...)
 #endif
 
-//static constexpr bool mUncompressed = true;
-static constexpr bool mUncompressed = false;
+static constexpr bool mUncompressed = true;
+// static constexpr bool mUncompressed = false;
 
 NdiApp::NdiApp()
 {
@@ -26,6 +26,15 @@ NdiApp::NdiApp()
 
 NdiApp::~NdiApp()
 {
+}
+
+void NdiApp::requestKeyFrame()
+{
+    if (mRecvInst)
+    {
+        DBG_NDI_APP("Request key frame\n");
+        NDIlib_recv_request_keyframe(mRecvInst->src());
+    }
 }
 
 bool NdiApp::createReceiver(const std::string& name, const std::string& url, Quality quality)
@@ -57,9 +66,6 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
 
     // Connect to our sources
     NDIlib_recv_connect(mRecvInst->src(), &ndiSources);
-
-    // Request the key frame
-    NDIlib_recv_request_keyframe(mRecvInst->src());
 
     return true;
 }

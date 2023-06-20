@@ -1,3 +1,5 @@
+#pragma once
+
 #include "interfaces/input-observer.hpp"
 
 #include "common/logger.hpp"
@@ -10,7 +12,7 @@ class NdiSrcObserver: public InputObserver
     using UiUpdateCb = std::function<int32_t(std::vector<std::string>)>;
 
 public:
-    void updateInputState(std::vector<std::string> inputNames)
+    virtual void updateInputState(std::vector<std::string> inputNames) override
     {
         mInputNames = inputNames;
         LOGW("%s\n", __func__);

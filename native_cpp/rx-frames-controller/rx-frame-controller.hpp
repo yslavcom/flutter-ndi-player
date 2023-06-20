@@ -2,6 +2,7 @@
 
 #include "common/frame-queue.hpp"
 #include "interfaces/frame_observer.hpp"
+#include "interfaces/input-control.hpp"
 
 #include <set>
 #include <mutex>
@@ -10,10 +11,12 @@
 class RxFrameController
 {
 public:
-    RxFrameController(FrameQueue::VideoRx& videoRxQueue, FrameQueue::AudioRx& audioRxQueue)
+    RxFrameController(FrameQueue::VideoRx& videoRxQueue, FrameQueue::AudioRx& audioRxQueue, InputControl* inputControl)
         : mVideoRxQueue(videoRxQueue)
         , mAudioRxQueue(audioRxQueue)
+        , mTimeRefr{std::chrono::steady_clock::now()}
         , mFrameCount(0)
+        , mInputControl(inputControl)
     {}
 
     void installVideoFrameObs(VideoFrameObserver* obs);
@@ -39,4 +42,6 @@ private:
 
     std::chrono::steady_clock::time_point mTimeRefr;
     unsigned mFrameCount;
+
+    InputControl* mInputControl;
 };

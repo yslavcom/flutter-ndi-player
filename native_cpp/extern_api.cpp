@@ -6,6 +6,7 @@
 #include "player/player.hpp"
 #include "player/codec.hpp"
 
+#include  "interfaces/input-control.hpp"
 #include  "rx-frames-controller/rx-frame-controller.hpp"
 
 #include "DartApiDL/include/dart_api_dl.c"
@@ -51,7 +52,7 @@ auto Scan = NdiRxScan::getInstance();
 NdiSrcObserver mNdiSrcObserver;
 
 // Start Program Rx Singleton
-class NdiRxProg
+class NdiRxProg: public InputControl
 {
 public:
     static NdiApp* getInstance()
@@ -59,6 +60,8 @@ public:
         std::call_once(mInitFlag, &NdiRxProg::buildInstance);
         return mNdiApp.get();
     }
+
+
 
 private:
     static std::unique_ptr<NdiApp> mNdiApp;
@@ -131,14 +134,24 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     Dart_PostCObject_DL(DartApiMessagePort, &obj);
 }
 
-    NdiApp::Quality mProgramQuality = NdiApp::Quality::High;
+NdiApp::Quality mProgramQuality = NdiApp::Quality::High;
 
-    std::unique_ptr<Player> mPlayer;
-    RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue);
-    CustomThread mRxFrameControllerThread;
-    std::mutex mVideoDecoderFrameMutex;
-    FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
-    FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
+std::unique_ptr<Player> mPlayer;
+
+class NdiInputControl: public InputControl
+{
+    // InputControl interface
+    virtual void restart() override
+    {
+        ProgramRx->requestKeyFrame();
+    }
+};
+NdiInputControl mNdiInputControl;
+RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue, &mNdiInputControl);
+CustomThread mRxFrameControllerThread;
+std::mutex mVideoDecoderFrameMutex;
+FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
+FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
 } // anonymous namespace
 
 EXPORT
