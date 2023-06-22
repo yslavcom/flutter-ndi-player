@@ -104,7 +104,7 @@ public:
                 release(el->first, el->second);
             }
         }
-        , 100)
+        , 500)
     {
     }
 

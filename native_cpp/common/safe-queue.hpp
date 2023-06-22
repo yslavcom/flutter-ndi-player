@@ -1,5 +1,7 @@
 #pragma once
 
+#include "logger.hpp"
+
 #include <queue>
 #include <mutex>
 #include <functional>
@@ -29,6 +31,7 @@ public:
         std::lock_guard lock(mMutex);
         if (mLIMIT > 0 && getCountUnsafe() > mLIMIT)
         {
+            LOGE("!!! Overflow\n");
             removeOldestElement();
         }
 

@@ -71,7 +71,7 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
             if (!mTerminateProcessFrames)
             {
-                mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
+        //        mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
 
                 // keep pushing the rame while decoder is rerady to accept it
                 while(!mTerminateProcessFrames && !mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
