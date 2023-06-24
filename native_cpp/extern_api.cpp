@@ -221,13 +221,14 @@ void startProgram(int64_t progrIdx)
 EXPORT
 void stopProgram(int64_t progrIdx)
 {
-#if 0
-    if (mPlayer)
-    {
-        mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
-        mPlayer = nullptr;
-    }
-#endif
+    (void*)progrIdx;
+
+    mRxFrameController.installVideoFrameObs(mPlayer.get());
+    mRxFrameController.uninstallAudioFrameObs(mPlayer.get());\
+
+    mPlayer = nullptr;
+    mVidFramesToDecode.flush();
+    ProgramRx->stopReceiver();
 }
 
 EXPORT

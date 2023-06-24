@@ -25,6 +25,7 @@ public:
     ~NdiApp();
 
     bool createReceiver(const std::string& name, const std::string& url, Quality quality);
+    bool stopReceiver();
     bool capturePackets();
 
     void requestKeyFrame();

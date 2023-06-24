@@ -71,6 +71,11 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
     return true;
 }
 
+bool NdiApp::stopReceiver()
+{
+    mRecvInst = nullptr;
+}
+
 bool NdiApp::capturePackets()
 {
     if (!mRecvInst)
