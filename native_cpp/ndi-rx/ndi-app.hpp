@@ -96,4 +96,6 @@ private:
     template<typename T>
     void receivedPack(std::unique_ptr<T> pack, std::function<void(void* userData)>);
     std::set<InputPacketsObserver*> mInputPacketsObservers;
+
+    bool mUncompressedShq;
 };

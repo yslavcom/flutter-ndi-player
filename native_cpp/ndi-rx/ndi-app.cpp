@@ -17,10 +17,8 @@
     #define DBG_NDI_APP(format, ...)
 #endif
 
-//static constexpr bool mUncompressed = true;
-static constexpr bool mUncompressed = false;
-
 NdiApp::NdiApp()
+    : mUncompressedShq(false)
 {
 }
 
@@ -44,13 +42,16 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
     // TODO: use NDIlib_recv_color_format_compressed_v5 to pass compressed video through without automatic decompression
     NDIlib_recv_create_v3_t recvDescHi{};
 
-    if (mUncompressed)
+    if (mUncompressedShq)
     {
-        recvDescHi.color_format = NDIlib_recv_color_format_fastest; // decompressed
+        // SHQ, decompressed
+        recvDescHi.color_format = NDIlib_recv_color_format_fastest;
     }
     else
     {
-        recvDescHi.color_format = (NDIlib_recv_color_format_e)NDIlib_recv_color_format_compressed_v5; // compressed
+        // Allow SpeedHQ frames, compressed H.264 frames, HEVC frames and HEVC/H264 with alpha, along with
+        // compressed audio frames and OPUS support.
+        recvDescHi.color_format = (NDIlib_recv_color_format_e)NDIlib_recv_color_format_ex_compressed_v5_with_audio;
     }
 
     recvDescHi.bandwidth = (quality == Quality::High) ? NDIlib_recv_bandwidth_highest : NDIlib_recv_bandwidth_lowest;

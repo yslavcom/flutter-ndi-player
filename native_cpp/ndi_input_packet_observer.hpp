@@ -31,7 +31,19 @@ public:
             return;
         }
 
-        bool compressed = isCompressed(video->FourCC);
+        uint32_t fourCC = __builtin_bswap32(video->FourCC);
+
+        auto optCompressed = isCompressed((NDIlib_FourCC_video_type_ex_e)video->FourCC);
+        if (!optCompressed.has_value())
+        {
+            // Display wanring about unkwown state?
+            return;
+        }
+        bool compressed = optCompressed.value();
+
+        /* 53485132 -> SHQ2, 55595659 -> UYVY*/
+
+        DBG_NDI_INP_OBS("receivedVideoPack, 4cc:%lx, compressed:%d\n", fourCC, compressed);
 
         if (compressed)
         {
@@ -101,7 +113,7 @@ public:
 
                     frame.xres = video->xres;
                     frame.yres = video->yres;
-                    frame.fourCC = __builtin_bswap32(video->FourCC);
+                    frame.fourCC = fourCC;
                     frame.frameRateN = video->frame_rate_N;
                     frame.frameRateD = video->frame_rate_D;
                     frame.aspectRatio = video->picture_aspect_ratio;
@@ -141,7 +153,7 @@ public:
         {
             FrameQueue::VideoFrameStr frame;
             frame.data = video->p_data;
-            frame.fourCC = video->FourCC;
+            frame.fourCC = fourCC;
             frame.stride = video->line_stride_in_bytes;
             frame.xres = video->xres;
             frame.yres = video->yres;
@@ -169,9 +181,76 @@ private:
     FrameQueue::VideoRx& mVideoRxQueue;
     FrameQueue::AudioRx& mAudioRxQueue;
 
-    bool isCompressed(NDIlib_FourCC_video_type_e type) const
+    std::optional<bool> isCompressed(NDIlib_FourCC_video_type_ex_e type) const
     {
         switch(type)
+        {
+    	// SpeedHQ formats at the highest bandwidth.
+    	case NDIlib_FourCC_type_SHQ0_highest_bandwidth:	// Backwards compatibility
+        case NDIlib_FourCC_type_SHQ2_highest_bandwidth:	// Backwards compatibility
+        case NDIlib_FourCC_type_SHQ7_highest_bandwidth:	// Backwards compatibility
+            return true;
+
+    	// SpeedHQ formats at the lowest bandwidth.
+        case NDIlib_FourCC_type_SHQ0_lowest_bandwidth:	// Backwards compatibility
+        case NDIlib_FourCC_type_SHQ2_lowest_bandwidth:	// Backwards compatibility
+        case NDIlib_FourCC_type_SHQ7_lowest_bandwidth:	// Backwards compatibility
+            return true;
+
+    	// If SpeedHQ 4:4:4 / 4:4:4:4 formats are desired, please contact ndi@newtek.com.
+
+    	// H.264 video at the highest bandwidth -- the data field is expected to be prefixed with the
+    	// NDIlib_compressed_packet_t structure.
+        case NDIlib_FourCC_type_H264_highest_bandwidth:	// Backwards compatibility
+
+    	// H.264 video at the lowest bandwidth -- the data field is expected to be prefixed with the
+    	// NDIlib_compressed_packet_t structure.
+        case NDIlib_FourCC_type_H264_lowest_bandwidth:	// Backwards compatibility
+
+    	// H.265/HEVC video at the highest bandwidth -- the data field is expected to be prefixed with
+    	// the NDIlib_compressed_packet_t structure.
+        case NDIlib_FourCC_type_HEVC_highest_bandwidth:	// Backwards compatibility
+
+    	// H.265/HEVC video at the lowest bandwidth -- the data field is expected to be prefixed with
+    	// the NDIlib_compressed_packet_t structure.
+        case NDIlib_FourCC_type_HEVC_lowest_bandwidth:	// Backwards compatibility
+
+    	// H.264 video at the highest bandwidth -- the data field is expected to be prefixed with the
+    	// NDIlib_compressed_packet_t structure.
+    	//
+    	// This version is basically a frame of double the height where to top part is the color and the bottom
+    	// half has the alpha channel (against chroma being gray).
+        case NDIlib_FourCC_type_h264_alpha_highest_bandwidth:	// Backwards compatibility
+
+    	// H.264 video at the lowest bandwidth -- the data field is expected to be prefixed with the
+    	// NDIlib_compressed_packet_t structure.
+    	//
+    	// This version is basically a frame of double the height where to top part is the color and the bottom
+    	// half has the alpha channel (against chroma being gray).
+        case NDIlib_FourCC_type_h264_alpha_lowest_bandwidth:	// Backwards compatibility
+
+    	// H.265/HEVC video at the highest bandwidth -- the data field is expected to be prefixed with
+    	// the NDIlib_compressed_packet_t structure.
+    	//
+    	// This version is basically a frame of double the height where to top part is the color and the bottom
+    	// half has the alpha channel (against chroma being gray).
+        case NDIlib_FourCC_type_HEVC_alpha_highest_bandwidth:	// Backwards compatibility
+
+    	// H.265/HEVC video at the lowest bandwidth -- the data field is expected to be prefixed with
+    	// the NDIlib_compressed_packet_t structure.
+    	//
+    	// This version is basically a frame of double the height where to top part is the color and the bottom
+    	// half has the alpha channel (against chroma being gray).
+        case NDIlib_FourCC_type_HEVC_alpha_lowest_bandwidth:	// Backwards compatibility
+            return true;
+
+    	// Make sure this is a 32-bit enumeration.
+    	case NDIlib_FourCC_video_type_ex_max:
+            // not sure here
+            break;
+        }
+
+        switch((NDIlib_FourCC_video_type_e)type)
         {
         case NDIlib_FourCC_type_UYVY:
         case NDIlib_FourCC_type_UYVA:
@@ -190,9 +269,10 @@ private:
 
         case NDIlib_FourCC_video_type_max:
             // not sure here
-            return true;
+            break;
         }
-        return true;
+
+        return {};
     }
 
     bool mIsFirstFrame;
