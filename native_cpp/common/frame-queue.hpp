@@ -1,6 +1,8 @@
 #pragma once
 
 #include "safe-queue.hpp"
+#include "logger.hpp"
+
 #include <functional>
 #include <variant>
 #include <vector>
@@ -99,10 +101,12 @@ public:
         : SafeQueue<T>(mu
         , [](T* el)
         {
+#if 0
             if (el && el->second)
             {
                 release(el->first, el->second);
             }
+#endif
         }
         , 500)
     {

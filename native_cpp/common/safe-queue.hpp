@@ -65,6 +65,7 @@ public:
     void clearQueue()
     {
         std::lock_guard lock(mMutex);
+        LOGW("clearQueue, getCountUnsafe:%d\n", getCountUnsafe());
         while (getCountUnsafe())
         {
             removeOldestElement();
@@ -82,8 +83,10 @@ private:
     {
         T val = mQueue.front();
         mQueue.pop();
+        LOGW("removeOldestElement, popped\n");
         if (mEraseElementCb)
         {
+            LOGW("removeOldestElement, mEraseElementCb\n");
             mEraseElementCb(&val);
         }
     }
