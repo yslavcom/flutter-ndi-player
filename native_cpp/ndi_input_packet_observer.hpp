@@ -43,7 +43,7 @@ public:
 
         /* 53485132 -> SHQ2, 55595659 -> UYVY*/
 
-        DBG_NDI_INP_OBS("receivedVideoPack, 4cc:%lx, compressed:%d\n", fourCC, compressed);
+        // DBG_NDI_INP_OBS("receivedVideoPack, 4cc:%lx, compressed:%d\n", fourCC, compressed);
 
         if (compressed)
         {

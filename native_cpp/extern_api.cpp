@@ -78,6 +78,8 @@ std::once_flag NdiRxProg::mInitFlag;
 auto ProgramRx = NdiRxProg::getInstance();
 CustomThread mCapturePacketsThread;
 
+std::optional<int64_t> mCurrentProgramIdx;
+
 std::mutex mFrameRxMutex;
 FrameQueue::VideoRx mVideoRxQueue(mFrameRxMutex);
 FrameQueue::AudioRx mAudioRxQueue(mFrameRxMutex);
@@ -178,9 +180,32 @@ int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
 }
 
 EXPORT
+void stopProgram(int64_t progrIdx)
+{
+    (void)progrIdx;
+
+    LOGW("stopProgram\n");
+
+    mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
+    mRxFrameController.uninstallAudioFrameObs(mPlayer.get());
+
+    mPlayer = nullptr;
+#if 0
+    mVidFramesToDecode.flush();
+    ProgramRx->stopReceiver();
+#endif
+}
+
+EXPORT
 void startProgram(int64_t progrIdx)
 {
     LOGW("%s:%ld\n", __func__, progrIdx);
+
+    if (mCurrentProgramIdx)
+    {
+        stopProgram(*mCurrentProgramIdx);
+    }
+    mCurrentProgramIdx = progrIdx;
 
     auto name = Scan->getSourceName(progrIdx);
     auto url = Scan->getSourceUrl(progrIdx);
@@ -216,19 +241,6 @@ void startProgram(int64_t progrIdx)
             }
         });
     }
-}
-
-EXPORT
-void stopProgram(int64_t progrIdx)
-{
-    (void*)progrIdx;
-
-    mRxFrameController.installVideoFrameObs(mPlayer.get());
-    mRxFrameController.uninstallAudioFrameObs(mPlayer.get());\
-
-    mPlayer = nullptr;
-    mVidFramesToDecode.flush();
-    ProgramRx->stopReceiver();
 }
 
 EXPORT

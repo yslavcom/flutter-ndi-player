@@ -108,7 +108,7 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
                 // push video to queue after checking for audio !!!
                 auto releaseCb = [this, rxInst](void* userData)
                 {
-                    // rxInst is owned by class object
+                    // rxInst is a shred pointer and is owned by class object
                     if (!userData) { return; }
                     auto video = (NDIlib_video_frame_v2_t*)userData;
                     NDIlib_recv_free_video_v2(rxInst->src(), video);
