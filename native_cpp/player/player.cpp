@@ -3,7 +3,9 @@
 #include "player.hpp"
 #include "common/logger.hpp"
 
+#ifdef ANDROID_PLATFORM
 #include <android_native_app_glue.h>
+#endif
 
 #include <type_traits>
 

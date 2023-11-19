@@ -3,6 +3,7 @@
 #include "source-container.hpp"
 #include "interfaces/input-observer.hpp"
 #include "common/custom_thread.hpp"
+#include <stddef.h>
 
 //#include <Processing.NDI.Lib.h>
 #include <Processing.NDI.Advanced.h>

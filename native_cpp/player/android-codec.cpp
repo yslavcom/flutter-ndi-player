@@ -1,3 +1,5 @@
+#ifdef ANDROID_PLATFORM
+
 #include "android-codec.hpp"
 #include "common/logger.hpp"
 
@@ -404,3 +406,5 @@ void AndroidDecoder::MediaCodecOnFrameRendered(AMediaCodec *codec, int64_t media
         DBG_ANDRDEC("MediaCodecOnFrameRendered, mediaTimeUs:%d, systemNano:%d\n", mediaTimeUs, systemNano);
     }
 }
+
+#endif // #ifdef ANDROID_PLATFORM

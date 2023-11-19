@@ -2,11 +2,13 @@
 #include "android-codec.hpp"
 #include "common/logger.hpp"
 
+#ifdef ANDROID_PLATFORM
 #include <jni.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <android/surface_texture.h>
 #include <android/surface_texture_jni.h>
+#endif // #ifdef ANDROID_PLATFORM
 
 #include <functional>
 #include <memory>
@@ -19,6 +21,7 @@
     #define DBG_RENDER(format, ...)
 #endif
 
+#ifdef ANDROID_PLATFORM
 namespace
 {
 // candidate to be removed
@@ -28,6 +31,9 @@ namespace
     const char* pathTex = "com/example/ndi_player/Texture";
     using ReqTextCb_t = std::function<void()>;
     ReqTextCb_t reqTextCb;
+
+    std::mutex mRenderMutex;
+    std::unique_ptr<RenderVidFrame> mRenderVidFrame;
 
     void setReqTextCb(ReqTextCb_t cb)
     {
@@ -48,8 +54,6 @@ namespace
 
     ANativeWindow* mWindow = nullptr;
 
-    std::mutex mRenderMutex;
-    std::unique_ptr<RenderVidFrame> mRenderVidFrame;
     std::unique_ptr<AndroidDecoder> mVidDecoder;
 }
 
@@ -143,14 +147,22 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
         getVideoDecoder()->configure();
     }
 }
+#else
+namespace // #ifdef ANDROID_PLATFORM
+{
+    std::mutex mRenderMutex;
+    std::unique_ptr<RenderVidFrame> mRenderVidFrame;
+    std::unique_ptr<LinuxDecoder> mVidDecoder;
+}
+#endif // #ifdef ANDROID_PLATFORM
 
 //////////////////////////////////////////////////
 // RenderVidFrame implementation
 
 void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size)
 {
+#ifdef ANDROID_PLATFORM
     DBG_RENDER("onRender, mWindow:%p, frameBytes:%p, size:%d\n", mWindow, frameBytes.get(), size);
-
     if (!frameBytes || !size)
     {
         //nothing to do
@@ -187,6 +199,7 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
             }
         }
     }
+#endif
 }
 
 std::pair<unsigned, unsigned> RenderVidFrame::getOutDim() const
@@ -215,7 +228,7 @@ Video::Decoder* getVideoDecoder()
 {
     if (!mVidDecoder)
     {
-#if 1 // ANDROID_OUT
+#ifdef ANDROID_PLATFORM
         mVidDecoder.reset(new AndroidDecoder(requestTexture));
 #else
         assert(false && "Setup video decoder for the platform");

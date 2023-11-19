@@ -1,7 +1,7 @@
 #include "logger.hpp"
 
 /////////////////////////////////////////////
-#if ANDROID_OUT
+#ifdef ANDROID_PLATFORM
 
 #include <android/log.h>
 #include <stdarg.h>
@@ -35,7 +35,7 @@ void LOGE(const char * format, ... )
 #endif
 
 /////////////////////////////////////////////
-#ifdef LINUX_OUT
+#ifdef LINUX_PLATFORM
 
 void LOGW(const char * format, ... )
 {

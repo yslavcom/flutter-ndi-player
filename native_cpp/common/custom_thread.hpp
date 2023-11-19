@@ -3,6 +3,7 @@
 #include "common/logger.hpp"
 
 #include <thread>
+#include <atomic>
 
 class CustomThread final
 {

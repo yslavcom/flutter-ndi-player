@@ -38,13 +38,12 @@ add_compile_options(-fPIC)
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 add_library(${TARGET_NAME} STATIC ${SOURCES})
 
-if (ANDROID)
-    target_compile_definitions(${TARGET_NAME} PRIVATE ANDROID_OUT=1)
-elseif (LINUX)
-    target_compile_definitions(${TARGET_NAME} PRIVATE LINUX_OUT=1)
-else ()
-    target_compile_definitions(${TARGET_NAME} PRIVATE OTHER_OUT=1)
-endif ()
+if(ANDROID)
+    add_definitions(-DANDROID_PLATFORM)  # Define a preprocessor macro
+elseif(UNIX AND NOT APPLE)
+    add_definitions(-DLINUX_PLATFORM)
+endif()
+
 
 if (ANDROID)
     find_library(log-lib log)

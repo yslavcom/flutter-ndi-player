@@ -1,4 +1,4 @@
-#pragma once
+#ifdef ANDROID_PLATFORM
 
 #include "codec.hpp"
 #include "decoder-loop.hpp"
@@ -11,6 +11,8 @@
 #include <functional>
 #include <queue>
 #include <mutex>
+
+#pragma once
 
 class AMediaCodec;
 class AMediaFormat;
@@ -86,3 +88,5 @@ private:
     static void AMediaCodecOnFrameRendered(AMediaCodec *codec, void *userdata, int64_t mediaTimeUs, int64_t systemNano);
     void MediaCodecOnFrameRendered(AMediaCodec *codec, int64_t mediaTimeUs, int64_t systemNano);
 };
+
+#endif  // #ifdef ANDROID_PLATFORM
