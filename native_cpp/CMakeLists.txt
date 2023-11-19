@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.18.1)
+# cmake_minimum_required(VERSION 3.18.1)
+cmake_minimum_required(VERSION 3.16.3)
 project(video-app C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(TARGET_NAME ndi-monitor)
