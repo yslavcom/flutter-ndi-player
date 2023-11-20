@@ -26,7 +26,7 @@ add_subdirectory(rx-frames-controller)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pthread")
 
 add_library(${TARGET_NAME} SHARED ${SOURCES})
 
