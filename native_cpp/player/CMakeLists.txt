@@ -11,6 +11,8 @@ set(TARGET_NAME player)
 # Check if the platform is Android
 if(ANDROID)
     add_definitions(-DANDROID_PLATFORM)  # Define a preprocessor macro
+elseif(UNIX AND NOT APPLE)
+    add_definitions(-DLINUX_PLATFORM)
 endif()
 
 add_compile_options(-fPIC)

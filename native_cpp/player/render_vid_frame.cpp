@@ -1,14 +1,18 @@
 #include "render_vid_frame.hpp"
-#include "android-codec.hpp"
 #include "common/logger.hpp"
 
 #ifdef ANDROID_PLATFORM
+#include "android-codec.hpp"
 #include <jni.h>
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <android/surface_texture.h>
 #include <android/surface_texture_jni.h>
 #endif // #ifdef ANDROID_PLATFORM
+
+#if LINUX_PLATFORM
+#include "linux-decoder.hpp"
+#endif
 
 #include <functional>
 #include <memory>
