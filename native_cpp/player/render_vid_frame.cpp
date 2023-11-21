@@ -235,7 +235,11 @@ Video::Decoder* getVideoDecoder()
 #ifdef ANDROID_PLATFORM
         mVidDecoder.reset(new AndroidDecoder(requestTexture));
 #else
+#ifdef LINUX_PLATFORM
+        mVidDecoder.reset(new LinuxDecoder(nullptr));
+#else
         assert(false && "Setup video decoder for the platform");
+#endif
 #endif
     }
     return mVidDecoder.get();
