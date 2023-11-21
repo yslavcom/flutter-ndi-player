@@ -15,7 +15,7 @@ class Player: public VideoFrameObserver, public AudioFrameObserver
 {
 public:
     Player();
-    ~Player();
+    virtual ~Player();
 
     void setRenderObserver(RenderVidFrameObserver* obs);
     void setDecoder(Video::Decoder* decoder);

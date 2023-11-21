@@ -53,7 +53,7 @@ public:
             hdrSize |= ((uint32_t)video->p_data[1] << 8);
             hdrSize |= ((uint32_t)video->p_data[0]);
 
-            if (hdrSize >= video->data_size_in_bytes)
+            if (hdrSize >= (uint32_t)video->data_size_in_bytes)
             {
                 DBG_NDI_INP_OBS("Empty payload\n");
                 if (releaseCb)

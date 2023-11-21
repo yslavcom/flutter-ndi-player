@@ -39,9 +39,7 @@ private:
     public:
         RecvClass(const NDIlib_recv_create_v3_t& arg)
         {
-#if 1
-            const char* ndiConfig = nullptr;
-#else
+#if 0
             const char* ndiConfig = R"({
                 "ndi": {
                     "rudp": { "recv": {"enable": true}},

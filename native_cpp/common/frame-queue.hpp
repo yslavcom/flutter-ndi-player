@@ -101,6 +101,7 @@ public:
         : SafeQueue<T>(mu
         , [](T* el)
         {
+            (void)el;
 #if 0
             if (el && el->second)
             {

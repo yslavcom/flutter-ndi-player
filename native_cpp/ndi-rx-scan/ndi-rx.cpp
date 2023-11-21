@@ -147,6 +147,7 @@ void NdiRx::removeObserver(InputObserver* obs)
 
 bool NdiRx::scanNdiSources()
 {
+    #pragma GCC diagnostic ignored "-Wunused-value"
     mShadowsourceTrackThread.start([this](bool stop){
         if (!start())
         {

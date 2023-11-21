@@ -126,7 +126,7 @@ void sendMsgToFlutter(std::vector<std::string> sources)
         return;
     }
     mSources = sources;
-    mCharFromSources = std::move(CharFromSources{sources});
+    mCharFromSources = CharFromSources{sources};
 
     Dart_CObject obj;
     obj.type = Dart_CObject_kTypedData;
@@ -230,6 +230,7 @@ void startProgram(int64_t progrIdx)
         }
 
         mCapturePacketsThread.start([](bool stop){
+                (void)stop;
                 for (;;)
                 {
                     ProgramRx->capturePackets();
@@ -237,6 +238,7 @@ void startProgram(int64_t progrIdx)
             });
 
         mRxFrameControllerThread.start([](bool stop){
+            (void)stop;
             for (;;)
             {
                 mRxFrameController.run();
