@@ -206,7 +206,7 @@ bool AndroidDecoder::configure()
     DBG_ANDRDEC("AndroidDecoder::configure, isValid:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
         isValid(), mH264Type, mXres, mYres);
 
-    if (!isValid()) return false;
+    if (!isValid() || !mDecoderLoop) return false;
 
     AMediaFormat_setString(mFormat, AMEDIAFORMAT_KEY_MIME, mH264Type);
     AMediaFormat_setInt32(mFormat, AMEDIAFORMAT_KEY_WIDTH, mXres);
