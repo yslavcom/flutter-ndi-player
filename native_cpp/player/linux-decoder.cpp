@@ -11,6 +11,8 @@
 #endif
 
 LinuxDecoder::LinuxDecoder(RequestSetupCb cb)
+    : mIsStarted(false)
+    , mIsReady(false)
 {
     DBG_LINDECODER("LinuxDecoder\n");
 }
@@ -29,18 +31,34 @@ bool LinuxDecoder::create(uint32_t fourcc)
 bool LinuxDecoder::configure()
 {
     DBG_LINDECODER("\n");
-    return false;
+
+    if (!mDecoderLoop)
+    {
+        return false;
+    }
+
+    mIsReady = true;
+    if (mIsReady)
+    {
+        mDecoderLoop->run();
+    }
+
+    return mIsReady;
 }
 
 bool LinuxDecoder::start()
 {
     DBG_LINDECODER("\n");
-    return false;
+
+    mIsStarted = true;
+    return true;
 }
 
 bool LinuxDecoder::stop()
 {
     DBG_LINDECODER("\n");
+
+    mIsStarted = false;
     return true;
 }
 
@@ -58,39 +76,47 @@ bool LinuxDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
 bool LinuxDecoder::isReady() const
 {
     DBG_LINDECODER("\n");
-    return false;
+    return mIsReady;
 }
 
 bool LinuxDecoder::isStarted() const
 {
     DBG_LINDECODER("\n");
-    return false;
+    return mIsStarted;
 }
 
 void LinuxDecoder::requestSetup()
 {
     DBG_LINDECODER("\n");
+    // nothing to do
 }
 
 bool LinuxDecoder::retrieveFrame()
 {
     DBG_LINDECODER("\n");
-    return false;
+    return true;
 }
 
 void LinuxDecoder::init(void* nativeWindow)
 {
     DBG_LINDECODER("\n");
+
+    if (!mDecoderLoop)
+    {
+        mDecoderLoop.reset(new DecoderLoop(this, mDecMu, mVidFramesToDecode, mDecodedVideoFrames));
+    }
 }
 
 void LinuxDecoder::diagnostics(void* userData)
 {
     DBG_LINDECODER("\n");
+    // nothing to do
 }
 
 void LinuxDecoder::setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps)
 {
-    DBG_LINDECODER("\n");
+    mSps = sps;
+    mPps = pps;
 }
 
 #endif // LINUX_PLATFORM

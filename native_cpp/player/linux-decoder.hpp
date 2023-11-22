@@ -1,7 +1,10 @@
 #ifdef LINUX_PLATFORM
 
 #include "codec.hpp"
+#include "decoder-loop.hpp"
 
+#include <vector>
+#include <memory>
 #include <vector>
 
 #pragma once
@@ -30,6 +33,16 @@ public:
     virtual void diagnostics(void* userData) override;
 
     virtual void setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps) override;
+
+private:
+    std::vector<uint8_t> mSps;
+    std::vector<uint8_t> mPps;
+
+    std::unique_ptr<DecoderLoop> mDecoderLoop;
+    std::mutex mDecMu;
+
+    bool mIsStarted;
+    bool mIsReady;
 };
 
 #endif // #ifdef LINUX_PLATFORM
