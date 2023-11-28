@@ -8,6 +8,12 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(TARGET_NAME common)
 
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g0")
+
 if (ANDROID)
     set(ffmpeg_dir /home/iaroslav/Downloads/personal/Flutter/prj/TestDrive/ffmpeg-android-maker/output)
     set(ffmpeg_libs ${ffmpeg_dir}/lib/${ANDROID_ABI})
