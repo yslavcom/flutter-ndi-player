@@ -133,6 +133,8 @@ class HomePage extends StatelessWidget {
     var onButtonPressCounter = 0;
     final ProgramControl _programControl = ProgramControl();
 
+  HomePage({super.key});
+
     @override
     Widget build(BuildContext context){
         var appState = context.watch<NdiMonitorState>();

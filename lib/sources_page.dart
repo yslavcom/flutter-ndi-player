@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'program_control.dart';
 
 import 'package:flutter/material.dart';
@@ -23,7 +22,7 @@ class SourcesPage extends StatelessWidget {
 
       return Scaffold(
         appBar: AppBar(
-          title: Text('Inputs'),
+          title: const Text('Inputs'),
           backgroundColor: theme.colorScheme.surfaceTint,
           foregroundColor: Colors.white,
           ),
