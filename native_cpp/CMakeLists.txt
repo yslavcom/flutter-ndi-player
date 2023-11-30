@@ -23,6 +23,7 @@ add_subdirectory(ndi-rx-scan)
 add_subdirectory(ndi-rx)
 add_subdirectory(player)
 add_subdirectory(rx-frames-controller)
+add_subdirectory(audio-play)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
@@ -50,6 +51,7 @@ target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
     ndi-app
     player
     rx-frames-controller
+    audio-play
     )
 target_link_libraries(${TARGET_NAME} PUBLIC
     ndi_rx_scan
@@ -57,4 +59,5 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     common
     player
     rx_frames_controller
+    audio-play
     )
