@@ -15,6 +15,8 @@
 #include "common/frame-queue.hpp"
 #include "common/custom_thread.hpp"
 
+#include "audio-play/include/audio_play_lib.h"
+
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -201,7 +203,7 @@ void stopProgram(int64_t progrIdx)
 EXPORT
 void startProgram(int64_t progrIdx)
 {
-    LOGW("%s:%ld\n", __func__, progrIdx);
+    LOGW("%s:%ld\n", __func__, audio_play_adder((uint32_t)progrIdx));
 
     if (mCurrentProgramIdx)
     {

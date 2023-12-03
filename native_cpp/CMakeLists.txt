@@ -1,4 +1,3 @@
-# cmake_minimum_required(VERSION 3.18.1)
 cmake_minimum_required(VERSION 3.16.3)
 project(video-app C CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -31,6 +30,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g0")
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+enable_language(Rust)
+
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pthread")
@@ -46,12 +49,12 @@ else ()
 endif ()
 
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    audio-play
     common
     ndi-rx-scan
     ndi-app
     player
     rx-frames-controller
-    audio-play
     )
 target_link_libraries(${TARGET_NAME} PUBLIC
     ndi_rx_scan
@@ -59,5 +62,5 @@ target_link_libraries(${TARGET_NAME} PUBLIC
     common
     player
     rx_frames_controller
-    audio-play
+    audio
     )
