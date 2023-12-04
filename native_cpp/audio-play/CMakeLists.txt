@@ -24,4 +24,5 @@ add_library(${TARGET_NAME} STATIC ${SOURCES})
 # target_link_libraries(${TARGET_NAME} PUBLIC)
 
 #add_executable(${TARGET_NAME} ${SOURCES})
-target_link_libraries(${TARGET_NAME} audio-play-lib dl pthread)
+# target_link_libraries(${TARGET_NAME} audio-play-lib dl pthread)
+target_link_libraries(${TARGET_NAME} audio-play-lib dl)
