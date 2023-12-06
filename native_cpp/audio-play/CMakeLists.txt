@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-# project(
-#   ndi-monitor
-#   VERSION 1.0
-#   LANGUAGES CXX)
-project(CMakeRustSample)
+project(
+  ndi-monitor
+  VERSION 1.0
+  LANGUAGES CXX)
+# project(CMakeRustSample)
 
 set(TARGET_NAME audio)
 
@@ -13,6 +13,12 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pthread")
 
 enable_language(Rust)
 include(CMakeCargo)
+
+# Find the OpenSL ES library
+find_library(
+    OpenSLES
+    OpenSLES
+)
 
 include_directories("include")
 add_subdirectory(audio-play-lib)
@@ -25,4 +31,4 @@ add_library(${TARGET_NAME} STATIC ${SOURCES})
 
 #add_executable(${TARGET_NAME} ${SOURCES})
 # target_link_libraries(${TARGET_NAME} audio-play-lib dl pthread)
-target_link_libraries(${TARGET_NAME} audio-play-lib dl)
+target_link_libraries(${TARGET_NAME} ${OpenSLES} audio-play-lib dl)

@@ -203,7 +203,9 @@ void stopProgram(int64_t progrIdx)
 EXPORT
 void startProgram(int64_t progrIdx)
 {
-    LOGW("%s:%ld\n", __func__, audio_play_adder((uint32_t)progrIdx));
+    LOGW("%s:%ld\n", __func__, progrIdx);
+
+    audio_setup();
 
     if (mCurrentProgramIdx)
     {

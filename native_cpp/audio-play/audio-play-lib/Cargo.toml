@@ -10,5 +10,7 @@ crate-type = ["staticlib"]
 
 [dependencies]
 android_logger = "0.13.3"
+atomic_float = "0.1.0"
+lazy_static = "1.4.0"
 log = "0.4.20"
 oboe = "0.5.0"

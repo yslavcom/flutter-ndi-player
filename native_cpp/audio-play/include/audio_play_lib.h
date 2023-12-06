@@ -10,6 +10,7 @@ extern "C" {
 #include <stdint.h>
 
 uint32_t audio_play_adder(uint32_t);
+void audio_setup(void);
 
 #ifdef __cplusplus
 }

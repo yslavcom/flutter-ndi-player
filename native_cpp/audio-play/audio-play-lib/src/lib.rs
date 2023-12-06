@@ -1,15 +1,33 @@
 use oboe::{
+    //AudioDeviceDirection,
+    //AudioDeviceInfo,
+    //AudioFeature,
     AudioOutputCallback,
+    AudioOutputStream,
     AudioOutputStreamSafe,
-    AudioStreamBuilder,
     AudioStream,
+    AudioStreamAsync,
+    AudioStreamBase,
+    AudioStreamBuilder,
     DataCallbackResult,
+    //DefaultStreamValues,
+    Mono,
+    Output,
     PerformanceMode,
     SharingMode,
-    Mono,
+    Stereo,
 };
 
-use std::f32::consts::PI;
+use atomic_float::AtomicF32;
+
+use std::{
+    f32::consts::PI,
+    marker::PhantomData,
+    sync::{atomic::Ordering, Arc},
+};
+
+use lazy_static::lazy_static;
+use std::sync::Mutex;
 
 #[macro_use] extern crate log;
 extern crate android_logger;
@@ -17,55 +35,182 @@ extern crate android_logger;
 use log::LevelFilter;
 use android_logger::Config;
 
-// Structure for sound generator
-pub struct SineWave {
-    frequency: f32,
-    gain: f32,
-    phase: f32,
-    delta: Option<f32>,
+
+
+/// Sine-wave generator stream
+#[derive(Default)]
+pub struct SineGen {
+    stream: Option<AudioStreamAsync<Output, SineWave<f32, Mono>>>,
 }
 
-// Default constructor for sound generator
-impl Default for SineWave {
-    fn default() -> Self {
-        Self {
-            frequency: 440.0,
-            gain: 0.5,
-            phase: 0.0,
-            delta: None,
+impl SineGen {
+
+    fn new() -> Self {
+        Self{stream: None}
+    }
+
+    /// Create and start audio stream
+    pub fn try_start(&mut self) {
+        if self.stream.is_none() {
+            let param = Arc::new(SineParam::default());
+
+            let mut stream = AudioStreamBuilder::default()
+                .set_performance_mode(PerformanceMode::LowLatency)
+                .set_sharing_mode(SharingMode::Shared)
+                .set_format::<f32>()
+                .set_channel_count::<Mono>()
+                .set_callback(SineWave::<f32, Mono>::new(&param))
+                .open_stream()
+                .unwrap();
+
+            log::debug!("start stream: {:?}", stream);
+
+            param.set_sample_rate(stream.get_sample_rate() as _);
+
+            stream.start().unwrap();
+
+            self.stream = Some(stream);
+            debug!("self.stream: {:?}", self.stream);
+        }
+    }
+
+    /// Pause audio stream
+    pub fn try_pause(&mut self) {
+        if let Some(stream) = &mut self.stream {
+            log::debug!("pause stream: {:?}", stream);
+            stream.pause().unwrap();
+        }
+    }
+
+    /// Stop and remove audio stream
+    pub fn try_stop(&mut self) {
+        if let Some(stream) = &mut self.stream {
+            log::debug!("stop stream: {:?}", stream);
+            stream.stop().unwrap();
+            self.stream = None;
         }
     }
 }
 
-// Audio output callback trait implementation
-impl AudioOutputCallback for SineWave {
-    // Define type for frames which we would like to process
+pub struct SineParam {
+    frequency: AtomicF32,
+    gain: AtomicF32,
+    sample_rate: AtomicF32,
+    delta: AtomicF32,
+}
+
+impl Default for SineParam {
+    fn default() -> Self {
+        Self {
+            frequency: AtomicF32::new(440.0),
+            gain: AtomicF32::new(0.5),
+            sample_rate: AtomicF32::new(0.0),
+            delta: AtomicF32::new(0.0),
+        }
+    }
+}
+
+impl SineParam {
+    fn set_sample_rate(&self, sample_rate: f32) {
+        let frequency = self.frequency.load(Ordering::Acquire);
+        let delta = frequency * 2.0 * PI / sample_rate;
+
+        self.delta.store(delta, Ordering::Release);
+        self.sample_rate.store(sample_rate, Ordering::Relaxed);
+
+        println!("Prepare sine wave generator: samplerate={sample_rate}, time delta={delta}");
+    }
+
+    fn set_frequency(&self, frequency: f32) {
+        let sample_rate = self.sample_rate.load(Ordering::Relaxed);
+        let delta = frequency * 2.0 * PI / sample_rate;
+
+        self.delta.store(delta, Ordering::Relaxed);
+        self.frequency.store(frequency, Ordering::Relaxed);
+    }
+
+    fn set_gain(&self, gain: f32) {
+        self.gain.store(gain, Ordering::Relaxed);
+    }
+}
+
+pub struct SineWave<F, C> {
+    param: Arc<SineParam>,
+    phase: f32,
+    marker: PhantomData<(F, C)>,
+}
+
+impl<F, C> Drop for SineWave<F, C> {
+    fn drop(&mut self) {
+        println!("drop SineWave generator");
+    }
+}
+
+impl<F, C> SineWave<F, C> {
+    pub fn new(param: &Arc<SineParam>) -> Self {
+        println!("init SineWave generator");
+        Self {
+            param: param.clone(),
+            phase: 0.0,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<F, C> Iterator for SineWave<F, C> {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let delta = self.param.delta.load(Ordering::Relaxed);
+        let gain = self.param.gain.load(Ordering::Relaxed);
+
+        let frame = gain * self.phase.sin();
+
+        self.phase += delta;
+        while self.phase > 2.0 * PI {
+            self.phase -= 2.0 * PI;
+        }
+
+        Some(frame)
+    }
+}
+
+impl AudioOutputCallback for SineWave<f32, Mono> {
     type FrameType = (f32, Mono);
 
-    // Implement sound data output callback
-    fn on_audio_ready(&mut self, stream: &mut dyn AudioOutputStreamSafe, frames: &mut [f32]) -> DataCallbackResult {
-        // Configure out wave generator
-        if self.delta.is_none() {
-            let sample_rate = stream.get_sample_rate() as f32;
-            self.delta = (self.frequency * 2.0 * PI / sample_rate).into();
-            println!("Prepare sine wave generator: samplerate={}, time delta={}", sample_rate, self.delta.unwrap());
-        }
-
-        let delta = self.delta.unwrap();
-
-        // Generate audio frames to fill the output buffer
+    fn on_audio_ready(
+        &mut self,
+        _stream: &mut dyn AudioOutputStreamSafe,
+        frames: &mut [f32],
+    ) -> DataCallbackResult {
         for frame in frames {
-            *frame = self.gain * self.phase.sin();
-            self.phase += delta;
-            while self.phase > 2.0 * PI {
-                self.phase -= 2.0 * PI;
-            }
+            *frame = self.next().unwrap();
         }
-
-        // Notify the oboe that stream is continued
         DataCallbackResult::Continue
     }
 }
+
+impl AudioOutputCallback for SineWave<f32, Stereo> {
+    type FrameType = (f32, Stereo);
+
+    fn on_audio_ready(
+        &mut self,
+        _stream: &mut dyn AudioOutputStreamSafe,
+        frames: &mut [(f32, f32)],
+    ) -> DataCallbackResult {
+        for frame in frames {
+            frame.0 = self.next().unwrap();
+            frame.1 = frame.0;
+        }
+        DataCallbackResult::Continue
+    }
+}
+
+// static mut SINE: SineGen = SineGen::new();
+lazy_static! {
+    static ref SINE: Mutex<SineGen> = Mutex::new(SineGen::new());
+}
+
 
 #[no_mangle]
 pub extern "C" fn audio_setup() -> () {
@@ -74,26 +219,51 @@ pub extern "C" fn audio_setup() -> () {
         Config::default().with_max_level(LevelFilter::Trace),
     );
 
-    debug!("this is a debug {}", "message");
+    let mut sine = SINE.lock().unwrap();
+    sine.try_start();
 
-    // Create playback stream
-    let mut sine = AudioStreamBuilder::default()
-        // select desired performance mode
-        .set_performance_mode(PerformanceMode::LowLatency)
-        // select desired sharing mode
-        .set_sharing_mode(SharingMode::Shared)
-        // select sound sample format
-        .set_format::<f32>()
-        // select channels configuration
-        .set_channel_count::<Mono>()
-        // set our generator as callback
-        .set_callback(SineWave::default())
-        // open the output stream
-        .open_stream()
-        .unwrap();
-
-    // Start playback
-    sine.start().unwrap();
-
-    debug!("sine.start");
 }
+
+/*
+/// Print device's audio info
+pub fn audio_probe() {
+    if let Err(error) = DefaultStreamValues::init() {
+        eprintln!("Unable to init default stream values due to: {error}");
+    }
+
+    println!("Default stream values:");
+    println!("  Sample rate: {}", DefaultStreamValues::get_sample_rate());
+    println!(
+        "  Frames per burst: {}",
+        DefaultStreamValues::get_frames_per_burst()
+    );
+    println!(
+        "  Channel count: {}",
+        DefaultStreamValues::get_channel_count()
+    );
+
+    println!("Audio features:");
+    println!("  Low latency: {}", AudioFeature::LowLatency.has().unwrap());
+    println!("  Output: {}", AudioFeature::Output.has().unwrap());
+    println!("  Pro: {}", AudioFeature::Pro.has().unwrap());
+    println!("  Microphone: {}", AudioFeature::Microphone.has().unwrap());
+    println!("  Midi: {}", AudioFeature::Midi.has().unwrap());
+
+    let devices = AudioDeviceInfo::request(AudioDeviceDirection::InputOutput).unwrap();
+
+    println!("Audio Devices:");
+
+    for device in devices {
+        println!("{{");
+        println!("  Id: {}", device.id);
+        println!("  Type: {:?}", device.device_type);
+        println!("  Direction: {:?}", device.direction);
+        println!("  Address: {}", device.address);
+        println!("  Product name: {}", device.product_name);
+        println!("  Channel counts: {:?}", device.channel_counts);
+        println!("  Sample rates: {:?}", device.sample_rates);
+        println!("  Formats: {:?}", device.formats);
+        println!("}}");
+    }
+}
+*/
