@@ -37,11 +37,19 @@ use android_logger::Config;
 
 
 
+/*
 /// Sine-wave generator stream
 #[derive(Default)]
 pub struct SineGen {
     stream: Option<AudioStreamAsync<Output, SineWave<f32, Mono>>>,
 }
+*/
+/// Sine-wave generator stream
+#[derive(Default)]
+pub struct SineGen {
+    stream: Option<AudioStreamAsync<Output, SineWave<f32, Stereo>>>,
+}
+
 
 impl SineGen {
 
@@ -58,8 +66,8 @@ impl SineGen {
                 .set_performance_mode(PerformanceMode::LowLatency)
                 .set_sharing_mode(SharingMode::Shared)
                 .set_format::<f32>()
-                .set_channel_count::<Mono>()
-                .set_callback(SineWave::<f32, Mono>::new(&param))
+                .set_channel_count::<Stereo>()
+                .set_callback(SineWave::<f32, Stereo>::new(&param))
                 .open_stream()
                 .unwrap();
 
@@ -206,7 +214,6 @@ impl AudioOutputCallback for SineWave<f32, Stereo> {
     }
 }
 
-// static mut SINE: SineGen = SineGen::new();
 lazy_static! {
     static ref SINE: Mutex<SineGen> = Mutex::new(SineGen::new());
 }
