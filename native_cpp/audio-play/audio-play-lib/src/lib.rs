@@ -36,14 +36,13 @@ use log::LevelFilter;
 use android_logger::Config;
 
 
-
-/*
-/// Sine-wave generator stream
-#[derive(Default)]
-pub struct SineGen {
-    stream: Option<AudioStreamAsync<Output, SineWave<f32, Mono>>>,
+mod audio_rx {
+    // Bring the function `hello_from_helper` into scope
+    pub use self::audio_rx::AUDIO_DATA;
+    mod audio_rx;
 }
-*/
+
+
 /// Sine-wave generator stream
 #[derive(Default)]
 pub struct SineGen {

@@ -4,7 +4,6 @@ project(
   ndi-monitor
   VERSION 1.0
   LANGUAGES CXX)
-# project(CMakeRustSample)
 
 set(TARGET_NAME audio)
 
@@ -27,8 +26,5 @@ add_compile_options(-fPIC)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS "*.[h,c]pp")
 add_library(${TARGET_NAME} STATIC ${SOURCES})
-# target_link_libraries(${TARGET_NAME} PUBLIC)
 
-#add_executable(${TARGET_NAME} ${SOURCES})
-# target_link_libraries(${TARGET_NAME} audio-play-lib dl pthread)
 target_link_libraries(${TARGET_NAME} ${OpenSLES} audio-play-lib dl)
