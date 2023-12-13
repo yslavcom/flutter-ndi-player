@@ -8,13 +8,14 @@ use std::sync::{Arc, Mutex};
 // Define a type for the callback function signature
 type CallbackFn = unsafe extern "C" fn(arg: *const c_void);
 
-enum Error
+#[derive(Debug)]
+pub enum Error
 {
     MemoryAllocationFail
 }
 
-#[derive(Clone)]
-struct AudioFrameStr
+#[derive(Clone, Copy)]
+pub struct AudioFrameStr
 {
     opaque: usize,
     chan_no: u32,
@@ -25,15 +26,13 @@ struct AudioFrameStr
 }
 
 impl AudioFrameStr {
-    pub fn new() -> Self {
-        Self {opaque: 0,
-            chan_no: 0,
-            // it's actually a pointer to audio samples, passed from C/C++
-            // it's owned by NDI lib module
-            samples_opaque: 0,
-            samples_no: 0,
-            stride: 0,
-            planar: false,
+    pub fn new(opaque: usize, chan_no: u32, samples_opaque: usize, samples_no: u32, stride: u32, planar: bool) -> Self {
+        Self {opaque:       opaque,
+            chan_no:        chan_no,
+            samples_opaque: samples_opaque,
+            samples_no:     samples_no,
+            stride:         stride,
+            planar:         planar,
         }
     }
 }
@@ -54,6 +53,7 @@ impl Drop for AudioDataCallback {
                 match element {
                     Some(el) => {
                         unsafe {
+                            debug!("cleanup_cb: {:?}", el.opaque);
                             cleanup_cb(el.opaque as *const c_void);
                         }
                     },
@@ -75,13 +75,13 @@ impl AudioDataCallback {
         }
     }
 
-    pub fn set_callback(mut self, callback: CallbackFn) {
+    pub fn set_callback(&mut self, callback: CallbackFn) {
         self.cleanup_cb = Some(callback);
     }
 
-    pub fn add_audio_frame(self, audio_frame: AudioFrameStr) -> Result<(), Error> {
+    pub fn add_audio_frame(&mut self, audio_frame: AudioFrameStr) -> Result<(), Error> {
         let result = std::panic::catch_unwind(|| {
-            self.aud_frame.push(audio_frame.clone());
+            self.aud_frame.push(audio_frame);
         });
         match result {
             Ok(_) => {
@@ -91,6 +91,11 @@ impl AudioDataCallback {
                 Err(Error::MemoryAllocationFail)
             }
         }
+    }
+
+    pub fn len(&self) -> usize
+    {
+        self.aud_frame.len()
     }
 }
 

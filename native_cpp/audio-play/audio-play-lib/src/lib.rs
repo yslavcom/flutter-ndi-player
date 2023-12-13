@@ -1,3 +1,7 @@
+pub mod audio_rx;
+use crate::audio_rx::AUDIO_DATA;
+use crate::audio_rx::AudioFrameStr;
+
 use oboe::{
     //AudioDeviceDirection,
     //AudioDeviceInfo,
@@ -34,13 +38,6 @@ extern crate android_logger;
 
 use log::LevelFilter;
 use android_logger::Config;
-
-
-mod audio_rx {
-    // Bring the function `hello_from_helper` into scope
-    pub use self::audio_rx::AUDIO_DATA;
-    mod audio_rx;
-}
 
 
 /// Sine-wave generator stream
@@ -350,6 +347,8 @@ lazy_static! {
     static ref AUD_PLAY: Mutex<AudPlay> = Mutex::new(AudPlay::new());
 }
 
+
+/// Setup to play audio
 #[no_mangle]
 pub extern "C" fn audio_setup() -> () {
 
@@ -360,4 +359,28 @@ pub extern "C" fn audio_setup() -> () {
     let mut aud_play = AUD_PLAY.lock().unwrap();
     aud_play.try_start();
 
+}
+
+/// Push audio frame to queue
+#[no_mangle]
+pub extern "C" fn audio_push_aud_frame(opaque: usize,
+    chan_no: u32,
+    samples_opaque: usize,
+    samples_no: u32,
+    stride: u32,
+    planar: bool) -> bool
+{
+    let mut aud_data = AUDIO_DATA.lock().unwrap();
+
+    let aud_frame = AudioFrameStr::new(opaque, chan_no, samples_opaque, samples_no, stride, planar);
+    match aud_data.add_audio_frame(aud_frame) {
+        Ok(()) => {
+            debug!("audio frames count: {:?}", aud_data.len());
+            return true;
+        },
+        Err(_e) => {
+            debug!("audio frames count, Error: {:?}", _e);
+            return false;
+        },
+    }
 }
