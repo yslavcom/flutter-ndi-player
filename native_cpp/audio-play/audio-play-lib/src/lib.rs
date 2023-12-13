@@ -217,18 +217,17 @@ lazy_static! {
     static ref SINE: Mutex<SineGen> = Mutex::new(SineGen::new());
 }
 
-
-#[no_mangle]
-pub extern "C" fn audio_setup() -> () {
-
-    android_logger::init_once(
-        Config::default().with_max_level(LevelFilter::Trace),
-    );
-
-    let mut sine = SINE.lock().unwrap();
-    sine.try_start();
-
-}
+//#[no_mangle]
+//pub extern "C" fn audio_setup() -> () {
+//
+//    android_logger::init_once(
+//        Config::default().with_max_level(LevelFilter::Trace),
+//    );
+//
+//    let mut sine = SINE.lock().unwrap();
+//    sine.try_start();
+//
+//}
 
 /*
 /// Print device's audio info
@@ -273,3 +272,92 @@ pub fn audio_probe() {
     }
 }
 */
+
+
+/// Sine-wave generator stream
+#[derive(Default)]
+pub struct AudPlay {
+    stream: Option<AudioStreamAsync<Output, NdiAudSamples>>,
+}
+
+
+impl AudPlay {
+
+    fn new() -> Self {
+        Self{stream: None}
+    }
+
+    /// Create and start audio stream
+    pub fn try_start(&mut self, ) {
+        if self.stream.is_none() {
+
+            let mut stream = AudioStreamBuilder::default()
+                .set_performance_mode(PerformanceMode::LowLatency)
+                .set_sharing_mode(SharingMode::Shared)
+                .set_format::<f32>()
+                .set_channel_count::<Stereo>()
+                .set_callback(NdiAudSamples::new())
+                .open_stream()
+                .unwrap();
+
+            log::debug!("start stream: {:?}", stream);
+
+            stream.start().unwrap();
+
+            self.stream = Some(stream);
+            debug!("self.stream: {:?}", self.stream);
+        }
+    }
+
+    /// Pause audio stream
+    pub fn try_pause(&mut self) {
+        if let Some(stream) = &mut self.stream {
+            log::debug!("pause stream: {:?}", stream);
+            stream.pause().unwrap();
+        }
+    }
+
+    /// Stop and remove audio stream
+    pub fn try_stop(&mut self) {
+        if let Some(stream) = &mut self.stream {
+            log::debug!("stop stream: {:?}", stream);
+            stream.stop().unwrap();
+            self.stream = None;
+        }
+    }
+}
+
+impl AudioOutputCallback for NdiAudSamples {
+    type FrameType = (f32, Stereo);
+    fn on_audio_ready(
+        &mut self,
+        _stream: &mut dyn AudioOutputStreamSafe,
+        frames: &mut [(f32, f32)],
+    ) -> DataCallbackResult {
+        DataCallbackResult::Continue
+    }
+}
+
+pub struct NdiAudSamples;
+
+impl NdiAudSamples {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+lazy_static! {
+    static ref AUD_PLAY: Mutex<AudPlay> = Mutex::new(AudPlay::new());
+}
+
+#[no_mangle]
+pub extern "C" fn audio_setup() -> () {
+
+    android_logger::init_once(
+        Config::default().with_max_level(LevelFilter::Trace),
+    );
+
+    let mut aud_play = AUD_PLAY.lock().unwrap();
+    aud_play.try_start();
+
+}
