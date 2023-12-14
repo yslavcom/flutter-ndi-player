@@ -2,6 +2,7 @@
 
 #include "player.hpp"
 #include "common/logger.hpp"
+#include "audio-play/include/audio_play_lib.h"
 
 #ifdef ANDROID_PLATFORM
 #include <android_native_app_glue.h>
@@ -105,6 +106,9 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     {
         return;
     }
+    auto& audio = frame->first;
+
+    audio_push_aud_frame(reinterpret_cast<uintptr_t>(audio.opaque), audio.chanNo, reinterpret_cast<uintptr_t>(audio.samples), audio.samplesNo, audio.stride, audio.planar);
 
 #if 0
     //TODO: play audio
