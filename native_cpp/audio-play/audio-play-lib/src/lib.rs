@@ -351,17 +351,17 @@ lazy_static! {
 
 /// Setup to play audio
 #[no_mangle]
-pub extern "C" fn audio_setup(callback: CallbackFn) {
+pub extern "C" fn audio_setup(callback: Option<CallbackFn>) {
 
     android_logger::init_once(
         Config::default().with_max_level(LevelFilter::Trace),
     );
 
     let mut aud_data = AUDIO_DATA.lock().unwrap();
-    if callback as usize == 0 {
-        aud_data.set_callback(None);
+    if let Some(cb) = callback {
+        aud_data.set_callback(Some(cb));
     } else {
-        aud_data.set_callback(Some(callback));
+        aud_data.set_callback(None);
     }
 
     let mut aud_play = AUD_PLAY.lock().unwrap();
