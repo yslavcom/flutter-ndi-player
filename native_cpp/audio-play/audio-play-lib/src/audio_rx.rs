@@ -79,6 +79,14 @@ impl AudioDataCallback {
         self.cleanup_cb = callback;
     }
 
+    pub fn cleanup(&self, aud: &AudioFrameStr) {
+        if let Some(cleanup_cb) = self.cleanup_cb {
+            unsafe {
+                cleanup_cb(aud.opaque as *const c_void);
+            }
+        }
+    }
+
     pub fn add_audio_frame(&mut self, audio_frame: AudioFrameStr) -> Result<(), Error> {
         let result = std::panic::catch_unwind(|| {
             self.aud_frame.push(audio_frame);
@@ -96,6 +104,10 @@ impl AudioDataCallback {
     pub fn len(&self) -> usize
     {
         self.aud_frame.len()
+    }
+
+    pub fn pop_aud_frame(&mut self) -> Option<AudioFrameStr> {
+        self.aud_frame.pop()
     }
 }
 

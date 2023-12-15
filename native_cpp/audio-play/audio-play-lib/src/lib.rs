@@ -332,6 +332,15 @@ impl AudioOutputCallback for NdiAudSamples {
         _stream: &mut dyn AudioOutputStreamSafe,
         frames: &mut [(f32, f32)],
     ) -> DataCallbackResult {
+        let mut aud_data = AUDIO_DATA.lock().unwrap();
+        loop {
+            let aud_frame = aud_data.pop_aud_frame();
+            if let Some(aud_frame) = aud_frame{
+                aud_data.cleanup(&aud_frame);
+            } else {
+                break;
+            }
+        }
         DataCallbackResult::Continue
     }
 }
