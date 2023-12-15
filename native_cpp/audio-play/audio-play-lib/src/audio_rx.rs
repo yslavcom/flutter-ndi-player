@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 
 // Define a type for the callback function signature
-type CallbackFn = unsafe extern "C" fn(arg: *const c_void);
+pub type CallbackFn = unsafe extern "C" fn(arg: *const c_void);
 
 #[derive(Debug)]
 pub enum Error
@@ -75,8 +75,8 @@ impl AudioDataCallback {
         }
     }
 
-    pub fn set_callback(&mut self, callback: CallbackFn) {
-        self.cleanup_cb = Some(callback);
+    pub fn set_callback(&mut self, callback: Option<CallbackFn>) {
+        self.cleanup_cb = callback;
     }
 
     pub fn add_audio_frame(&mut self, audio_frame: AudioFrameStr) -> Result<(), Error> {

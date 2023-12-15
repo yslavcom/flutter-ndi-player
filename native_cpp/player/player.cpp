@@ -21,6 +21,7 @@
 Player::Player()
     : mRenderVidFrameObserver(nullptr)
     , mVideoDecoder(nullptr)
+    , mAudioInitialised(false)
 {
 }
 
@@ -107,12 +108,16 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
         return;
     }
     auto& audio = frame->first;
+    if (!mAudioInitialised)
+    {
+        auto cb = frame->second.target<void(void*)>();
+        audio_setup(cb);
+        mAudioInitialised = true;
+    }
 
     audio_push_aud_frame(reinterpret_cast<uintptr_t>(audio.opaque), audio.chanNo, reinterpret_cast<uintptr_t>(audio.samples), audio.samplesNo, audio.stride, audio.planar);
 
 #if 0
-    //TODO: play audio
-#else
 //    DBG_PLAYER("dump audio, remaining:%d\n", remainingCount);
     if (frame->second)
     {

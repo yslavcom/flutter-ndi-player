@@ -30,4 +30,6 @@ private:
     RenderVidFrameObserver* mRenderVidFrameObserver;
     Video::Decoder* mVideoDecoder;
     std::mutex mDecoderMu;
+
+    bool mAudioInitialised;
 };

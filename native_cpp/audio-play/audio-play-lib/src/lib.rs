@@ -1,6 +1,7 @@
 pub mod audio_rx;
 use crate::audio_rx::AUDIO_DATA;
 use crate::audio_rx::AudioFrameStr;
+use crate::audio_rx::CallbackFn;
 
 use oboe::{
     //AudioDeviceDirection,
@@ -350,11 +351,18 @@ lazy_static! {
 
 /// Setup to play audio
 #[no_mangle]
-pub extern "C" fn audio_setup() -> () {
+pub extern "C" fn audio_setup(callback: CallbackFn) {
 
     android_logger::init_once(
         Config::default().with_max_level(LevelFilter::Trace),
     );
+
+    let mut aud_data = AUDIO_DATA.lock().unwrap();
+    if callback as usize == 0 {
+        aud_data.set_callback(None);
+    } else {
+        aud_data.set_callback(Some(callback));
+    }
 
     let mut aud_play = AUD_PLAY.lock().unwrap();
     aud_play.try_start();
