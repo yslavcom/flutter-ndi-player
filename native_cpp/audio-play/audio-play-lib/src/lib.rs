@@ -333,13 +333,15 @@ impl AudioOutputCallback for NdiAudSamples {
         frames: &mut [(f32, f32)],
     ) -> DataCallbackResult {
         let mut aud_data = AUDIO_DATA.lock().unwrap();
-        loop {
             let aud_frame = aud_data.pop_aud_frame();
             if let Some(aud_frame) = aud_frame{
+
+                let sample_ptr: *const f32 = aud_frame.samples_opaque as *const f32;
+                for frame in frames {
+                    frame.0 = unsafe {*sample_ptr};
+                    frame.1 = unsafe {*sample_ptr.offset(1)};
+                }
                 aud_data.cleanup(&aud_frame);
-            } else {
-                break;
-            }
         }
         DataCallbackResult::Continue
     }
@@ -375,7 +377,6 @@ pub extern "C" fn audio_setup(callback: Option<CallbackFn>) {
 
     let mut aud_play = AUD_PLAY.lock().unwrap();
     aud_play.try_start();
-
 }
 
 /// Push audio frame to queue

@@ -18,11 +18,11 @@ pub enum Error
 pub struct AudioFrameStr
 {
     opaque: usize,
-    chan_no: u32,
-    samples_opaque: usize,
-    samples_no: u32,
-    stride: u32,
-    planar: bool,
+    pub chan_no: u32,
+    pub samples_opaque: usize,
+    pub samples_no: u32,
+    pub stride: u32,
+    pub planar: bool,
 }
 
 impl AudioFrameStr {
