@@ -41,21 +41,26 @@ pub struct AudioDataCallback
 {
     cleanup_cb: Option<CallbackFn>,
     aud_frame: SegQueue<AudioFrameStr>,
+    aud_frame_cache: Option<AudioFrameStr>,
+    aud_cache_pos: u32,
 }
 
 impl Drop for AudioDataCallback {
     fn drop(&mut self) {
         // Using pattern matching
 
-        if let Some(cleanup_cb) = &self.cleanup_cb {
+        if self.cleanup_cb.is_some() {
+
+            if let Some(aud_frame_cache) = &self.aud_frame_cache {
+                self.cleanup(aud_frame_cache);
+            }
+
             loop {
                 let element = self.aud_frame.pop();
                 match element {
                     Some(el) => {
-                        unsafe {
-                            debug!("cleanup_cb: {:?}", el.opaque);
-                            cleanup_cb(el.opaque as *const c_void);
-                        }
+                        debug!("cleanup_cb: {:?}", el.opaque);
+                        self.cleanup(&el);
                     },
                     None => {
                         // no more elements in the queue
@@ -72,6 +77,8 @@ impl AudioDataCallback {
     pub fn new() -> Self {
         Self { cleanup_cb : None,
             aud_frame: SegQueue::new(),
+            aud_frame_cache : None,
+            aud_cache_pos : 0
         }
     }
 
@@ -108,6 +115,30 @@ impl AudioDataCallback {
 
     pub fn pop_aud_frame(&mut self) -> Option<AudioFrameStr> {
         self.aud_frame.pop()
+    }
+
+    pub fn cache_set(&mut self, audio_frame: AudioFrameStr) {
+        self.aud_frame_cache = Some(audio_frame);
+        self.aud_cache_pos = 0;
+    }
+
+    pub fn cache_get(&self) -> Option<&AudioFrameStr> {
+        self.aud_frame_cache.as_ref()
+    }
+
+    pub fn cache_clear(&mut self) {
+        if let Some(aud_frame_cache) = &self.aud_frame_cache {
+            self.cleanup(aud_frame_cache);
+        }
+        self.aud_cache_pos = 0;
+    }
+
+    pub fn aud_cache_pos_set(&mut self, val: u32) {
+        self.aud_cache_pos = val;
+    }
+
+    pub fn aud_cache_pos_get(&self) -> &u32 {
+        &self.aud_cache_pos
     }
 }
 

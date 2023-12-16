@@ -332,16 +332,31 @@ impl AudioOutputCallback for NdiAudSamples {
         _stream: &mut dyn AudioOutputStreamSafe,
         frames: &mut [(f32, f32)],
     ) -> DataCallbackResult {
-        let mut aud_data = AUDIO_DATA.lock().unwrap();
-            let aud_frame = aud_data.pop_aud_frame();
-            if let Some(aud_frame) = aud_frame{
+        // check stream AudioOutputStreamSafe properties here
 
-                let sample_ptr: *const f32 = aud_frame.samples_opaque as *const f32;
-                for frame in frames {
-                    frame.0 = unsafe {*sample_ptr};
-                    frame.1 = unsafe {*sample_ptr.offset(1)};
+        let mut aud_data = AUDIO_DATA.lock().unwrap();
+        let aud_frame = aud_data.pop_aud_frame();
+        if let Some(aud_frame) = aud_frame{
+            let mut aud_frame_count = aud_frame.samples_no * aud_frame.chan_no;
+            assert_eq!(aud_frame.chan_no, 2, "Expecting channel count be {}, but in reality it's {}", 2, aud_frame.chan_no);
+
+            // let mut request_count = frames.len();
+            debug!("request_count={}, aud_frame_count={}", frames.len(), aud_frame_count);
+
+            let mut count = 0;
+            let sample_ptr: *const f32 = aud_frame.samples_opaque as *const f32;
+            for frame in frames {
+
+                if aud_frame_count == 0 {
+                    break;
                 }
-                aud_data.cleanup(&aud_frame);
+
+                frame.0 = unsafe {*sample_ptr.offset(count)};
+                frame.1 = unsafe {*sample_ptr.offset(count+1)};
+                count += 2;
+                aud_frame_count -= 2;
+            }
+            aud_data.cleanup(&aud_frame);
         }
         DataCallbackResult::Continue
     }
@@ -393,11 +408,9 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
     let aud_frame = AudioFrameStr::new(opaque, chan_no, samples_opaque, samples_no, stride, planar);
     match aud_data.add_audio_frame(aud_frame) {
         Ok(()) => {
-            debug!("audio frames count: {:?}", aud_data.len());
             return true;
         },
         Err(_e) => {
-            debug!("audio frames count, Error: {:?}", _e);
             return false;
         },
     }
