@@ -41,8 +41,12 @@ pub struct AudioDataCallback
 {
     cleanup_cb: Option<CallbackFn>,
     aud_frame: SegQueue<AudioFrameStr>,
+
+    total_queued_samples_per_chan: u32,
+
     aud_frame_cache: Option<AudioFrameStr>,
-    aud_cache_pos: u32,
+    cache_pos: isize,
+    cache_sample_no: isize,
 }
 
 impl Drop for AudioDataCallback {
@@ -77,8 +81,10 @@ impl AudioDataCallback {
     pub fn new() -> Self {
         Self { cleanup_cb : None,
             aud_frame: SegQueue::new(),
+            total_queued_samples_per_chan: 0,
             aud_frame_cache : None,
-            aud_cache_pos : 0
+            cache_pos : 0,
+            cache_sample_no : 0,
         }
     }
 
@@ -95,11 +101,14 @@ impl AudioDataCallback {
     }
 
     pub fn add_audio_frame(&mut self, audio_frame: AudioFrameStr) -> Result<(), Error> {
+        assert_eq!(audio_frame.chan_no, 2, "Expecting channel count be {}, but in reality it's {}", 2, audio_frame.chan_no);
+
         let result = std::panic::catch_unwind(|| {
             self.aud_frame.push(audio_frame);
         });
         match result {
             Ok(_) => {
+                self.total_queued_samples_per_chan += audio_frame.samples_no;
                 Ok(())
             }
             Err(_e) => {
@@ -108,37 +117,70 @@ impl AudioDataCallback {
         }
     }
 
-    pub fn len(&self) -> usize
-    {
+    pub fn get_total_samples_per_chan(&self) -> u32 {
+        self.total_queued_samples_per_chan + self.get_cached_samples_per_chan()
+    }
+
+    /// Get one sample for stereo. Consider creating an iterator and returning the whole set of requested data
+    pub fn get_sample(&mut self) -> Option<(f32, f32)> {
+        if self.get_total_samples_per_chan() == 0 {
+            ()
+        }
+
+        if self.get_cached_samples_per_chan() == 0 {
+            // We're sure there's at list one audio frame is queued
+            let audio_frame = self.pop_aud_frame().unwrap();
+            self.cache_set(audio_frame);
+        }
+
+        let sample_ptr: *const f32 = self.aud_frame_cache.unwrap().samples_opaque as *const f32;
+        let sample_0 = unsafe {*sample_ptr.offset(self.cache_pos)};
+        let sample_1 = unsafe {*sample_ptr.offset(self.cache_pos+1)};
+        self.cache_pos += 2;
+        if self.cache_pos >= self.cache_sample_no {
+            self.cache_clear();
+        }
+        Some((sample_0, sample_1))
+    }
+
+    // private
+    #[allow(dead_code)]
+    fn len(&self) -> usize {
         self.aud_frame.len()
     }
 
-    pub fn pop_aud_frame(&mut self) -> Option<AudioFrameStr> {
-        self.aud_frame.pop()
+    fn pop_aud_frame(&mut self) -> Option<AudioFrameStr> {
+        let frame = self.aud_frame.pop();
+        if let Some(frame) = frame {
+            self.total_queued_samples_per_chan -= frame.samples_no;
+        }
+        frame
     }
 
-    pub fn cache_set(&mut self, audio_frame: AudioFrameStr) {
+    fn cache_set(&mut self, audio_frame: AudioFrameStr) {
         self.aud_frame_cache = Some(audio_frame);
-        self.aud_cache_pos = 0;
+        self.cache_pos = 0;
+        self.cache_sample_no = audio_frame.samples_no as isize;
     }
 
-    pub fn cache_get(&self) -> Option<&AudioFrameStr> {
+    #[allow(dead_code)]
+    fn cache_get(&self) -> Option<&AudioFrameStr> {
         self.aud_frame_cache.as_ref()
     }
 
-    pub fn cache_clear(&mut self) {
+    fn cache_clear(&mut self) {
         if let Some(aud_frame_cache) = &self.aud_frame_cache {
             self.cleanup(aud_frame_cache);
         }
-        self.aud_cache_pos = 0;
+        self.cache_pos = 0;
+        self.cache_sample_no = 0;
     }
 
-    pub fn aud_cache_pos_set(&mut self, val: u32) {
-        self.aud_cache_pos = val;
-    }
-
-    pub fn aud_cache_pos_get(&self) -> &u32 {
-        &self.aud_cache_pos
+    fn get_cached_samples_per_chan(&self) -> u32 {
+        if self.cache_sample_no == 0 {
+            return 0
+        }
+        return (self.cache_sample_no - self.cache_pos) as u32
     }
 }
 

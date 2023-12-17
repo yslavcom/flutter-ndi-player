@@ -97,4 +97,6 @@ private:
     std::set<InputPacketsObserver*> mInputPacketsObservers;
 
     bool mUncompressedShq;
+
+    std::chrono::steady_clock::time_point mTimeRefr;
 };

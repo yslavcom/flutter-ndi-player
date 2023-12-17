@@ -107,6 +107,7 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     {
         return;
     }
+
     auto& audio = frame->first;
     if (!mAudioInitialised)
     {

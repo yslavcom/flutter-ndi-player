@@ -15,7 +15,7 @@ use oboe::{
     AudioStreamBase,
     AudioStreamBuilder,
     DataCallbackResult,
-    //DefaultStreamValues,
+    DefaultStreamValues,
     Mono,
     Output,
     PerformanceMode,
@@ -27,6 +27,7 @@ use atomic_float::AtomicF32;
 
 use std::{
     f32::consts::PI,
+    time::Instant,
     marker::PhantomData,
     sync::{atomic::Ordering, Arc},
 };
@@ -126,6 +127,7 @@ impl SineParam {
         println!("Prepare sine wave generator: samplerate={sample_rate}, time delta={delta}");
     }
 
+    #[allow(dead_code)]
     fn set_frequency(&self, frequency: f32) {
         let sample_rate = self.sample_rate.load(Ordering::Relaxed);
         let delta = frequency * 2.0 * PI / sample_rate;
@@ -134,6 +136,7 @@ impl SineParam {
         self.frequency.store(frequency, Ordering::Relaxed);
     }
 
+    #[allow(dead_code)]
     fn set_gain(&self, gain: f32) {
         self.gain.store(gain, Ordering::Relaxed);
     }
@@ -287,6 +290,9 @@ impl AudPlay {
 
     /// Create and start audio stream
     pub fn try_start(&mut self, ) {
+
+        audio_probe();
+
         if self.stream.is_none() {
 
             let mut stream = AudioStreamBuilder::default()
@@ -334,29 +340,22 @@ impl AudioOutputCallback for NdiAudSamples {
     ) -> DataCallbackResult {
         // check stream AudioOutputStreamSafe properties here
 
+        let mut start_time = AUD_CB_ELAPSED.lock().unwrap();
+        let t = start_time.unwrap_or(Instant::now());
+        *start_time = Some(Instant::now());
+        debug!("cb: {:?}", t.elapsed());
+
         let mut aud_data = AUDIO_DATA.lock().unwrap();
-        let aud_frame = aud_data.pop_aud_frame();
-        if let Some(aud_frame) = aud_frame{
-            let mut aud_frame_count = aud_frame.samples_no * aud_frame.chan_no;
-            assert_eq!(aud_frame.chan_no, 2, "Expecting channel count be {}, but in reality it's {}", 2, aud_frame.chan_no);
 
-            // let mut request_count = frames.len();
-            debug!("request_count={}, aud_frame_count={}", frames.len(), aud_frame_count);
-
-            let mut count = 0;
-            let sample_ptr: *const f32 = aud_frame.samples_opaque as *const f32;
+        let demand_samples = frames.len();
+        let total_samples_per_chan = aud_data.get_total_samples_per_chan() as usize;
+//        debug!("request_count={}, total_samples_per_chan={}", frames.len(), total_samples_per_chan);
+        if demand_samples <= total_samples_per_chan {
             for frame in frames {
-
-                if aud_frame_count == 0 {
-                    break;
-                }
-
-                frame.0 = unsafe {*sample_ptr.offset(count)};
-                frame.1 = unsafe {*sample_ptr.offset(count+1)};
-                count += 2;
-                aud_frame_count -= 2;
+                let samples = aud_data.get_sample().unwrap_or((0.0, 0.0));
+                frame.0 = samples.0;
+                frame.1 = samples.1;
             }
-            aud_data.cleanup(&aud_frame);
         }
         DataCallbackResult::Continue
     }
@@ -372,6 +371,8 @@ impl NdiAudSamples {
 
 lazy_static! {
     static ref AUD_PLAY: Mutex<AudPlay> = Mutex::new(AudPlay::new());
+    static ref AUD_CB_ELAPSED: Mutex<Option<Instant>> = Mutex::new(None);
+    static ref AUD_WRITE_ELAPSED: Mutex<Option<Instant>> = Mutex::new(None);
 }
 
 
@@ -403,6 +404,11 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
     stride: u32,
     planar: bool) -> bool
 {
+    let mut push_time = AUD_WRITE_ELAPSED.lock().unwrap();
+    let t = push_time.unwrap_or(Instant::now());
+    *push_time = Some(Instant::now());
+    debug!("audio_push_aud_frame:{:?}", t.elapsed());
+
     let mut aud_data = AUDIO_DATA.lock().unwrap();
 
     let aud_frame = AudioFrameStr::new(opaque, chan_no, samples_opaque, samples_no, stride, planar);
@@ -414,4 +420,49 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
             return false;
         },
     }
+}
+
+/// Print device's audio info
+fn audio_probe() {
+/*
+    if let Err(error) = DefaultStreamValues::init() {
+        eprintln!("Unable to init default stream values due to: {error}");
+    }
+*/
+    debug!("Default stream values:");
+    debug!("  Sample rate: {}", DefaultStreamValues::get_sample_rate());
+    debug!(
+        "  Frames per burst: {}",
+        DefaultStreamValues::get_frames_per_burst()
+    );
+    debug!(
+        "  Channel count: {}",
+        DefaultStreamValues::get_channel_count()
+    );
+
+/*
+    debug!("Audio features:");
+    debug!("  Low latency: {}", AudioFeature::LowLatency.has().unwrap());
+    debug!("  Output: {}", AudioFeature::Output.has().unwrap());
+    debug!("  Pro: {}", AudioFeature::Pro.has().unwrap());
+    debug!("  Microphone: {}", AudioFeature::Microphone.has().unwrap());
+    debug!("  Midi: {}", AudioFeature::Midi.has().unwrap());
+
+    let devices = AudioDeviceInfo::request(AudioDeviceDirection::InputOutput).unwrap();
+
+    debug!("Audio Devices:");
+
+    for device in devices {
+        debug!("{{");
+        debug!("  Id: {}", device.id);
+        debug!("  Type: {:?}", device.device_type);
+        debug!("  Direction: {:?}", device.direction);
+        debug!("  Address: {}", device.address);
+        debug!("  Product name: {}", device.product_name);
+        debug!("  Channel counts: {:?}", device.channel_counts);
+        debug!("  Sample rates: {:?}", device.sample_rates);
+        debug!("  Formats: {:?}", device.formats);
+        debug!("}}");
+    }
+*/
 }

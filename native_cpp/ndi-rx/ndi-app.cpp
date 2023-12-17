@@ -10,11 +10,18 @@
 
 
 // #define _DBG_NDI_APP
+#define _DBG_AUD_RX
 
 #ifdef _DBG_NDI_APP
     #define DBG_NDI_APP(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
     #define DBG_NDI_APP(format, ...)
+#endif
+
+#ifdef _DBG_AUD_RX
+    #define DBG_AUD_RX(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_AUD_RX(format, ...)
 #endif
 
 NdiApp::NdiApp()
@@ -128,12 +135,22 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
         {
             auto releaseCb = [this, rxInst](void* userData)
             {
+                DBG_AUD_RX("Clean aud, userData:%p, inst:%p\n", userData, rxInst->src());
+
                 // rxInst is owned by class object
                 if (!userData) { return; }
                 auto audio = (NDIlib_audio_frame_v3_t*)userData;
                 NDIlib_recv_free_audio_v3(rxInst->src(), audio);
+
                 delete(audio);
             };
+
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
+            mTimeRefr = now;
+
+            DBG_AUD_RX("Aud elapsed:%3.5f ms\n", elapsed.count());
+
             receivedPack(std::move(audio), releaseCb);
             break;
         }
