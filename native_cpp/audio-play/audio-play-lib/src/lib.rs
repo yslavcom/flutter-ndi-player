@@ -343,13 +343,15 @@ impl AudioOutputCallback for NdiAudSamples {
         let mut start_time = AUD_CB_ELAPSED.lock().unwrap();
         let t = start_time.unwrap_or(Instant::now());
         *start_time = Some(Instant::now());
-        debug!("cb: {:?}", t.elapsed());
 
         let mut aud_data = AUDIO_DATA.lock().unwrap();
 
         let demand_samples = frames.len();
         let total_samples_per_chan = aud_data.get_total_samples_per_chan() as usize;
-//        debug!("request_count={}, total_samples_per_chan={}", frames.len(), total_samples_per_chan);
+
+        debug!("rem:{}, cb: {:?}, demand_samples:{}, total_samples_per_chan:{}",
+            aud_data.len(), t.elapsed(), demand_samples, total_samples_per_chan);
+
         if demand_samples <= total_samples_per_chan {
             for frame in frames {
                 let samples = aud_data.get_sample().unwrap_or((0.0, 0.0));
@@ -378,7 +380,7 @@ lazy_static! {
 
 /// Setup to play audio
 #[no_mangle]
-pub extern "C" fn audio_setup(callback: Option<CallbackFn>) {
+pub extern "C" fn audio_setup(callback: Option<CallbackFn>, context: usize) {
 
     android_logger::init_once(
         Config::default().with_max_level(LevelFilter::Trace),
@@ -386,9 +388,11 @@ pub extern "C" fn audio_setup(callback: Option<CallbackFn>) {
 
     let mut aud_data = AUDIO_DATA.lock().unwrap();
     if let Some(cb) = callback {
-        aud_data.set_callback(Some(cb));
+        debug!("Set callback");
+        aud_data.set_callback(Some(cb), context);
     } else {
-        aud_data.set_callback(None);
+        debug!("Clear callback");
+        aud_data.set_callback(None, 0);
     }
 
     let mut aud_play = AUD_PLAY.lock().unwrap();

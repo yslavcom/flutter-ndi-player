@@ -12,10 +12,18 @@
 
 
 // #define _DBG_PLAYER
+#define _DBG_PLAYER_AUD
+
 #ifdef _DBG_PLAYER
     #define DBG_PLAYER(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
     #define DBG_PLAYER(format, ...)
+#endif
+
+#ifdef _DBG_PLAYER_AUD
+    #define DBG_PLAYER_AUD(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_PLAYER_AUD(format, ...)
 #endif
 
 Player::Player()
@@ -111,8 +119,10 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     auto& audio = frame->first;
     if (!mAudioInitialised)
     {
-        auto cb = frame->second.target<void(void*)>();
-        audio_setup(cb);
+        auto cb = frame->second.first;
+        auto ctxt = frame->second.second;
+        DBG_PLAYER_AUD("Set Callback:%p\n", cb);
+        audio_setup(cb, reinterpret_cast<uintptr_t>(ctxt));
         mAudioInitialised = true;
     }
 

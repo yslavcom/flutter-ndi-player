@@ -92,8 +92,11 @@ private:
 
     bool captureBlock(std::shared_ptr<RecvClass> rxInst); // a blocking function
 
-    template<typename T>
-    void receivedPack(std::unique_ptr<T> pack, std::function<void(void* userData)>);
+    void releaseAudioSample(void* releaseData);
+    static void releaseAudioSampleS(void* context, void* releaseData);
+
+    template<typename T, typename C, typename... Args>
+    void receivedPack(std::unique_ptr<T> pack, C cb, Args... args);
     std::set<InputPacketsObserver*> mInputPacketsObservers;
 
     bool mUncompressedShq;

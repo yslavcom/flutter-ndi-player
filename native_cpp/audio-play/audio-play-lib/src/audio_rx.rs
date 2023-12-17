@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 
 // Define a type for the callback function signature
-pub type CallbackFn = unsafe extern "C" fn(arg: *const c_void);
+pub type CallbackFn = unsafe extern "C" fn(ctxt: *const c_void, user_data: *const c_void);
 
 #[derive(Debug)]
 pub enum Error
@@ -40,6 +40,8 @@ impl AudioFrameStr {
 pub struct AudioDataCallback
 {
     cleanup_cb: Option<CallbackFn>,
+    context: usize,
+
     aud_frame: SegQueue<AudioFrameStr>,
 
     total_queued_samples_per_chan: u32,
@@ -80,6 +82,7 @@ impl AudioDataCallback {
 
     pub fn new() -> Self {
         Self { cleanup_cb : None,
+            context: 0,
             aud_frame: SegQueue::new(),
             total_queued_samples_per_chan: 0,
             aud_frame_cache : None,
@@ -88,14 +91,17 @@ impl AudioDataCallback {
         }
     }
 
-    pub fn set_callback(&mut self, callback: Option<CallbackFn>) {
+    pub fn set_callback(&mut self, callback: Option<CallbackFn>, ctxt: usize) {
         self.cleanup_cb = callback;
+        self.context = ctxt;
     }
 
     pub fn cleanup(&self, aud: &AudioFrameStr) {
+        debug!("Try cleanup");
         if let Some(cleanup_cb) = self.cleanup_cb {
             unsafe {
-                cleanup_cb(aud.opaque as *const c_void);
+                debug!("Cleanup:{}", aud.opaque);
+                cleanup_cb(self.context as *const c_void, aud.opaque as *const c_void);
             }
         }
     }
@@ -143,11 +149,12 @@ impl AudioDataCallback {
         Some((sample_0, sample_1))
     }
 
-    // private
     #[allow(dead_code)]
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.aud_frame.len()
     }
+
+    // private
 
     fn pop_aud_frame(&mut self) -> Option<AudioFrameStr> {
         let frame = self.aud_frame.pop();
@@ -172,6 +179,7 @@ impl AudioDataCallback {
         if let Some(aud_frame_cache) = &self.aud_frame_cache {
             self.cleanup(aud_frame_cache);
         }
+        self.aud_frame_cache = None;
         self.cache_pos = 0;
         self.cache_sample_no = 0;
     }

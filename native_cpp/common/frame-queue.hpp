@@ -62,10 +62,11 @@ struct AudioFrameStr
 };
 
 using ReleaseCb = std::function<void(void*)>;
+typedef void(*ReleaseCbAud)(void*, void*);
 
 using VideoFrameVariant = std::variant<VideoFrameStr, VideoFrameCompressedStr>;
 using VideoFrame = std::pair<VideoFrameVariant, ReleaseCb>;
-using AudioFrame = std::pair<AudioFrameStr, ReleaseCb>;
+using AudioFrame = std::pair<AudioFrameStr, std::pair<ReleaseCbAud, void*>>;
 
 // helper type for the visitor
 template<class... Ts>

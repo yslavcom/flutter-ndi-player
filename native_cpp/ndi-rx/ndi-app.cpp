@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <type_traits>
+#include <cassert>
 
 
 // #define _DBG_NDI_APP
@@ -133,25 +134,13 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 
         case NDIlib_frame_type_audio:
         {
-            auto releaseCb = [this, rxInst](void* userData)
-            {
-                DBG_AUD_RX("Clean aud, userData:%p, inst:%p\n", userData, rxInst->src());
-
-                // rxInst is owned by class object
-                if (!userData) { return; }
-                auto audio = (NDIlib_audio_frame_v3_t*)userData;
-                NDIlib_recv_free_audio_v3(rxInst->src(), audio);
-
-                delete(audio);
-            };
-
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
             mTimeRefr = now;
 
             DBG_AUD_RX("Aud elapsed:%3.5f ms\n", elapsed.count());
 
-            receivedPack(std::move(audio), releaseCb);
+            receivedPack(std::move(audio), NdiApp::releaseAudioSampleS, this);
             break;
         }
 
@@ -167,6 +156,28 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
             break;
     }
     return true;
+}
+
+void NdiApp::releaseAudioSample(void* releaseData)
+{
+//    assert(0); // uncomment debug print and NDIlib_recv_free_audio_v3
+    //DBG_AUD_RX("Clean aud, userData:%p, inst:%p\n", releaseData, rxInst->src());
+    DBG_AUD_RX("Clean aud, userData:%p, inst:%p\n", releaseData);
+
+    // rxInst is owned by class object
+    if (!releaseData) { return; }
+    auto audio = (NDIlib_audio_frame_v3_t*)releaseData;
+//    NDIlib_recv_free_audio_v3(rxInst->src(), audio);
+
+    delete(audio);
+}
+
+void NdiApp::releaseAudioSampleS(void* context, void* releaseData)
+{
+    if (context)
+    {
+        reinterpret_cast<NdiApp*>(context)->releaseAudioSample(releaseData);
+    }
 }
 
 void NdiApp::addObserver(InputPacketsObserver* obs)
@@ -193,8 +204,8 @@ void NdiApp::removeObserver(InputPacketsObserver* obs)
     }
 }
 
-template <typename T>
-void NdiApp::receivedPack(std::unique_ptr<T> pack, std::function<void(void* userData)> releaseCb)
+template<typename T, typename C, typename... Args>
+void NdiApp::receivedPack(std::unique_ptr<T> pack, C releaseCb, Args... args)
 {
     if constexpr (std::is_same_v<T, NDIlib_video_frame_v2_t>)
     {
@@ -207,7 +218,7 @@ void NdiApp::receivedPack(std::unique_ptr<T> pack, std::function<void(void* user
     {
         for (auto& el: mInputPacketsObservers)
         {
-            el->receivedAudioPack(std::move(pack), releaseCb);
+            el->receivedAudioPack(std::move(pack), releaseCb, args...);
         }
     }
 }

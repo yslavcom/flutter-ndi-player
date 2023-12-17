@@ -163,7 +163,7 @@ public:
         }
     }
 
-    void receivedAudioPack(std::unique_ptr<NDIlib_audio_frame_v3_t> audio, std::function<void(void* userData)> releaseCb) override
+    void receivedAudioPack(std::unique_ptr<NDIlib_audio_frame_v3_t> audio, FrameQueue::ReleaseCbAud releaseCb, void* context) override
     {
 
         FrameQueue::AudioFrameStr frame;
@@ -174,7 +174,7 @@ public:
         frame.stride = audio->channel_stride_in_bytes;
         frame.opaque = (void*)audio.release();
 
-        mAudioRxQueue.push(std::make_pair(frame, releaseCb));
+        mAudioRxQueue.push(std::make_pair(frame, std::make_pair(releaseCb, context)));
     }
 
 private:
