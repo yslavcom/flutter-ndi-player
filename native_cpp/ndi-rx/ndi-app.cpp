@@ -138,8 +138,12 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
             auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
             mTimeRefr = now;
 
-            DBG_AUD_RX("Aud elapsed:%3.5f ms\n", elapsed.count());
+            DBG_AUD_RX("Aud elapsed:%3.5f ms | audio:%p, inst:%p, inst_count:%d\n", elapsed.count(), audio.get(), rxInst->src(), rxInst.use_count());
 
+            {
+                std::lock_guard lk(mMutex);
+                mAudRevMap[audio.get()] = rxInst;
+            }
             receivedPack(std::move(audio), NdiApp::releaseAudioSampleS, this);
             break;
         }
@@ -160,14 +164,17 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 
 void NdiApp::releaseAudioSample(void* releaseData)
 {
-//    assert(0); // uncomment debug print and NDIlib_recv_free_audio_v3
-    //DBG_AUD_RX("Clean aud, userData:%p, inst:%p\n", releaseData, rxInst->src());
-    DBG_AUD_RX("Clean aud, userData:%p, inst:%p\n", releaseData);
-
     // rxInst is owned by class object
     if (!releaseData) { return; }
+
+    std::lock_guard lk(mMutex);
+
     auto audio = (NDIlib_audio_frame_v3_t*)releaseData;
-//    NDIlib_recv_free_audio_v3(rxInst->src(), audio);
+    auto rxInst = mAudRevMap.find(audio);
+    assert(rxInst != mAudRevMap.cend() && "Failed to match the recevier pointer to the audio packet");
+    NDIlib_recv_free_audio_v3(rxInst->second->src(), audio);
+    DBG_AUD_RX("Clean aud, audio:%p, inst:%p, inst_count:%d\n", audio, rxInst->second->src(), rxInst->second.use_count());
+    mAudRevMap.erase(rxInst);
 
     delete(audio);
 }

@@ -65,7 +65,7 @@ impl Drop for AudioDataCallback {
                 let element = self.aud_frame.pop();
                 match element {
                     Some(el) => {
-                        debug!("cleanup_cb: {:?}", el.opaque);
+//                        debug!("cleanup_cb: {:?}", el.opaque);
                         self.cleanup(&el);
                     },
                     None => {
@@ -97,10 +97,10 @@ impl AudioDataCallback {
     }
 
     pub fn cleanup(&self, aud: &AudioFrameStr) {
-        debug!("Try cleanup");
+//        debug!("Try cleanup");
         if let Some(cleanup_cb) = self.cleanup_cb {
             unsafe {
-                debug!("Cleanup:{}", aud.opaque);
+//                debug!("Cleanup:{}", aud.opaque);
                 cleanup_cb(self.context as *const c_void, aud.opaque as *const c_void);
             }
         }

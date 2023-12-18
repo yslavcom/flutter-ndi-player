@@ -11,6 +11,8 @@
 #include <memory>
 #include <set>
 #include <functional>
+#include <map>
+#include <mutex>
 
 class NdiApp
 {
@@ -91,6 +93,7 @@ private:
     std::shared_ptr<RecvClass> mRecvInst;
 
     bool captureBlock(std::shared_ptr<RecvClass> rxInst); // a blocking function
+    std::map <NDIlib_audio_frame_v3_t*, std::shared_ptr<RecvClass>> mAudRevMap;
 
     void releaseAudioSample(void* releaseData);
     static void releaseAudioSampleS(void* context, void* releaseData);
@@ -102,4 +105,6 @@ private:
     bool mUncompressedShq;
 
     std::chrono::steady_clock::time_point mTimeRefr;
+
+    std::mutex mMutex;
 };

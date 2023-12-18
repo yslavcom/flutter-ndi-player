@@ -349,8 +349,10 @@ impl AudioOutputCallback for NdiAudSamples {
         let demand_samples = frames.len();
         let total_samples_per_chan = aud_data.get_total_samples_per_chan() as usize;
 
+/*
         debug!("rem:{}, cb: {:?}, demand_samples:{}, total_samples_per_chan:{}",
             aud_data.len(), t.elapsed(), demand_samples, total_samples_per_chan);
+*/
 
         if demand_samples <= total_samples_per_chan {
             for frame in frames {
@@ -411,7 +413,7 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
     let mut push_time = AUD_WRITE_ELAPSED.lock().unwrap();
     let t = push_time.unwrap_or(Instant::now());
     *push_time = Some(Instant::now());
-    debug!("audio_push_aud_frame:{:?}", t.elapsed());
+//    debug!("audio_push_aud_frame:{:?}", t.elapsed());
 
     let mut aud_data = AUDIO_DATA.lock().unwrap();
 

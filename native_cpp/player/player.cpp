@@ -12,7 +12,8 @@
 
 
 // #define _DBG_PLAYER
-#define _DBG_PLAYER_AUD
+// #define _DBG_PLAYER_AUD
+// #define _DBG_PLAYER_VID
 
 #ifdef _DBG_PLAYER
     #define DBG_PLAYER(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -24,6 +25,12 @@
     #define DBG_PLAYER_AUD(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
     #define DBG_PLAYER_AUD(format, ...)
+#endif
+
+#ifdef _DBG_PLAYER_VID
+    #define DBG_PLAYER_VID(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_PLAYER_VID(format, ...)
 #endif
 
 Player::Player()
@@ -50,18 +57,18 @@ void Player::setDecoder(Video::Decoder* decoder)
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 {
-    DBG_PLAYER("Player::onFrame, frame:%p, renderObs:%p, mVideoDecoder:%p(ready:%d)\n",
+    DBG_PLAYER_VID("Player::onFrame, frame:%p, renderObs:%p, mVideoDecoder:%p(ready:%d)\n",
         frame, mRenderVidFrameObserver, mVideoDecoder, (mVideoDecoder ? mVideoDecoder->isReady(): false));
 
     if (!frame)
     {
-        DBG_PLAYER("Missing frame\n");
+        DBG_PLAYER_VID("Missing frame\n");
         return;
     }
 
     if (!mRenderVidFrameObserver)
     {
-        DBG_PLAYER("Missing frame observer\n");
+        DBG_PLAYER_VID("Missing frame observer\n");
         return;
     }
     // Apple test pattern generator sends frame just once when the dimensions are still unknown.
@@ -69,7 +76,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
     auto [xRes, yRes] = mRenderVidFrameObserver->getOutDim();
     if (!xRes || !yRes)
     {
-        DBG_PLAYER("Bad dimensions: %d/%d\n", xRes, yRes);
+        DBG_PLAYER_VID("Bad dimensions: %d/%d\n", xRes, yRes);
     }
     // render the frame
     if (xRes && yRes)
@@ -80,29 +87,31 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
         std::visit(FrameQueue::overloaded {
             [this, x, y](FrameQueue::VideoFrameStr& arg)
             {
+                DBG_PLAYER_VID("Uncompressed, x:%d, y:%d\n", arg.xres, arg.yres);
+
                 // uncompressed frame
                 size_t size = 0;
                 auto scaledFrame = convScaleFrame(arg, x, y, size);
-                DBG_PLAYER("Render uncompressed\n");
+                DBG_PLAYER_VID("Render uncompressed\n");
                 mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
             },
             [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)
             {
                 // compressed frame, must be cleaned up after decoding
-                DBG_PLAYER("Compressed, x:%d, y:%d\n", arg.xres, arg.yres);
+                DBG_PLAYER_VID("Compressed, x:%d, y:%d\n", arg.xres, arg.yres);
 
                 std::lock_guard lk(mDecoderMu);
                 if (mVideoDecoder)
                 {
                     if (!mVideoDecoder->isReady())
                     {
-                        DBG_PLAYER("Request render/decode window setup\n");
+                        DBG_PLAYER_VID("Request render/decode window setup\n");
                         mVideoDecoder->setDimensions(arg.xres, arg.yres);
                         mVideoDecoder->setCodecFourCC(H26x::FourCC{arg.fourCC});
                         mVideoDecoder->requestSetup();
                     }
                     auto res = mVideoDecoder->pushToDecode(arg, cleanupCb);
-                    DBG_PLAYER("mVideoDecoder->pushToDecode:%d, rate:%d/%d\n", res, arg.frameRateN, arg.frameRateD);
+                    DBG_PLAYER_VID("mVideoDecoder->pushToDecode:%d, rate:%d/%d\n", res, arg.frameRateN, arg.frameRateD);
                 }
             }
         }, frame->first);
