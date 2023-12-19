@@ -12,7 +12,7 @@
 
 
 // #define _DBG_PLAYER
-// #define _DBG_PLAYER_AUD
+#define _DBG_PLAYER_AUD
 // #define _DBG_PLAYER_VID
 
 #ifdef _DBG_PLAYER
@@ -124,24 +124,25 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     {
         return;
     }
-
+#if 1
     auto& audio = frame->first;
     if (!mAudioInitialised)
     {
         auto cb = frame->second.first;
         auto ctxt = frame->second.second;
-        DBG_PLAYER_AUD("Set Callback:%p\n", cb);
+        DBG_PLAYER_AUD("Set Callback:%p, chanNo:%d, samples:%p, samplesNo:%d, stride:%d, planar:%d\n",
+            cb, frame->first.chanNo, frame->first.samples, frame->first.samplesNo, frame->first.stride, frame->first.planar);
         audio_setup(cb, reinterpret_cast<uintptr_t>(ctxt));
         mAudioInitialised = true;
     }
 
     audio_push_aud_frame(reinterpret_cast<uintptr_t>(audio.opaque), audio.chanNo, reinterpret_cast<uintptr_t>(audio.samples), audio.samplesNo, audio.stride, audio.planar);
 
-#if 0
+#else
 //    DBG_PLAYER("dump audio, remaining:%d\n", remainingCount);
-    if (frame->second)
+    if (frame->second.first)
     {
-        frame->second(frame->first.opaque);
+        frame->second.first(frame->second.second, frame->first.opaque);
     }
 #endif
 }

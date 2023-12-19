@@ -2,6 +2,8 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,4 +17,7 @@ void LOGE(const char * format, ... );
 
 #ifdef __cplusplus
 }
+
+std::string logFourcc(uint32_t fourcc);
+
 #endif

@@ -11,7 +11,7 @@
 
 
 // #define _DBG_NDI_APP
-#define _DBG_AUD_RX
+// #define _DBG_AUD_RX
 
 #ifdef _DBG_NDI_APP
     #define DBG_NDI_APP(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -138,7 +138,7 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
             auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
             mTimeRefr = now;
 
-            DBG_AUD_RX("Aud elapsed:%3.5f ms | audio:%p, inst:%p, inst_count:%d\n", elapsed.count(), audio.get(), rxInst->src(), rxInst.use_count());
+//            DBG_AUD_RX("Aud elapsed:%3.5f ms | audio:%p, inst:%p, inst_count:%d\n", elapsed.count(), audio.get(), rxInst->src(), rxInst.use_count());
 
             {
                 std::lock_guard lk(mMutex);
@@ -165,6 +165,9 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 void NdiApp::releaseAudioSample(void* releaseData)
 {
     // rxInst is owned by class object
+
+    DBG_AUD_RX("releaseAudioSample:%p\n", releaseData);
+
     if (!releaseData) { return; }
 
     std::lock_guard lk(mMutex);

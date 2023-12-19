@@ -32,3 +32,4 @@ static void printBuf(const uint8_t * buf, size_t len)
     DBG_PRNT_BUF("scratch str:%s\n", scratchStr);
 #endif
 }
+

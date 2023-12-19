@@ -57,4 +57,15 @@ void LOGE(const char * format, ... )
     va_end(arg_list);
 }
 
+std::string logFourcc(uint32_t fourcc)
+{
+    char buffer[5];
+    buffer[0] = (char)((fourcc & 0xff000000) >> 24);
+    buffer[1] = (char)((fourcc & 0x00ff0000) >> 16);
+    buffer[2] = (char)((fourcc & 0x0000ff00) >> 8);
+    buffer[3] = (char)(fourcc & 0x000000ff);
+    buffer[4] = 0;        // Null terminate.
+    return std::string(buffer);
+}
+
 #endif

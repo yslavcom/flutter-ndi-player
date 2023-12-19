@@ -341,7 +341,7 @@ impl AudioOutputCallback for NdiAudSamples {
         // check stream AudioOutputStreamSafe properties here
 
         let mut start_time = AUD_CB_ELAPSED.lock().unwrap();
-        let t = start_time.unwrap_or(Instant::now());
+        let _t = start_time.unwrap_or(Instant::now());
         *start_time = Some(Instant::now());
 
         let mut aud_data = AUDIO_DATA.lock().unwrap();
@@ -411,7 +411,7 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
     planar: bool) -> bool
 {
     let mut push_time = AUD_WRITE_ELAPSED.lock().unwrap();
-    let t = push_time.unwrap_or(Instant::now());
+    let _t = push_time.unwrap_or(Instant::now());
     *push_time = Some(Instant::now());
 //    debug!("audio_push_aud_frame:{:?}", t.elapsed());
 

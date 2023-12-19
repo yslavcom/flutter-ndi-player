@@ -8,11 +8,20 @@
 
 #include <iostream>
 
-#define _DBG_NDI_INP_OBS
+// #define _DBG_NDI_INP_OBS
+// #define _DBG_AUD_LOG
+
 #ifdef _DBG_NDI_INP_OBS
     #define DBG_NDI_INP_OBS(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
     #define DBG_NDI_INP_OBS(format, ...)
+#endif
+
+
+#ifdef _DBG_AUD_LOG
+    #define DBG_AUD_LOG(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_AUD_LOG(format, ...)
 #endif
 
 class NdiInputPacketsObserver : public InputPacketsObserver
@@ -165,6 +174,7 @@ public:
 
     void receivedAudioPack(std::unique_ptr<NDIlib_audio_frame_v3_t> audio, FrameQueue::ReleaseCbAud releaseCb, void* context) override
     {
+        DBG_AUD_LOG("Aud FourCC:%s\n", logFourcc(audio->FourCC).c_str());
 
         FrameQueue::AudioFrameStr frame;
         frame.chanNo = audio->no_channels;
@@ -172,6 +182,8 @@ public:
         frame.samples = audio->p_data;
         // TODO: check FOURCC here to figure out the right stride
         frame.stride = audio->channel_stride_in_bytes;
+        // frame.planar = audio->FourCC == NDIlib_FourCC_audio_type_FLTP ? true : false;
+        frame.planar = true;
         frame.opaque = (void*)audio.release();
 
         mAudioRxQueue.push(std::make_pair(frame, std::make_pair(releaseCb, context)));

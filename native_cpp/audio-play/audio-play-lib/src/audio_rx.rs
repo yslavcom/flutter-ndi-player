@@ -97,10 +97,9 @@ impl AudioDataCallback {
     }
 
     pub fn cleanup(&self, aud: &AudioFrameStr) {
-//        debug!("Try cleanup");
         if let Some(cleanup_cb) = self.cleanup_cb {
             unsafe {
-//                debug!("Cleanup:{}", aud.opaque);
+                // debug!("Cleanup:{}", aud.opaque);
                 cleanup_cb(self.context as *const c_void, aud.opaque as *const c_void);
             }
         }
@@ -130,7 +129,7 @@ impl AudioDataCallback {
     /// Get one sample for stereo. Consider creating an iterator and returning the whole set of requested data
     pub fn get_sample(&mut self) -> Option<(f32, f32)> {
         if self.get_total_samples_per_chan() == 0 {
-            ()
+            return None;
         }
 
         if self.get_cached_samples_per_chan() == 0 {
