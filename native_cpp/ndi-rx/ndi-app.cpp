@@ -98,15 +98,18 @@ bool NdiApp::capturePackets()
 
 bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 {
-    //NDIlib_video_frame_v2_t* video = (NDIlib_video_frame_v2_t*)malloc(sizeof(NDIlib_video_frame_v2_t));
-    // std::unique_ptr<NDIlib_metadata_frame_t> meta = std::make_unique<NDIlib_metadata_frame_t>();
+#define DBG_POLL_NDI_QUEUE (0)
 
+#if DBG_POLL_NDI_QUEUE
     NDIlib_recv_queue_t queue{};
     NDIlib_recv_get_queue(rxInst->src(), &queue);
 
     if (queue.video_frames || queue.audio_frames)
+#endif
     {
+#if DBG_POLL_NDI_QUEUE
         for (;;)
+#endif
         {
             std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
             std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
@@ -121,14 +124,18 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 
                 case NDIlib_frame_type_video:
                 {
-                    queue.video_frames --;
+#if DBG_POLL_NDI_QUEUE
+                    if (queue.video_frames) queue.video_frames --;
+#endif
                     handleVideo(std::move(video), rxInst);
                     break;
                 }
 
                 case NDIlib_frame_type_audio:
                 {
-                    queue.audio_frames --;
+#if DBG_POLL_NDI_QUEUE
+                    if (queue.audio_frames) queue.audio_frames --;
+#endif
                     handleAudio(std::move(audio), rxInst);
                     break;
                 }
@@ -144,11 +151,12 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
                 default:
                     break;
             } // switch
-
+#if DBG_POLL_NDI_QUEUE
             if (queue.video_frames == 0 && queue.audio_frames == 0)
             {
-                break;
+                return true;
             }
+#endif
         } // for
     }
     return true;
