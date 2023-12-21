@@ -1,4 +1,6 @@
-use std::os::raw::c_void;
+use std::{os::raw::c_void
+    , time::Duration
+    , time::Instant};
 use crossbeam_queue::SegQueue;
 
 use once_cell::sync::Lazy;
@@ -49,6 +51,8 @@ pub struct AudioDataCallback
     aud_frame_cache: Option<AudioFrameStr>,
     cache_pos: isize,
     cache_sample_no: isize,
+
+    aud_samples_timer: Option<Instant>,
 }
 
 impl Drop for AudioDataCallback {
@@ -65,7 +69,6 @@ impl Drop for AudioDataCallback {
                 let element = self.aud_frame.pop();
                 match element {
                     Some(el) => {
-//                        debug!("cleanup_cb: {:?}", el.opaque);
                         self.cleanup(&el);
                     },
                     None => {
@@ -88,6 +91,8 @@ impl AudioDataCallback {
             aud_frame_cache : None,
             cache_pos : 0,
             cache_sample_no : 0,
+
+            aud_samples_timer: None,
         }
     }
 
@@ -99,7 +104,6 @@ impl AudioDataCallback {
     pub fn cleanup(&self, aud: &AudioFrameStr) {
         if let Some(cleanup_cb) = self.cleanup_cb {
             unsafe {
-                // debug!("Cleanup:{}", aud.opaque);
                 cleanup_cb(self.context as *const c_void, aud.opaque as *const c_void);
             }
         }
@@ -139,12 +143,20 @@ impl AudioDataCallback {
         }
 
         let sample_ptr: *const f32 = self.aud_frame_cache.unwrap().samples_opaque as *const f32;
-        let sample_0 = unsafe {*sample_ptr.offset(self.cache_pos)};
-        let sample_1 = unsafe {*sample_ptr.offset(self.cache_pos+1)};
-        self.cache_pos += 2;
-        if self.cache_pos >= self.cache_sample_no {
+
+        let mut sample_0 = unsafe {*sample_ptr.offset(self.cache_pos)};
+        let mut sample_1 = unsafe {*sample_ptr.offset(self.cache_pos+self.cache_sample_no/2)};
+
+        self.cache_pos += 1;
+        if self.cache_pos >= self.cache_sample_no/2 {
             self.cache_clear();
         }
+
+        if sample_0 > 1.0 { sample_0 = 1.0 }
+        if sample_0 < -1.0 { sample_0 = -1.0 }
+        if sample_1 > 1.0 { sample_1 = 1.0 }
+        if sample_1 < -1.0 { sample_1 = -1.0 }
+
         Some((sample_0, sample_1))
     }
 

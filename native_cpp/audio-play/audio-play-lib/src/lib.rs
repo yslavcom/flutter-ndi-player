@@ -25,6 +25,7 @@ use oboe::{
 
 use atomic_float::AtomicF32;
 
+use std::time::Duration;
 use std::{
     f32::consts::PI,
     time::Instant,
@@ -349,27 +350,42 @@ impl AudioOutputCallback for NdiAudSamples {
         let demand_samples = frames.len();
         let total_samples_per_chan = aud_data.get_total_samples_per_chan() as usize;
 
-/*
-        debug!("rem:{}, cb: {:?}, demand_samples:{}, total_samples_per_chan:{}",
-            aud_data.len(), t.elapsed(), demand_samples, total_samples_per_chan);
-*/
+        let mut push_time = AUD_WRITE_ELAPSED.lock().unwrap();
+        let t = push_time.unwrap_or(Instant::now());
+        if t.elapsed() >= Duration::from_secs(1) {
+            *push_time = Some(Instant::now());
+            debug!("frames len:{:?}", frames.len());
+        }
 
         if demand_samples <= total_samples_per_chan {
             for frame in frames {
-                let samples = aud_data.get_sample().unwrap_or((0.0, 0.0));
-                frame.0 = samples.0;
-                frame.1 = samples.1;
+                let samples = aud_data.get_sample();
+                if let Some(sample) = samples {
+                    frame.0 = sample.0;
+                    frame.1 = sample.1;
+                    self.prev_sample = samples;
+                }
+                else {
+                    frame.0 = self.prev_sample.unwrap_or((0.0, 0.0)).0;
+                    frame.1 = self.prev_sample.unwrap_or((0.0, 0.0)).1;
+                }
             }
         }
+
+
         DataCallbackResult::Continue
     }
 }
 
-pub struct NdiAudSamples;
+pub struct NdiAudSamples {
+    prev_sample: Option<(f32, f32)>,
+}
 
 impl NdiAudSamples {
     pub fn new() -> Self {
-        Self
+        Self {
+            prev_sample: None,
+        }
     }
 }
 
@@ -397,6 +413,9 @@ pub extern "C" fn audio_setup(callback: Option<CallbackFn>, context: usize) {
         aud_data.set_callback(None, 0);
     }
 
+    let mut push_time = AUD_WRITE_ELAPSED.lock().unwrap();
+    *push_time = Some(Instant::now());
+
     let mut aud_play = AUD_PLAY.lock().unwrap();
     aud_play.try_start();
 }
@@ -410,11 +429,6 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
     stride: u32,
     planar: bool) -> bool
 {
-    let mut push_time = AUD_WRITE_ELAPSED.lock().unwrap();
-    let _t = push_time.unwrap_or(Instant::now());
-    *push_time = Some(Instant::now());
-//    debug!("audio_push_aud_frame:{:?}", t.elapsed());
-
     let mut aud_data = AUDIO_DATA.lock().unwrap();
 
     let aud_frame = AudioFrameStr::new(opaque, chan_no, samples_opaque, samples_no, stride, planar);
@@ -435,7 +449,7 @@ fn audio_probe() {
         eprintln!("Unable to init default stream values due to: {error}");
     }
 */
-    debug!("Default stream values:");
+    debug!("!!! Default stream values:");
     debug!("  Sample rate: {}", DefaultStreamValues::get_sample_rate());
     debug!(
         "  Frames per burst: {}",
@@ -445,6 +459,7 @@ fn audio_probe() {
         "  Channel count: {}",
         DefaultStreamValues::get_channel_count()
     );
+
 
 /*
     debug!("Audio features:");
@@ -471,4 +486,24 @@ fn audio_probe() {
         debug!("}}");
     }
 */
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_audio_samples() {
+        let samples_no: u32 = 1024;
+        let mut samples: Vec<u32> = Vec::with_capacity(samples_no as usize);
+        for i in 0..samples.len() {
+            samples.push((i+1) as u32); // Fill the vector with counter values
+        }
+
+        let raw_ptr = samples.as_ptr();
+        let samples_opaque = raw_ptr as usize;
+
+        assert_eq!(true, audio_push_aud_frame(0, 2, samples_opaque, samples_no, samples_no * 4, true));
+    }
 }
