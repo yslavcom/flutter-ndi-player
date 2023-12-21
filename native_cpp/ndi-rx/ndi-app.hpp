@@ -95,6 +95,10 @@ private:
     bool captureBlock(std::shared_ptr<RecvClass> rxInst); // a blocking function
     std::map <NDIlib_audio_frame_v3_t*, std::shared_ptr<RecvClass>> mAudRevMap;
 
+    bool handleVideo(std::unique_ptr<NDIlib_video_frame_v2_t>, std::shared_ptr<RecvClass> rxInst);
+    bool handleAudio(std::unique_ptr<NDIlib_audio_frame_v3_t>, std::shared_ptr<RecvClass> rxInst);
+
+
     void releaseAudioSample(void* releaseData);
     static void releaseAudioSampleS(void* context, void* releaseData);
 

@@ -92,73 +92,104 @@ bool NdiApp::capturePackets()
         return false;
     }
 
+    //return captureBlockV2(mRecvInst);
     return captureBlock(mRecvInst);
 }
 
 bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 {
     //NDIlib_video_frame_v2_t* video = (NDIlib_video_frame_v2_t*)malloc(sizeof(NDIlib_video_frame_v2_t));
+    // std::unique_ptr<NDIlib_metadata_frame_t> meta = std::make_unique<NDIlib_metadata_frame_t>();
 
-    std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
-    std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
-    std::unique_ptr<NDIlib_metadata_frame_t> meta = std::make_unique<NDIlib_metadata_frame_t>();
+    NDIlib_recv_queue_t queue{};
+    NDIlib_recv_get_queue(rxInst->src(), &queue);
 
-    NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 1000);
-
-    switch (ret)
+    if (queue.video_frames || queue.audio_frames)
     {
-        case NDIlib_frame_type_none:
-            break;
-
-        case NDIlib_frame_type_video:
+        for (;;)
         {
-            if (video->p_data)
+            std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
+            std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
+
+            //NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 100);
+            NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), nullptr, 5);
+
+            switch (ret)
             {
-                // push video to queue after checking for audio !!!
-                auto releaseCb = [this, rxInst](void* userData)
+                case NDIlib_frame_type_none:
+                    break;
+
+                case NDIlib_frame_type_video:
                 {
-                    // rxInst is a shred pointer and is owned by class object
-                    if (!userData) { return; }
-                    auto video = (NDIlib_video_frame_v2_t*)userData;
-                    NDIlib_recv_free_video_v2(rxInst->src(), video);
-                    delete(video);
-                };
-                receivedPack(std::move(video), releaseCb);
-            }
-            else
+                    queue.video_frames --;
+                    handleVideo(std::move(video), rxInst);
+                    break;
+                }
+
+                case NDIlib_frame_type_audio:
+                {
+                    queue.audio_frames --;
+                    handleAudio(std::move(audio), rxInst);
+                    break;
+                }
+
+                case NDIlib_frame_type_metadata:
+                    // NDIlib_recv_free_metadata(rxInst->src(), meta.get());
+                    break;
+
+                case NDIlib_frame_type_error:
+                    LOGE("NDI pack rx error\n");
+                    break;
+
+                default:
+                    break;
+            } // switch
+
+            if (queue.video_frames == 0 && queue.audio_frames == 0)
             {
-                NDIlib_recv_free_video_v2(rxInst->src(), video.get());
+                break;
             }
-            break;
-        }
+        } // for
+    }
+    return true;
+}
 
-        case NDIlib_frame_type_audio:
+bool NdiApp::handleVideo(std::unique_ptr<NDIlib_video_frame_v2_t> video, std::shared_ptr<RecvClass> rxInst)
+{
+    if (video->p_data)
+    {
+        // push video to queue after checking for audio !!!
+        auto releaseCb = [this, rxInst](void* userData)
         {
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
-            mTimeRefr = now;
+            // rxInst is a shred pointer and is owned by class object
+            if (!userData) { return; }
+            auto video = (NDIlib_video_frame_v2_t*)userData;
+            NDIlib_recv_free_video_v2(rxInst->src(), video);
+            delete(video);
+        };
+        receivedPack(std::move(video), releaseCb);
+    }
+    else
+    {
+        NDIlib_recv_free_video_v2(rxInst->src(), video.get());
+    }
 
+    return true;
+}
+
+bool NdiApp::handleAudio(std::unique_ptr<NDIlib_audio_frame_v3_t> audio, std::shared_ptr<RecvClass> rxInst)
+{
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration<float, std::milli>(now - mTimeRefr);
+    mTimeRefr = now;
 //            DBG_AUD_RX("Aud elapsed:%3.5f ms | audio:%p, inst:%p, inst_count:%d\n", elapsed.count(), audio.get(), rxInst->src(), rxInst.use_count());
 
-            {
-                std::lock_guard lk(mMutex);
-                mAudRevMap[audio.get()] = rxInst;
-            }
-            receivedPack(std::move(audio), NdiApp::releaseAudioSampleS, this);
-            break;
-        }
-
-        case NDIlib_frame_type_metadata:
-            NDIlib_recv_free_metadata(rxInst->src(), meta.get());
-            break;
-
-        case NDIlib_frame_type_error:
-            LOGE("NDI pack rx error\n");
-            break;
-
-        default:
-            break;
+    {
+        std::lock_guard lk(mMutex);
+        mAudRevMap[audio.get()] = rxInst;
     }
+    receivedPack(std::move(audio), NdiApp::releaseAudioSampleS, this);
+
     return true;
 }
 
