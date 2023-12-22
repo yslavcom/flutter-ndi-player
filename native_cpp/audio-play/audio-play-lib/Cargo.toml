@@ -8,7 +8,8 @@ edition = "2021"
 [lib]
 crate-type = ["staticlib"]
 
-[build-dependencies]
+# [build-dependencies]
+[dependencies]
 android_logger = "0.13.3"
 atomic_float = "0.1.0"
 crossbeam-queue = "0.3.8"
@@ -17,9 +18,12 @@ log = "0.4.20"
 oboe = "0.5.0"
 once_cell = "1.19.0"
 
-[dev-dependencies]
-atomic_float = "0.1.0"
-crossbeam-queue = "0.3.8"
-lazy_static = "1.4.0"
-log = "0.4.20"
-once_cell = "1.19.0"
+# [dev-dependencies]
+# atomic_float = "0.1.0"
+# crossbeam-queue = "0.3.8"
+# lazy_static = "1.4.0"
+# log = "0.4.20"
+# once_cell = "1.19.0"
+
+[features]
+host_test = []

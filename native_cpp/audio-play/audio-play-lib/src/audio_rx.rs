@@ -16,7 +16,7 @@ pub enum Error
     MemoryAllocationFail
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct AudioFrameStr
 {
     opaque: usize,
@@ -39,6 +39,7 @@ impl AudioFrameStr {
     }
 }
 
+#[derive(Debug)]
 pub struct AudioDataCallback
 {
     cleanup_cb: Option<CallbackFn>,
@@ -136,6 +137,10 @@ impl AudioDataCallback {
             return None;
         }
 
+        if self.cache_pos >= self.cache_sample_no {
+            self.cache_clear();
+        }
+
         if self.get_cached_samples_per_chan() == 0 {
             // We're sure there's at list one audio frame is queued
             let audio_frame = self.pop_aud_frame().unwrap();
@@ -145,12 +150,9 @@ impl AudioDataCallback {
         let sample_ptr: *const f32 = self.aud_frame_cache.unwrap().samples_opaque as *const f32;
 
         let mut sample_0 = unsafe {*sample_ptr.offset(self.cache_pos)};
-        let mut sample_1 = unsafe {*sample_ptr.offset(self.cache_pos+self.cache_sample_no/2)};
+        let mut sample_1 = unsafe {*sample_ptr.offset(self.cache_pos+self.cache_sample_no)};
 
         self.cache_pos += 1;
-        if self.cache_pos >= self.cache_sample_no/2 {
-            self.cache_clear();
-        }
 
         if sample_0 > 1.0 { sample_0 = 1.0 }
         if sample_0 < -1.0 { sample_0 = -1.0 }
@@ -162,7 +164,11 @@ impl AudioDataCallback {
 
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
-        self.aud_frame.len()
+        return self.aud_frame.len();
+    }
+
+    pub fn total_queued_samples_per_chan(&self) -> u32 {
+        self.total_queued_samples_per_chan
     }
 
     // private
@@ -195,8 +201,9 @@ impl AudioDataCallback {
         self.cache_sample_no = 0;
     }
 
-    fn get_cached_samples_per_chan(&self) -> u32 {
-        if self.cache_sample_no == 0 {
+    pub fn get_cached_samples_per_chan(&self) -> u32
+    {
+        if self.cache_sample_no == 0 || self.cache_pos >= self.cache_sample_no {
             return 0
         }
         return (self.cache_sample_no - self.cache_pos) as u32

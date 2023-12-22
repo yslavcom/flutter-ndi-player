@@ -3,6 +3,7 @@ use crate::audio_rx::AUDIO_DATA;
 use crate::audio_rx::AudioFrameStr;
 use crate::audio_rx::CallbackFn;
 
+// // #[cfg(not(feature = "host_test"))]
 use oboe::{
     //AudioDeviceDirection,
     //AudioDeviceInfo,
@@ -37,19 +38,25 @@ use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 #[macro_use] extern crate log;
+
+// #[cfg(not(feature = "host_test"))]
 extern crate android_logger;
 
 use log::LevelFilter;
+// #[cfg(not(feature = "host_test"))]
 use android_logger::Config;
 
+//////////////////////////
+/// Code
 
 /// Sine-wave generator stream
+// #[cfg(not(feature = "host_test"))]
 #[derive(Default)]
 pub struct SineGen {
     stream: Option<AudioStreamAsync<Output, SineWave<f32, Stereo>>>,
 }
 
-
+// #[cfg(not(feature = "host_test"))]
 impl SineGen {
 
     fn new() -> Self {
@@ -99,6 +106,7 @@ impl SineGen {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 pub struct SineParam {
     frequency: AtomicF32,
     gain: AtomicF32,
@@ -106,6 +114,7 @@ pub struct SineParam {
     delta: AtomicF32,
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl Default for SineParam {
     fn default() -> Self {
         Self {
@@ -117,6 +126,7 @@ impl Default for SineParam {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl SineParam {
     fn set_sample_rate(&self, sample_rate: f32) {
         let frequency = self.frequency.load(Ordering::Acquire);
@@ -143,18 +153,21 @@ impl SineParam {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 pub struct SineWave<F, C> {
     param: Arc<SineParam>,
     phase: f32,
     marker: PhantomData<(F, C)>,
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl<F, C> Drop for SineWave<F, C> {
     fn drop(&mut self) {
         println!("drop SineWave generator");
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl<F, C> SineWave<F, C> {
     pub fn new(param: &Arc<SineParam>) -> Self {
         println!("init SineWave generator");
@@ -166,6 +179,7 @@ impl<F, C> SineWave<F, C> {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl<F, C> Iterator for SineWave<F, C> {
     type Item = f32;
 
@@ -184,6 +198,7 @@ impl<F, C> Iterator for SineWave<F, C> {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl AudioOutputCallback for SineWave<f32, Mono> {
     type FrameType = (f32, Mono);
 
@@ -199,6 +214,7 @@ impl AudioOutputCallback for SineWave<f32, Mono> {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl AudioOutputCallback for SineWave<f32, Stereo> {
     type FrameType = (f32, Stereo);
 
@@ -215,74 +231,19 @@ impl AudioOutputCallback for SineWave<f32, Stereo> {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 lazy_static! {
     static ref SINE: Mutex<SineGen> = Mutex::new(SineGen::new());
 }
 
-//#[no_mangle]
-//pub extern "C" fn audio_setup() -> () {
-//
-//    android_logger::init_once(
-//        Config::default().with_max_level(LevelFilter::Trace),
-//    );
-//
-//    let mut sine = SINE.lock().unwrap();
-//    sine.try_start();
-//
-//}
-
-/*
-/// Print device's audio info
-pub fn audio_probe() {
-    if let Err(error) = DefaultStreamValues::init() {
-        eprintln!("Unable to init default stream values due to: {error}");
-    }
-
-    println!("Default stream values:");
-    println!("  Sample rate: {}", DefaultStreamValues::get_sample_rate());
-    println!(
-        "  Frames per burst: {}",
-        DefaultStreamValues::get_frames_per_burst()
-    );
-    println!(
-        "  Channel count: {}",
-        DefaultStreamValues::get_channel_count()
-    );
-
-    println!("Audio features:");
-    println!("  Low latency: {}", AudioFeature::LowLatency.has().unwrap());
-    println!("  Output: {}", AudioFeature::Output.has().unwrap());
-    println!("  Pro: {}", AudioFeature::Pro.has().unwrap());
-    println!("  Microphone: {}", AudioFeature::Microphone.has().unwrap());
-    println!("  Midi: {}", AudioFeature::Midi.has().unwrap());
-
-    let devices = AudioDeviceInfo::request(AudioDeviceDirection::InputOutput).unwrap();
-
-    println!("Audio Devices:");
-
-    for device in devices {
-        println!("{{");
-        println!("  Id: {}", device.id);
-        println!("  Type: {:?}", device.device_type);
-        println!("  Direction: {:?}", device.direction);
-        println!("  Address: {}", device.address);
-        println!("  Product name: {}", device.product_name);
-        println!("  Channel counts: {:?}", device.channel_counts);
-        println!("  Sample rates: {:?}", device.sample_rates);
-        println!("  Formats: {:?}", device.formats);
-        println!("}}");
-    }
-}
-*/
-
-
 /// Sine-wave generator stream
+// #[cfg(not(feature = "host_test"))]
 #[derive(Default)]
 pub struct AudPlay {
     stream: Option<AudioStreamAsync<Output, NdiAudSamples>>,
 }
 
-
+// #[cfg(not(feature = "host_test"))]
 impl AudPlay {
 
     fn new() -> Self {
@@ -332,6 +293,7 @@ impl AudPlay {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl AudioOutputCallback for NdiAudSamples {
     type FrameType = (f32, Stereo);
     fn on_audio_ready(
@@ -363,11 +325,10 @@ impl AudioOutputCallback for NdiAudSamples {
                 if let Some(sample) = samples {
                     frame.0 = sample.0;
                     frame.1 = sample.1;
-                    self.prev_sample = samples;
                 }
                 else {
-                    frame.0 = self.prev_sample.unwrap_or((0.0, 0.0)).0;
-                    frame.1 = self.prev_sample.unwrap_or((0.0, 0.0)).1;
+                    frame.0 = 0.0;
+                    frame.1 = 0.0;
                 }
             }
         }
@@ -377,10 +338,12 @@ impl AudioOutputCallback for NdiAudSamples {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 pub struct NdiAudSamples {
     prev_sample: Option<(f32, f32)>,
 }
 
+// #[cfg(not(feature = "host_test"))]
 impl NdiAudSamples {
     pub fn new() -> Self {
         Self {
@@ -389,6 +352,7 @@ impl NdiAudSamples {
     }
 }
 
+// #[cfg(not(feature = "host_test"))]
 lazy_static! {
     static ref AUD_PLAY: Mutex<AudPlay> = Mutex::new(AudPlay::new());
     static ref AUD_CB_ELAPSED: Mutex<Option<Instant>> = Mutex::new(None);
@@ -397,6 +361,7 @@ lazy_static! {
 
 
 /// Setup to play audio
+// #[cfg(not(feature = "host_test"))]
 #[no_mangle]
 pub extern "C" fn audio_setup(callback: Option<CallbackFn>, context: usize) {
 
@@ -443,6 +408,7 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
 }
 
 /// Print device's audio info
+// #[cfg(not(feature = "host_test"))]
 fn audio_probe() {
 /*
     if let Err(error) = DefaultStreamValues::init() {
@@ -493,17 +459,73 @@ fn audio_probe() {
 mod tests {
     use super::*;
 
+    fn print_sample_as_bytes(msg: &str, sample: Option<(f32, f32)>) {
+
+        if let Some(s) = sample {
+            let a = s.0;
+            let b = s.1;
+            println!("{} ({:?}, {:?})\n", msg, a.to_be_bytes(), b.to_be_bytes());
+        } else {
+            println!("{} (None)\n", msg);
+        }
+    }
+
     #[test]
     fn test_audio_samples() {
-        let samples_no: u32 = 1024;
-        let mut samples: Vec<u32> = Vec::with_capacity(samples_no as usize);
-        for i in 0..samples.len() {
+
+//        let mut aud_data = AUDIO_DATA.lock().unwrap();
+
+        let samples_no: u32 = 4;
+        let mut samples: Vec<u32> = Vec::with_capacity((samples_no * 2) as usize);
+        for i in 0..(samples_no*2) {
             samples.push((i+1) as u32); // Fill the vector with counter values
         }
 
         let raw_ptr = samples.as_ptr();
         let samples_opaque = raw_ptr as usize;
 
+        println!("samples vec len:{:?}", samples.len());
+        println!("the first 2 words in smaple vec are:{:?}, {:?}", samples[0], samples[1]);
+        println!("the first 2 samples are:{:?}, {:?}", unsafe{*raw_ptr}, unsafe{*raw_ptr.offset(1)});
+
         assert_eq!(true, audio_push_aud_frame(0, 2, samples_opaque, samples_no, samples_no * 4, true));
+        assert_eq!(true, audio_push_aud_frame(0, 2, samples_opaque, samples_no, samples_no * 4, true));
+
+
+        let mut aud_data = AUDIO_DATA.lock().unwrap();
+
+        assert_eq!(2, aud_data.len());
+        assert_eq!(samples_no*2, aud_data.get_total_samples_per_chan());
+        println!("1) get_total_samples_per_chan:{}", aud_data.get_total_samples_per_chan());
+        println!("1) total_queued_samples_per_chan:{}", aud_data.total_queued_samples_per_chan());
+        println!("1) get_cached_samples_per_chan:{}\n", aud_data.get_cached_samples_per_chan());
+        println!("1) aud_data:{:?}\n", aud_data);
+
+
+        let sample = aud_data.get_sample();
+        print_sample_as_bytes("getting 1st pair of samples:{:?}", sample);
+
+        println!("2) get_total_samples_per_chan:{}", aud_data.get_total_samples_per_chan());
+        println!("2) total_queued_samples_per_chan:{}", aud_data.total_queued_samples_per_chan());
+        println!("2) get_cached_samples_per_chan:{}\n", aud_data.get_cached_samples_per_chan());
+        println!("2) aud_data:{:?}\n", aud_data);
+
+        assert_eq!(samples_no*2-1, aud_data.get_total_samples_per_chan());
+        assert_eq!(1, aud_data.len());
+        assert_eq!(samples_no-1, aud_data.get_cached_samples_per_chan());
+
+        let sample = aud_data.get_sample();
+        print_sample_as_bytes("getting 2nd pair of samples:{:?}", sample);
+        assert_eq!(samples_no-2, aud_data.get_cached_samples_per_chan());
+
+        let sample = aud_data.get_sample();
+        print_sample_as_bytes("getting 3rd pair of samples:{:?}", sample);
+        assert_eq!(1, aud_data.get_cached_samples_per_chan());
+        assert_eq!(samples_no*2-3, aud_data.get_total_samples_per_chan());
+
+        let sample = aud_data.get_sample();
+        print_sample_as_bytes("getting 4th pair of samples:{:?}", sample);
+        assert_eq!(0, aud_data.get_cached_samples_per_chan());
+        assert_eq!(samples_no*2-4, aud_data.get_total_samples_per_chan());
     }
 }
