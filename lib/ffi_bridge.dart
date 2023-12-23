@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:nsd/nsd.dart';
 
+typedef UpdateListCallback = void Function(List<String>);
+
 class FFIBridge {
     static bool initialize() {
         nativeNdiMonitorLib = (DynamicLibrary.open('libndi-monitor.so')); // android & linux
@@ -21,8 +23,14 @@ class FFIBridge {
         final interactiveCppRequests = ReceivePort()
             ..listen((message) {
                 _ndiSourceNames = const LineSplitter().convert(ascii.decode(message));
+
                 if (kDebugMode) {
-                  print('NDI inputs list:$_ndiSourceNames');
+                  print('Native message inputs list:$_ndiSourceNames');
+                }
+
+                if (updateListCallback != null)
+                {
+                  updateListCallback!(_ndiSourceNames);
                 }
              });
 
@@ -36,13 +44,24 @@ class FFIBridge {
     }
     static late DynamicLibrary nativeNdiMonitorLib;
     static late Function scanNdiSources;
-    static late List<String> _ndiSourceNames;
+    static List<String> _ndiSourceNames = [];
     static getNdiSourceNames()
     {
         return _ndiSourceNames;
     }
 
     static late void Function(int programIdx) startProgram;
+
+    static void registerListUpdateCallback(Function(List<String>) callback)
+    {
+        updateListCallback = callback;
+
+        if (kDebugMode) {
+          print('registerListUpdateCallback:$callback');
+        }
+    }
+    static UpdateListCallback? updateListCallback;
+//     FFIBridge({required this.updateListCallback});
 }
 
 class Nds {

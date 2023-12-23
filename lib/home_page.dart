@@ -1,11 +1,8 @@
-// import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'pages.dart';
-import 'my_app_state.dart';
 import 'program_control.dart';
 import 'player_texture.dart';
 
@@ -31,9 +28,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ProgramControl().scanPrograms();
     }
 
+    Widget homePage = HomePage();
+
     @override
     Widget build(BuildContext context) {
-        Widget page;
+        Widget page = homePage;
         switch(selectedPage) {
             case PageIndex.home:
                 page = HomePage();
@@ -127,14 +126,37 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
 
-  HomePage({super.key});
+class _HomePageState extends State<HomePage>
+{
+  List<String> programNames = [];
+
+  @override
+  initState() {
+    super.initState();
+
+    ProgramControl().registerListUpdateCallback(updateListView);
+
+    if (kDebugMode)
+    {
+      print('programNames:$programNames');
+    }
+  }
 
   @override
   Widget build(BuildContext context){
     var theme = Theme.of(context);
-    var programNames = ProgramControl().getProgramsName();
+
+    programNames = ProgramControl().getProgramsName();
+
+    if (kDebugMode)
+    {
+      print('list builder');
+    }
 
     ProgramControl().scanPrograms();
     return Scaffold(
@@ -158,5 +180,15 @@ class HomePage extends StatelessWidget {
             ),
         ),
       );
+  }
+
+  // Callback function to update the ListView
+  void updateListView(List<String> newData) {
+    setState(() {
+      programNames = newData;
+      if (kDebugMode) {
+        print('NDI inputs list:$programNames');
+      }
+    });
   }
 }
