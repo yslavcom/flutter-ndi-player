@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'pages.dart';
 import 'my_app_state.dart';
@@ -19,7 +20,17 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
     PageIndex selectedPage = PageIndex.home;
-    //PageIndex selectedPage = PageIndex.android_debug;
+
+    @override
+    initState() {
+      super.initState();
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeRight,
+        DeviceOrientation.landscapeLeft,
+      ]);
+
+      ProgramControl().scanPrograms();
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -130,40 +141,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class HomePage extends StatelessWidget {
 
-    var onButtonPressCounter = 0;
-    final ProgramControl _programControl = ProgramControl();
+  var onButtonPressCounter = 0;
 
   HomePage({super.key});
 
-    @override
-    Widget build(BuildContext context){
-        var appState = context.watch<NdiMonitorState>();
-        IconData icon;
-        icon = Icons.search;
-
-        return Center(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                    Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                            ElevatedButton.icon(
-                                onPressed: () {
-                                    if (kDebugMode) {
-                                      print("Pressed the button: $onButtonPressCounter");
-                                    }
-                                    if (0 == onButtonPressCounter)
-                                    {
-                                        onButtonPressCounter = 1;
-                                        _programControl.scanPrograms();
-                                    }
-                                },
-                                icon: Icon(icon),
-                                label: const Text('Search NDI sources'),
-                            ),
-                        ],)
-                ],)
-        );
-    }
+  @override
+  Widget build(BuildContext context){
+      ProgramControl().scanPrograms();
+      return Center(
+          child: Column()
+      );
+  }
 }
