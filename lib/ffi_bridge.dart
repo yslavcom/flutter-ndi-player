@@ -22,7 +22,7 @@ class FFIBridge {
             ..listen((message) {
                 _ndiSourceNames = const LineSplitter().convert(ascii.decode(message));
                 if (kDebugMode) {
-                  print('NDI inputs:$_ndiSourceNames');
+                  print('NDI inputs list:$_ndiSourceNames');
                 }
              });
 
@@ -48,14 +48,7 @@ class FFIBridge {
 class Nds {
   static init() async {
 
-    if (kDebugMode)
-    {
-      print("!!! Nds::init");
-    }
-
-
     final discovery = await startDiscovery('_services._dns-sd._udp', autoResolve: false);
-
     try
     {
       discovery.addListener(() {

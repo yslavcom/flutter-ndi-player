@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 
 import 'pages.dart';
 import 'my_app_state.dart';
-import 'sources_page.dart';
 import 'program_control.dart';
 import 'player_texture.dart';
 
@@ -39,9 +38,6 @@ class _MyHomePageState extends State<MyHomePage> {
             case PageIndex.home:
                 page = HomePage();
                 break;
-            case PageIndex.sources:
-                page = SourcesPage();
-                break;
             case PageIndex.player:
                 page = const PlayerTex();
                 break;
@@ -63,10 +59,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                           NavigationRailDestination(
                                               icon: Icon(Icons.home),
                                               label: Text('Home'),
-                                          ),
-                                          NavigationRailDestination(
-                                              icon: Icon(Icons.list),
-                                              label: Text('Sources'),
                                           ),
                                           NavigationRailDestination(
                                               icon: Icon(Icons.abc),
@@ -110,10 +102,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                               icon: Icon(Icons.home),
                                               label: Text('Home'),
                                           ),
-                                          NavigationRailDestination(
-                                              icon: Icon(Icons.list),
-                                              label: Text('Sources'),
-                                          ),
                                       ],
                                       selectedIndex: selectedPage.index,
                                       onDestinationSelected: (value) {
@@ -141,15 +129,34 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class HomePage extends StatelessWidget {
 
-  var onButtonPressCounter = 0;
-
   HomePage({super.key});
 
   @override
   Widget build(BuildContext context){
-      ProgramControl().scanPrograms();
-      return Center(
-          child: Column()
+    var theme = Theme.of(context);
+    var programNames = ProgramControl().getProgramsName();
+
+    ProgramControl().scanPrograms();
+    return Scaffold(
+        backgroundColor: theme.colorScheme.background,
+        body: ListView.separated(
+            itemCount: programNames.length,
+            separatorBuilder: (BuildContext context, int index) => Divider(
+              height: 1,
+              color: theme.colorScheme.surfaceVariant,
+              thickness: 1,
+            ),
+            itemBuilder: (BuildContext context, int index) => ListTile(
+              textColor: theme.colorScheme.primary,
+              title: Text(programNames[index]),
+              onLongPress: () {
+                  ProgramControl().startProgram(index);
+              },
+              onTap: (){
+                  ProgramControl().startProgram(index);
+              },
+            ),
+        ),
       );
   }
 }
