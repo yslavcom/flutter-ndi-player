@@ -116,8 +116,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<String> programNames = [];
+  bool isSourceListVisible = true;
 
   // Texture controller
+  double textureOpacity = 0.5;
   final _controller = OpenGLTextureController();
   final _width = 1920;
   final _height = 1080;
@@ -143,8 +145,18 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: theme.colorScheme.background,
         body: Stack(children: [
           // The widget that appears later in the list will be drawn on top of the widgets that come before it
-          Opacity(opacity: 0.5, child: TextureContainer()),
-          Opacity(opacity: 1.0, child: SourceListContainer(theme)),
+          visibleWidget(true,
+              Opacity(opacity: textureOpacity, child: textureContainer())),
+          visibleWidget(isSourceListVisible,
+              Opacity(opacity: 1.0, child: sourceListContainer(theme))),
+          GestureDetector(
+            onDoubleTap: () {
+              setState(() {
+                toggleSourceListVisibility();
+                adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
+              });
+            },
+          )
         ]));
   }
 
@@ -163,7 +175,17 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
   }
 
-  Widget TextureContainer() {
+  Widget visibleWidget(bool isVisible, Widget wid) {
+    return Visibility(
+      visible: isVisible,
+      maintainSize: true,
+      maintainAnimation: true,
+      maintainState: true,
+      child: wid,
+    );
+  }
+
+  Widget textureContainer() {
     return Center(
       child: SizedBox(
         width: _width.toDouble(),
@@ -175,7 +197,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget SourceListContainer(ThemeData theme) {
+  Widget sourceListContainer(ThemeData theme) {
     return ListView.separated(
       itemCount: programNames.length,
       separatorBuilder: (BuildContext context, int index) => Divider(
@@ -191,8 +213,24 @@ class _HomePageState extends State<HomePage> {
         },
         onTap: () {
           ProgramControl().startProgram(index);
+          setState(() {
+            setSourceListVisibility(false);
+            adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
+          });
         },
       ),
     );
+  }
+
+  void setSourceListVisibility(bool isVisible) {
+    isSourceListVisible = isVisible;
+  }
+
+  void toggleSourceListVisibility() {
+    isSourceListVisible = !isSourceListVisible;
+  }
+
+  void adjustTextureTransparency(double opacity) {
+    textureOpacity = opacity;
   }
 }
