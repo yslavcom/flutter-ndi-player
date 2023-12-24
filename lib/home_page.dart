@@ -177,10 +177,16 @@ class _HomePageState extends State<HomePage> {
         textColor: theme.colorScheme.primary,
         title: Text(programNames[index]),
         onLongPress: () {
-          ProgramControl().startProgram(index);
+          if (kDebugMode) {
+            print('onLongPress');
+          }
+          displaySelectedSourceInfo();
         },
         onTap: () {
           ProgramControl().startProgram(index);
+          if (kDebugMode) {
+            print('onTap');
+          }
           setState(() {
             setSourceListVisibility(false);
             adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
@@ -200,5 +206,9 @@ class _HomePageState extends State<HomePage> {
 
   void adjustTextureTransparency(double opacity) {
     textureOpacity = opacity;
+  }
+
+  void displaySelectedSourceInfo() {
+    setState(() {});
   }
 }
