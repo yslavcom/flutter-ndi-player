@@ -49,22 +49,6 @@ class _MyHomePageState extends State<MyHomePage> {
         return Scaffold(
             body: Row(
           children: [
-            SafeArea(
-                child: NavigationRail(
-                    extended: constraints.maxWidth >= 600,
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.home),
-                        label: Text('Home'),
-                      ),
-                    ],
-                    selectedIndex: selectedPage.index,
-                    onDestinationSelected: (value) {
-                      setState(() {
-                        selectedPage = PageIndex.values[value];
-                      });
-                    })),
-            // Display the page on the right handside
             Expanded(
               child: Container(
                 color: Theme.of(context).colorScheme.primaryContainer,
@@ -80,22 +64,6 @@ class _MyHomePageState extends State<MyHomePage> {
         return Scaffold(
             body: Row(
           children: [
-            SafeArea(
-                child: NavigationRail(
-                    extended: constraints.maxWidth >= 600,
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.home),
-                        label: Text('Home'),
-                      ),
-                    ],
-                    selectedIndex: selectedPage.index,
-                    onDestinationSelected: (value) {
-                      setState(() {
-                        selectedPage = PageIndex.values[value];
-                      });
-                    })),
-            // Display the page on the right handside
             Expanded(
               child: Container(
                 color: Theme.of(context).colorScheme.primaryContainer,
