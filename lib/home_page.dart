@@ -139,37 +139,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
         backgroundColor: theme.colorScheme.background,
         body: Stack(children: [
-          Opacity(
-              opacity: 0.5,
-              child: Center(
-                child: SizedBox(
-                  width: _width.toDouble(),
-                  height: _height.toDouble(),
-                  child: _controller.isInitialized
-                      ? Texture(textureId: _controller.textureId)
-                      : null,
-                ),
-              )),
-          Opacity(
-              opacity: 1.0,
-              child: ListView.separated(
-                itemCount: programNames.length,
-                separatorBuilder: (BuildContext context, int index) => Divider(
-                  height: 1,
-                  color: theme.colorScheme.surfaceVariant,
-                  thickness: 1,
-                ),
-                itemBuilder: (BuildContext context, int index) => ListTile(
-                  textColor: theme.colorScheme.primary,
-                  title: Text(programNames[index]),
-                  onLongPress: () {
-                    ProgramControl().startProgram(index);
-                  },
-                  onTap: () {
-                    ProgramControl().startProgram(index);
-                  },
-                ),
-              )),
+          // The widget that appears later in the list will be drawn on top of the widgets that come before it
+          Opacity(opacity: 0.5, child: TextureContainer()),
+          Opacity(opacity: 1.0, child: SourceListContainer(theme)),
         ]));
   }
 
@@ -186,5 +158,38 @@ class _HomePageState extends State<HomePage> {
   Future<void> initializeController() async {
     await _controller.initialize(_width, _height);
     setState(() {});
+  }
+
+  Widget TextureContainer() {
+    return Center(
+      child: SizedBox(
+        width: _width.toDouble(),
+        height: _height.toDouble(),
+        child: _controller.isInitialized
+            ? Texture(textureId: _controller.textureId)
+            : null,
+      ),
+    );
+  }
+
+  Widget SourceListContainer(ThemeData theme) {
+    return ListView.separated(
+      itemCount: programNames.length,
+      separatorBuilder: (BuildContext context, int index) => Divider(
+        height: 1,
+        color: theme.colorScheme.surfaceVariant,
+        thickness: 1,
+      ),
+      itemBuilder: (BuildContext context, int index) => ListTile(
+        textColor: theme.colorScheme.primary,
+        title: Text(programNames[index]),
+        onLongPress: () {
+          ProgramControl().startProgram(index);
+        },
+        onTap: () {
+          ProgramControl().startProgram(index);
+        },
+      ),
+    );
   }
 }
