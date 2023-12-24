@@ -316,7 +316,6 @@ impl AudioOutputCallback for NdiAudSamples {
         let t = push_time.unwrap_or(Instant::now());
         if t.elapsed() >= Duration::from_secs(1) {
             *push_time = Some(Instant::now());
-            debug!("frames len:{:?}", frames.len());
         }
 
         if demand_samples <= total_samples_per_chan {
