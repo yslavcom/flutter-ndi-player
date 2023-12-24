@@ -5,6 +5,7 @@ import 'texture_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'dart:io';
 
@@ -32,6 +33,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // To keep the screen on
+    WakelockPlus.enable();
     Widget page = homePage;
     switch (selectedPage) {
       case PageIndex.home:
