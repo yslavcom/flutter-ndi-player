@@ -83,6 +83,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool isDebugInfoVisible = kDebugMode;
+  var _debugInfo = DebugInfo();
+
   List<String> programNames = [];
   bool isSourceListVisible = true;
 
@@ -124,7 +127,8 @@ class _HomePageState extends State<HomePage> {
                 adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
               });
             },
-          )
+          ),
+          if (isDebugInfoVisible) debugInfo(),
         ]));
   }
 
@@ -132,9 +136,6 @@ class _HomePageState extends State<HomePage> {
   void updateListView(List<String> newData) {
     setState(() {
       programNames = newData;
-      if (kDebugMode) {
-        print('NDI inputs list:$programNames');
-      }
     });
   }
 
@@ -177,16 +178,11 @@ class _HomePageState extends State<HomePage> {
         textColor: theme.colorScheme.primary,
         title: Text(programNames[index]),
         onLongPress: () {
-          if (kDebugMode) {
-            print('onLongPress');
-          }
           displaySelectedSourceInfo();
         },
         onTap: () {
           ProgramControl().startProgram(index);
-          if (kDebugMode) {
-            print('onTap');
-          }
+          _debugInfo.add('Program:', index.toString());
           setState(() {
             setSourceListVisibility(false);
             adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
@@ -194,6 +190,32 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+
+  Widget debugInfo() {
+    var list = _debugInfo.getInfoList();
+
+    return Align(
+        alignment: Alignment.bottomRight,
+        child: Visibility(
+            visible: true,
+            child: Opacity(
+                opacity: 1.0,
+                child: Container(
+                    alignment: Alignment.bottomRight,
+                    width: 200,
+                    child: ListView.builder(
+                        itemCount: _debugInfo.len(),
+                        itemBuilder: (BuildContext context, int index) {
+                          return ListTile(
+                            title: Text(list[index],
+                                textAlign: TextAlign.left,
+                                overflow: TextOverflow.visible,
+                                softWrap: true,
+                                style: const TextStyle(
+                                    fontSize: 14.0, color: Colors.red)),
+                          );
+                        })))));
   }
 
   void setSourceListVisibility(bool isVisible) {
@@ -210,5 +232,30 @@ class _HomePageState extends State<HomePage> {
 
   void displaySelectedSourceInfo() {
     setState(() {});
+  }
+}
+
+class DebugInfo {
+  Map<String, int> _entriesMap = {};
+  List<String> _info = [];
+
+  DebugInfo(){}
+
+  void add(String key, String data) {
+    if (_entriesMap.containsKey(key)) {
+      var idx = _entriesMap[key];
+      _info[idx!] = key+data;
+    } else {
+      _entriesMap[key] = _info.length;
+      _info.add(key+data);
+    }
+  }
+
+  List<String> getInfoList() {
+    return _info;
+  }
+
+  int len() {
+    return _info.length;
   }
 }

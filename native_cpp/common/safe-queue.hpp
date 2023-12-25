@@ -13,6 +13,7 @@ public:
     SafeQueue(std::mutex& mu)
         : mMutex(mu)
         , mLIMIT(0)
+        , mOverflowCount(0)
     {}
 
     SafeQueue(std::mutex& mu, std::function<void(T*)> eraseElementCb, unsigned limitFrames)
@@ -31,7 +32,7 @@ public:
         std::lock_guard lock(mMutex);
         if (mLIMIT > 0 && getCountUnsafe() > mLIMIT)
         {
-            LOGE("!!! Overflow\n");
+            mOverflowCount ++;
             removeOldestElement();
         }
 
@@ -70,6 +71,12 @@ public:
         {
             removeOldestElement();
         }
+        mOverflowCount = 0;
+    }
+
+    unsigned getOverflowCount() const
+    {
+        return mOverflowCount;
     }
 
 protected:
@@ -92,4 +99,5 @@ private:
     }
 
     const unsigned mLIMIT;
+    unsigned mOverflowCount;
 };
