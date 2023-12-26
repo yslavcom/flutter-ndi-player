@@ -212,6 +212,7 @@ void startProgram(int64_t progrIdx)
     auto name = Scan->getSourceName(progrIdx);
     auto url = Scan->getSourceUrl(progrIdx);
 
+    mNdiInputPacketsObserver.clear();
     ProgramRx->addObserver(&mNdiInputPacketsObserver);
 
     if (ProgramRx->createReceiver(name, url, mProgramQuality))
@@ -295,15 +296,15 @@ int getRxQueueLen(int type)
 }
 
 EXPORT
-int getRxFrameCount(int type)
+void getRxFrameCount(unsigned* vidFrame, unsigned* audFrame)
 {
-    if (type == kVideoQueueType)
+    auto count = mNdiInputPacketsObserver.getRxFrameCount();
+    if (vidFrame)
     {
-        return 0;
+        *vidFrame = count.first;
     }
-    else if (type == kAudioQueueType)
+    if (audFrame)
     {
-        return 0;
+        *audFrame = count.second;
     }
-    return 0;
 }

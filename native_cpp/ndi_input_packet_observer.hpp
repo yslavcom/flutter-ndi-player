@@ -30,8 +30,21 @@ public:
     NdiInputPacketsObserver(FrameQueue::VideoRx& videoRxQueue, FrameQueue::AudioRx& audioRxQueue)
         : mVideoRxQueue(videoRxQueue)
         , mAudioRxQueue(audioRxQueue)
+        , mVidFrameCount(0)
+        , mAudFrameCount(0)
         , mIsFirstFrame(true)
     {}
+
+    void clear()
+    {
+        mVidFrameCount = 0;
+        mAudFrameCount = 0;
+    }
+
+    std::pair<unsigned, unsigned> getRxFrameCount() const
+    {
+        return {mVidFrameCount, mAudFrameCount};
+    }
 
     void receivedVideoPack(std::unique_ptr<NDIlib_video_frame_v2_t> video, std::function<void(void* userData)> releaseCb) override
     {
@@ -192,6 +205,9 @@ public:
 private:
     FrameQueue::VideoRx& mVideoRxQueue;
     FrameQueue::AudioRx& mAudioRxQueue;
+
+    unsigned mVidFrameCount;
+    unsigned mAudFrameCount;
 
     std::optional<bool> isCompressed(NDIlib_FourCC_video_type_ex_e type) const
     {
