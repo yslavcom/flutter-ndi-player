@@ -61,6 +61,9 @@ public:
             // Display wanring about unkwown state?
             return;
         }
+
+        mVidFrameCount ++;
+
         bool compressed = optCompressed.value();
 
         /* 53485132 -> SHQ2, 55595659 -> UYVY*/
@@ -188,6 +191,8 @@ public:
     void receivedAudioPack(std::unique_ptr<NDIlib_audio_frame_v3_t> audio, FrameQueue::ReleaseCbAud releaseCb, void* context) override
     {
         DBG_AUD_LOG("Aud FourCC:%s\n", logFourcc(audio->FourCC).c_str());
+
+        mAudFrameCount ++;
 
         FrameQueue::AudioFrameStr frame;
         frame.chanNo = audio->no_channels;

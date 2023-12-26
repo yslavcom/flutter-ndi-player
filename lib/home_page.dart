@@ -112,6 +112,9 @@ class _HomePageState extends State<HomePage> {
 
           _debugInfo.add('VidQueue:', ProgramControl().getRxQueueLen(0).toString());
           _debugInfo.add('AudQueue:', ProgramControl().getRxQueueLen(1).toString());
+
+          var list = ProgramControl().getRxFrameCount();
+          _debugInfo.add('Rx Vid:/Aud:', '${list[0]} / ${list[1]}');
         });
       });
     }

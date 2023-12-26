@@ -295,16 +295,38 @@ int getRxQueueLen(int type)
     return 0;
 }
 
-EXPORT
-void getRxFrameCount(unsigned* vidFrame, unsigned* audFrame)
+enum
 {
-    auto count = mNdiInputPacketsObserver.getRxFrameCount();
-    if (vidFrame)
+    kGetVidAudFramesCount = 0,
+};
+
+EXPORT
+void* getArray(int type, int* size)
+{
+    if (!size)
     {
-        *vidFrame = count.first;
+        return nullptr;
     }
-    if (audFrame)
+    else if (type == kGetVidAudFramesCount)
     {
-        *audFrame = count.second;
+        auto count = mNdiInputPacketsObserver.getRxFrameCount();
+        auto ptr = (int*)malloc(sizeof(int)*2);
+        if (ptr)
+        {
+            ptr[0] = count.first;
+            ptr[1] = count.second;
+        }
+        *size = 2;
+        return (void*)ptr;
+    }
+    return nullptr;
+}
+
+EXPORT
+void freeArray(void* addr)
+{
+    if (addr)
+    {
+        free(addr);
     }
 }
