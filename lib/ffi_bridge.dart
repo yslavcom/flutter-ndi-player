@@ -16,6 +16,9 @@ class FFIBridge {
         final getOverflowCount_ = nativeNdiMonitorLib.lookup<NativeFunction<Uint32 Function(Int32)>>('getOverflowCount');
         getOverflowCount = getOverflowCount_.asFunction<int Function(int)>();
 
+        final getRxQueueLen_ = nativeNdiMonitorLib.lookup<NativeFunction<Uint32 Function(Int32)>>('getRxQueueLen');
+        getRxQueueLen = getRxQueueLen_.asFunction<int Function(int)>();
+
         // initialize the native dart API
         final initializeApi = nativeNdiMonitorLib.lookupFunction<IntPtr Function(Pointer<Void>),
             int Function(Pointer<Void>)>("initializeApiDLData");
@@ -49,6 +52,8 @@ class FFIBridge {
     static late DynamicLibrary nativeNdiMonitorLib;
     static late Function scanNdiSources;
     static late Function getOverflowCount;
+    static late Function getRxQueueLen;
+
     static List<String> _ndiSourceNames = [];
     static getNdiSourceNames()
     {

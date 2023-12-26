@@ -279,3 +279,31 @@ int getOverflowCount(int type)
     }
     return 0;
 }
+
+EXPORT
+int getRxQueueLen(int type)
+{
+    if (type == kVideoQueueType)
+    {
+        return mVideoRxQueue.getCount();
+    }
+    else if (type == kAudioQueueType)
+    {
+        return mAudioRxQueue.getCount();
+    }
+    return 0;
+}
+
+EXPORT
+int getRxFrameCount(int type)
+{
+    if (type == kVideoQueueType)
+    {
+        return 0;
+    }
+    else if (type == kAudioQueueType)
+    {
+        return 0;
+    }
+    return 0;
+}

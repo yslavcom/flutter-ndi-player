@@ -107,8 +107,11 @@ class _HomePageState extends State<HomePage> {
     if (isDebugInfoVisible) {
       _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
         setState(() {
-          _debugInfo.add('Audio Overflow:', ProgramControl().getOverflowCount(0).toString());
-          _debugInfo.add('Video Overflow:', ProgramControl().getOverflowCount(1).toString());
+          _debugInfo.add('VidOverflow:', ProgramControl().getOverflowCount(0).toString());
+          _debugInfo.add('AudOverflow:', ProgramControl().getOverflowCount(1).toString());
+
+          _debugInfo.add('VidQueue:', ProgramControl().getRxQueueLen(0).toString());
+          _debugInfo.add('AudQueue:', ProgramControl().getRxQueueLen(1).toString());
         });
       });
     }
@@ -147,7 +150,7 @@ class _HomePageState extends State<HomePage> {
               });
             },
           ),
-          if (isDebugInfoVisible) debugInfo(),
+          if (isDebugInfoVisible) debugInfo(theme),
         ]));
   }
 
@@ -211,7 +214,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget debugInfo() {
+  Widget debugInfo(ThemeData theme) {
     var list = _debugInfo.getInfoList();
 
     return Align(
@@ -225,12 +228,11 @@ class _HomePageState extends State<HomePage> {
                     width: 200,
                     child: ListView.separated(
                         itemCount: _debugInfo.len(),
-                        separatorBuilder: (BuildContext context, int index){
-                          return Divider(
+                        separatorBuilder: (BuildContext context, int index) => Divider(
                             height: 1,
-                            color: Colors.transparent,
-                          );
-                        },
+                            color: theme.colorScheme.surfaceVariant,
+                            thickness: 1,
+                          ),
                         itemBuilder: (BuildContext context, int index) {
                           return ListTile(
                             title: Text(list[index],

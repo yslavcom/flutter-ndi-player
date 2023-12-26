@@ -10,6 +10,7 @@ abstract class IProgramControl
     void startProgram(int programIdx);
     List<String> getProgramsName();
     int getOverflowCount(int type);
+    int getRxQueueLen(int type);
 }
 
 class ProgramControl extends IProgramControl {
@@ -43,5 +44,11 @@ class ProgramControl extends IProgramControl {
     int getOverflowCount(int type)
     {
       return FFIBridge.getOverflowCount(type);
+    }
+
+    @override
+    int getRxQueueLen(int type)
+    {
+      return FFIBridge.getRxQueueLen(type);
     }
 }
