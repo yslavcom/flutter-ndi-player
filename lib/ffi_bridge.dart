@@ -9,8 +9,12 @@ typedef UpdateListCallback = void Function(List<String>);
 class FFIBridge {
     static bool initialize() {
         nativeNdiMonitorLib = (DynamicLibrary.open('libndi-monitor.so')); // android & linux
+
         final scanNdiSources_ = nativeNdiMonitorLib.lookup<NativeFunction<Int32 Function()>>('scanNdiSources');
         scanNdiSources = scanNdiSources_.asFunction<int Function()>();
+
+        final getOverflowCount_ = nativeNdiMonitorLib.lookup<NativeFunction<Uint32 Function(Int32)>>('getOverflowCount');
+        getOverflowCount = getOverflowCount_.asFunction<int Function(int)>();
 
         // initialize the native dart API
         final initializeApi = nativeNdiMonitorLib.lookupFunction<IntPtr Function(Pointer<Void>),
@@ -44,6 +48,7 @@ class FFIBridge {
     }
     static late DynamicLibrary nativeNdiMonitorLib;
     static late Function scanNdiSources;
+    static late Function getOverflowCount;
     static List<String> _ndiSourceNames = [];
     static getNdiSourceNames()
     {
@@ -61,7 +66,6 @@ class FFIBridge {
         }
     }
     static UpdateListCallback? updateListCallback;
-//     FFIBridge({required this.updateListCallback});
 }
 
 class Nds {

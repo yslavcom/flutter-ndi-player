@@ -1,17 +1,20 @@
 /* * (C) Copyright   @Author: iaroslav.dochien  * @Date: 2023-12-24 08:48:08  * @Last Modified by:   iaroslav.dochien  * @Last Modified time: 2023-12-24 08:48:08 . All rights reserved *//* * (C) Copyright   @Author: iaroslav.dochien  * @Date: 2023-12-24 08:48:02  * @Last Modified by:   iaroslav.dochien  * @Last Modified time: 2023-12-24 08:48:02 . All rights reserved */
+import 'dart:ffi';
+
 import 'ffi_bridge.dart';
 import 'package:flutter/foundation.dart';
 
 abstract class IProgramControl
 {
-    void scanPrograms();
+    void scanNdiSources();
     void startProgram(int programIdx);
     List<String> getProgramsName();
+    int getOverflowCount(int type);
 }
 
 class ProgramControl extends IProgramControl {
     @override
-    void scanPrograms()
+    void scanNdiSources()
     {
         FFIBridge.scanNdiSources();
     }
@@ -34,5 +37,11 @@ class ProgramControl extends IProgramControl {
           print('registerListUpdateCallback: $callback');
         }
         FFIBridge.registerListUpdateCallback(callback);
+    }
+
+    @override
+    int getOverflowCount(int type)
+    {
+      return FFIBridge.getOverflowCount(type);
     }
 }

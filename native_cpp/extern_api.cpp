@@ -267,15 +267,15 @@ enum
 };
 
 EXPORT
-uint32_t getOverflowCount(int32_t type)
+int getOverflowCount(int type)
 {
     if (type == kVideoQueueType)
     {
-        return mVideoRxQueue.getOverflowCount();
+        return (int)mVideoRxQueue.getOverflowCount();
     }
     else if (type == kAudioQueueType)
     {
-        return mAudioRxQueue.getOverflowCount();
+        return (int)mAudioRxQueue.getOverflowCount();
     }
     return 0;
 }

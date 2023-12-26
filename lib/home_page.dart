@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'dart:io';
+import 'dart:async';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -26,7 +27,7 @@ class _MyHomePageState extends State<MyHomePage> {
       DeviceOrientation.landscapeLeft,
     ]);
 
-    ProgramControl().scanPrograms();
+    ProgramControl().scanNdiSources();
   }
 
   Widget homePage = HomePage();
@@ -85,6 +86,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isDebugInfoVisible = kDebugMode;
   var _debugInfo = DebugInfo();
+  late Timer _timer;
 
   List<String> programNames = [];
   bool isSourceListVisible = true;
@@ -101,6 +103,24 @@ class _HomePageState extends State<HomePage> {
     ProgramControl().registerListUpdateCallback(updateListView);
 
     initializeController();
+
+    if (isDebugInfoVisible) {
+      _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+        setState(() {
+          _debugInfo.add('Audio Overflow:', ProgramControl().getOverflowCount(0).toString());
+          _debugInfo.add('Video Overflow:', ProgramControl().getOverflowCount(1).toString());
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (isDebugInfoVisible) {
+    _timer.cancel();
+    }
+
+    super.dispose();
   }
 
   @override
@@ -109,7 +129,6 @@ class _HomePageState extends State<HomePage> {
 
     // Program names list
     programNames = ProgramControl().getProgramsName();
-    ProgramControl().scanPrograms();
 
     // Build
     return Scaffold(
@@ -204,8 +223,14 @@ class _HomePageState extends State<HomePage> {
                 child: Container(
                     alignment: Alignment.bottomRight,
                     width: 200,
-                    child: ListView.builder(
+                    child: ListView.separated(
                         itemCount: _debugInfo.len(),
+                        separatorBuilder: (BuildContext context, int index){
+                          return Divider(
+                            height: 1,
+                            color: Colors.transparent,
+                          );
+                        },
                         itemBuilder: (BuildContext context, int index) {
                           return ListTile(
                             title: Text(list[index],
@@ -239,15 +264,15 @@ class DebugInfo {
   Map<String, int> _entriesMap = {};
   List<String> _info = [];
 
-  DebugInfo(){}
+  DebugInfo() {}
 
   void add(String key, String data) {
     if (_entriesMap.containsKey(key)) {
       var idx = _entriesMap[key];
-      _info[idx!] = key+data;
+      _info[idx!] = key + data;
     } else {
       _entriesMap[key] = _info.length;
-      _info.add(key+data);
+      _info.add(key + data);
     }
   }
 
