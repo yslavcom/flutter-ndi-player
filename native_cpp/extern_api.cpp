@@ -298,6 +298,7 @@ int getRxQueueLen(int type)
 enum
 {
     kGetVidAudFramesCount = 0,
+    kGetSourceProgramInfo = 1,
 };
 
 EXPORT
@@ -318,6 +319,42 @@ void* getArray(int type, int* size)
         }
         *size = 2;
         return (void*)ptr;
+    }
+    return nullptr;
+}
+
+// all words as int32_t
+// args => [size, length of args message including 'type', count in words], [type], ...[etc]
+
+EXPORT
+void* getArrayArgs(void* args, int* size)
+{
+    if (!args || !size)
+    {
+        return nullptr;
+    }
+
+    int32_t argsSize = *((int32_t*)args);
+    if (argsSize < 1)
+    {
+        return nullptr;
+    }
+
+    int32_t type = *((int32_t*)args+1);
+
+    if (type == kGetVidAudFramesCount)
+    {
+        return getArray(kGetVidAudFramesCount, size);
+    }
+    else if (type == kGetSourceProgramInfo)
+    {
+        // Retrieve complete info on NDI Source
+        if (argsSize == 2)
+        {
+            int32_t sourceIdx = *((int32_t*)args+2);
+            (void)sourceIdx;
+        }
+
     }
     return nullptr;
 }

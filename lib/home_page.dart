@@ -207,7 +207,6 @@ class _HomePageState extends State<HomePage> {
         },
         onTap: () {
           ProgramControl().startProgram(index);
-          _debugInfo.add('Program:', index.toString());
           setState(() {
             setSourceListVisibility(false);
             adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
@@ -243,7 +242,7 @@ class _HomePageState extends State<HomePage> {
                                 overflow: TextOverflow.visible,
                                 softWrap: true,
                                 style: const TextStyle(
-                                    fontSize: 14.0, color: Colors.red)),
+                                    fontSize: 14.0, color: Colors.red, fontWeight: FontWeight.bold)),
                           );
                         })))));
   }

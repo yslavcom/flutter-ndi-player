@@ -11,6 +11,9 @@ typedef UpdateListCallback = void Function(List<String>);
 typedef getArray_func = Pointer<Void> Function(Int32 type, Pointer<Int32> dataSize);
 typedef GetArray = Pointer<Void> Function(int type, Pointer<Int32> dataSize);
 
+typedef getArrayArgs_func = Pointer<Void> Function(Pointer<Void>args, Pointer<Int32> dataSize);
+typedef GetArrayArgs = Pointer<Void> Function(Pointer<Void>args, Pointer<Int32> dataSize);
+
 typedef freeArray_func = Void Function(Pointer<Void>);
 typedef FreeArray = void Function(Pointer<Void> addr);
 
