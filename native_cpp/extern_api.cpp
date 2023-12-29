@@ -229,6 +229,10 @@ void startProgram(int64_t progrIdx)
             mRxFrameController.installVideoFrameObs(mPlayer.get());
             mRxFrameController.installAudioFrameObs(mPlayer.get());
         }
+        else
+        {
+            mPlayer.reStart();
+        }
 
         mCapturePacketsThread.start([](bool stop){
                 (void)stop;
