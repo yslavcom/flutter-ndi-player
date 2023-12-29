@@ -49,6 +49,7 @@ struct VideoFrameCompressedStr
 
     std::vector<uint8_t> sps;
     std::vector<uint8_t> pps;
+    bool isKeyFrame;
 };
 
 struct AudioFrameStr

@@ -3,6 +3,7 @@
 
 #include <ctype.h>
 #include <cstring>
+#include <cassert>
 
 #define _DBG_SPS
 #ifdef _DBG_SPS
@@ -14,17 +15,17 @@
 
 namespace H26x{
 
-std::optional<ServiceInfo> tryParseServiceInfo(const uint8_t * data, size_t sz, size_t hdrSz)
+std::optional<ServiceInfo> tryParseServiceInfo(FourCcType type, const uint8_t * data, size_t sz, size_t hdrSz)
 {
-    FourCC fourcc(data);
-
-    if (fourcc.word == 'H264')
+    switch (type)
+    {
+    case FourCcType::H264:
     {
         std::vector<uint16_t> NALStrtIdx;
         std::vector<uint8_t> NALType;
 
         ServiceInfo si{};
-        si.fourcc = fourcc;
+        si.fourCcType = type;
 
         // save each NAL in vector
         auto buffer = data + hdrSz;
@@ -50,6 +51,7 @@ std::optional<ServiceInfo> tryParseServiceInfo(const uint8_t * data, size_t sz, 
         unsigned spsStartIdx = 0;
         unsigned ppsSize = 0;
         unsigned ppsStartIdx = 0;
+        bool isKeyFrame = false;
 
         for(auto i = 0; i < NALStrtIdx.size(); i++)
         {
@@ -73,9 +75,18 @@ std::optional<ServiceInfo> tryParseServiceInfo(const uint8_t * data, size_t sz, 
                 ppsStartIdx = NALStrtIdx[i];
                 ppsSize = idxEnd - NALStrtIdx[i];
             }
+            else if(NALType[i] == 0x05)
+            {
+                isKeyFrame = true;
+            }
+
+            if (isKeyFrame)
+            {
+                // DBG_SPS("NALType[%d]:%d\n", i, NALType[i]);
+            }
         }
 
-//        DBG_SPS("spsSize:%d, ppsSize:%d\n", spsSize, spsSize);
+        // DBG_SPS("spsSize:%d,ppsSize:%d, isKeyFrame:%d\n", spsSize, spsSize, isKeyFrame);
 
         si.sps.resize(spsSize);
         std::memcpy(si.sps.data(), (uint8_t*)buffer + spsStartIdx, spsSize);
@@ -83,7 +94,20 @@ std::optional<ServiceInfo> tryParseServiceInfo(const uint8_t * data, size_t sz, 
         si.pps.resize(ppsSize);
         std::memcpy(si.pps.data(), (uint8_t*)buffer + ppsStartIdx, ppsSize);
 
+        si.isKeyFrame = isKeyFrame;
+
         return std::move(si);
+    }
+
+    case FourCcType::Hevc:
+    {
+        assert(0 && "Not yet implemented");
+    }
+
+    case FourCcType::Unknown:
+    {
+        assert(0 && "Shouldn't be here");
+    }
     }
 
     return {};

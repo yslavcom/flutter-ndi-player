@@ -157,7 +157,7 @@ bool AndroidDecoder::create(uint32_t fourcc)
 //    std::lock_guard lk(mDecMu);
 
     H26x::FourCC fourCC(fourcc);
-    if (fourCC != "H264")
+    if (!fourCC.isH264() && !fourCC.isHevc())
     {
         LOGE("Unknown codec 4cc:%lx\n", fourcc);
         assert(0 && "Unknown codec 4cc");

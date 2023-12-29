@@ -89,7 +89,7 @@ public:
             }
             else
             {
-                auto si = H26x::tryParseServiceInfo(video->p_data+4, video->data_size_in_bytes-4, hdrSize-4);
+                auto si = H26x::tryParseServiceInfo(H26x::FourCC(fourCC).getType(), video->p_data+4, video->data_size_in_bytes-4, hdrSize-4);
                 std::vector<uint8_t> sps;
                 std::vector<uint8_t> pps;
 
@@ -132,6 +132,8 @@ public:
 #endif
 
                     FrameQueue::VideoFrameCompressedStr frame;
+
+                    frame.isKeyFrame = si->isKeyFrame;
 
                     frame.sps = std::move(sps);
                     frame.pps = std::move(pps);

@@ -11,6 +11,12 @@
 namespace H26x
 {
 
+enum class FourCcType
+{
+    Unknown,
+    H264,
+    Hevc
+};
 struct FourCC
 {
     FourCC() = delete;
@@ -77,6 +83,23 @@ struct FourCC
         return word != 0;
     }
 
+    bool isH264() const
+    {
+        return word == 'H264' || word == 'h264';
+    }
+
+    bool isHevc() const
+    {
+        return word == 'HEVC' || word == 'hevc';
+    }
+
+    FourCcType getType() const
+    {
+        if (isH264()) { return FourCcType::H264; }
+        else if (isH264()) { return FourCcType::Hevc; }
+        else { return FourCcType::Unknown; }
+    }
+
     static FourCC Undefined()
     {
         return FourCC((uint32_t)0);
@@ -88,14 +111,16 @@ struct FourCC
 struct ServiceInfo
 {
     ServiceInfo()
-        : fourcc(FourCC::Undefined())
+        : fourCcType(FourCcType::Unknown)
+        , isKeyFrame(false)
     {}
 
-    FourCC fourcc;
+    FourCcType fourCcType;
     std::vector<uint8_t> sps;
     std::vector<uint8_t> pps;
+    bool isKeyFrame;
 };
 
-std::optional<ServiceInfo> tryParseServiceInfo(const uint8_t * data, size_t sz, size_t hdrSz);
+std::optional<ServiceInfo> tryParseServiceInfo(FourCcType type, const uint8_t * data, size_t sz, size_t hdrSz);
 
 } // namespace H264

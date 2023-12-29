@@ -4,6 +4,7 @@
 
 #include "texture.hpp"
 #include "codec.hpp"
+#include "nal_parse.hpp"
 
 #include "interfaces/frame_observer.hpp"
 #include "common/frame-queue.hpp"
@@ -19,6 +20,7 @@ public:
 
     void setRenderObserver(RenderVidFrameObserver* obs);
     void setDecoder(Video::Decoder* decoder);
+    void reStart();
 
 private:
     void onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount) override ;
@@ -32,4 +34,16 @@ private:
     std::mutex mDecoderMu;
 
     bool mAudioInitialised;
+
+    enum class State
+    {
+        Idle = 0,
+        Connecting,
+        Connected
+    };
+    State mState;
+#if 0
+    // SPS/PPS are retrieved at RX end, no need to parse here at the moment
+    std::unique_ptr<NalParse> mNalParse;
+#endif
 };
