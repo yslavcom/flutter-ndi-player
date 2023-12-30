@@ -111,4 +111,8 @@ private:
     std::chrono::steady_clock::time_point mTimeRefr;
 
     std::mutex mMutex;
+
+    std::chrono::steady_clock::time_point mLastVideoFrameTime;
+    unsigned mDbgVidFrameCount = 0;
+    unsigned mDbgPrevVidFrameCount = 0;
 };

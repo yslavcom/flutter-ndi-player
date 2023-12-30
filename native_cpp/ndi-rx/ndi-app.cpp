@@ -12,6 +12,7 @@
 
 // #define _DBG_NDI_APP
 // #define _DBG_AUD_RX
+#define _DBG_VID_RX
 
 #ifdef _DBG_NDI_APP
     #define DBG_NDI_APP(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -25,9 +26,16 @@
     #define DBG_AUD_RX(format, ...)
 #endif
 
+#ifdef _DBG_VID_RX
+    #define DBG_VID_RX(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_VID_RX(format, ...)
+#endif
+
 NdiApp::NdiApp()
     : mUncompressedShq(false)
 {
+    mDbgVidFrameCount = 0;
 }
 
 NdiApp::~NdiApp()
@@ -75,6 +83,7 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
 
     // Connect to our sources
     NDIlib_recv_connect(mRecvInst->src(), &ndiSources);
+    mDbgVidFrameCount = 0;
 
     return true;
 }
@@ -82,6 +91,7 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
 bool NdiApp::stopReceiver()
 {
     mRecvInst = nullptr;
+    mDbgVidFrameCount = 0;
     return true;
 }
 
@@ -116,6 +126,32 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 
             //NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 100);
             NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), nullptr, 5);
+
+#ifdef _DBG_VID_RX
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration<float, std::milli>(now - mLastVideoFrameTime);
+            if (elapsed.count() >= 1000.0)
+            {
+                mLastVideoFrameTime = now;
+
+                if (mDbgPrevVidFrameCount == mDbgVidFrameCount)
+                {
+                    NDIlib_recv_queue_t queue{};
+                    NDIlib_recv_get_queue(rxInst->src(), &queue);
+                    DBG_VID_RX("Vid Frame Rx Count:%d, video_frames:%d\n", mDbgVidFrameCount, queue.video_frames);
+                }
+                else
+                {
+                    DBG_VID_RX("Vid Frame Rx Count:%d\n", mDbgVidFrameCount);
+                }
+
+                mDbgPrevVidFrameCount = mDbgVidFrameCount;
+            }
+            if (ret == NDIlib_frame_type_video)
+            {
+                mDbgVidFrameCount ++;
+            }
+#endif // #ifdef _DBG_VID_RX
 
             switch (ret)
             {
