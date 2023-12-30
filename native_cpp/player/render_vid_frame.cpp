@@ -18,7 +18,7 @@
 #include <memory>
 #include <cassert>
 
-#define _DBG_RENDER
+// #define _DBG_RENDER
 #ifdef _DBG_RENDER
     #define DBG_RENDER(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
@@ -197,7 +197,8 @@ void RenderVidFrame::onRender(std::unique_ptr<uint8_t[]> frameBytes, size_t size
                     uint8_t* src = frameBytes.get() + y * mXres * 4;
                     memcpy(dst, src, buffer.width * 4);
                 }
-                LOGW("buffer.width:%d, buffer.height:%d\n", buffer.width, buffer.height);
+                // LOGW("buffer.width:%d, buffer.height:%d\n", buffer.width, buffer.height);
+
                 // Unlock ANativeWindow
                 ANativeWindow_unlockAndPost(::mWindow);
             }
