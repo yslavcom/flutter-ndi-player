@@ -133,11 +133,8 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                 break;
 
                 case State::Connecting:
-                    if (arg.isKeyFrame)
-                    {
-                        mState = State::Connected;
-                        sendToDecode(arg, H26x::FourCC{arg.fourCC});
-                    }
+                    mState = State::Connected;
+                    sendToDecode(arg, H26x::FourCC{arg.fourCC});
                 break;
 
                 case State::Connected:

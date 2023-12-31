@@ -41,6 +41,15 @@ private:
     public:
         RecvClass(const NDIlib_recv_create_v3_t& arg)
         {
+        /*
+        1) There's a limit imposed by NDI lib how long the video frames are recieved in RX mode.
+        It is set to 5 minutes.
+        A valid vendor ID is required to unlock this limitation.
+        Tested with NDI Advanced SDK.
+
+        2) A valid vendor |ID is required to unlock the decompression of the SHQ2 frame (recvDescHi.color_format = NDIlib_recv_color_format_fastest)
+        */
+
 #if 0
             const char* ndiConfig = R"({
                 "ndi": {
@@ -48,10 +57,13 @@ private:
                     "tcp": { "recv": {"enable": false}}
                 }
             })";
+#else
+            #include "ndi-conf.hpp"
 #endif
 
-//            mVal = NDIlib_recv_create_v4(&arg, ndiConfig);
-            mVal = NDIlib_recv_create_v3(&arg);
+
+            mVal = NDIlib_recv_create_v4(&arg, ndiConfig);
+//            mVal = NDIlib_recv_create_v3(&arg);
         }
         RecvClass(const RecvClass&) = delete;
         RecvClass& operator=(const RecvClass&) = delete;

@@ -12,7 +12,7 @@
 
 // #define _DBG_NDI_APP
 // #define _DBG_AUD_RX
-#define _DBG_VID_RX
+// #define _DBG_VID_RX
 
 #ifdef _DBG_NDI_APP
     #define DBG_NDI_APP(format, ...) LOGW(format, ## __VA_ARGS__)

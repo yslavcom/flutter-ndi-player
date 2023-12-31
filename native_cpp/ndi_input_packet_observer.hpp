@@ -10,6 +10,7 @@
 
 // #define _DBG_NDI_INP_OBS
 // #define _DBG_AUD_LOG
+// #define _DBG_COMPRESSED_LOG
 
 #ifdef _DBG_NDI_INP_OBS
     #define DBG_NDI_INP_OBS(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -22,6 +23,12 @@
     #define DBG_AUD_LOG(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
     #define DBG_AUD_LOG(format, ...)
+#endif
+
+#ifdef _DBG_COMPRESSED_LOG
+    #define DBG_COMPRESSED_LOG(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_COMPRESSED_LOG(format, ...)
 #endif
 
 class NdiInputPacketsObserver : public InputPacketsObserver
@@ -56,6 +63,7 @@ public:
         uint32_t fourCC = __builtin_bswap32(video->FourCC);
 
         auto optCompressed = isCompressed((NDIlib_FourCC_video_type_ex_e)video->FourCC);
+
         if (!optCompressed.has_value())
         {
             // Display wanring about unkwown state?
@@ -68,7 +76,7 @@ public:
 
         /* 53485132 -> SHQ2, 55595659 -> UYVY*/
 
-        // DBG_NDI_INP_OBS("receivedVideoPack, 4cc:%lx, compressed:%d\n", fourCC, compressed);
+        DBG_COMPRESSED_LOG("receivedVideoPack, 4cc:%lx, compressed:%d\n", fourCC, compressed);
 
         if (compressed)
         {
@@ -123,7 +131,8 @@ public:
                     LOGW("Wait for the first key frame\n");
                 }
 
-                if (pushFrames)
+                auto type = H26x::FourCC(fourCC).getType();
+                if (pushFrames || (type != H26x::FourCcType::H264 && type != H26x::FourCcType::Hevc))
                 {
 #if 0
                     auto p = video->p_data + hdrSize;
