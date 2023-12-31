@@ -8,14 +8,14 @@ include_directories(${GLIB_INCLUDE_DIRS})
 set(CMAKE_BUILD_TYPE Debug)
 
 if (ANDROID)
-    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/lib/${ANDROID_ABI}/libndi.so")
+    set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/Android/Install_NDI_SDK_v5_Android.tar-31.12.23/NDI\ Advanced\ SDK\ for\ Android/lib//${ANDROID_ABI}/libndi.so")
 elseif (UNIX AND NOT APPLE)
     set(LIB_NDI_VAR "/home/iaroslav/work/streaming/NDI/5.5.3/NDI-Advanced-SDK-for-Linux/lib/x86_64-linux-gnu/libndi.so.5.5.3")
 else ()
     set(LIB_NDI_VAR "")
 endif ()
 
-set (NDI_PATH "/home/iaroslav/work/streaming/NDI/Android/NDI\ Advanced\ SDK\ for\ Android/include/")
+set (NDI_PATH "/home/iaroslav/work/streaming/NDI/Android/Install_NDI_SDK_v5_Android.tar-31.12.23/NDI\ Advanced\ SDK\ for\ Android/include/")
 
 add_subdirectory(common)
 add_subdirectory(ndi-rx-scan)
