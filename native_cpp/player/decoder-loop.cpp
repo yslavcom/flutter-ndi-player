@@ -68,13 +68,32 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             FrameQueue::VideoFrame frame;
             mVidFramesToDecode->read(frame);
             auto& compressedFrame = std::get<FrameQueue::VideoFrameCompressedStr>(frame.first);
-            auto buf = compressedFrame.p_data;
+
+            std::vector<uint8_t> sps;
+            std::vector<uint8_t> pps;
+            // We should strip off the prepended header (4 reserved to the header).
+            auto si = H26x::tryParseServiceInfo(H26x::FourCC(compressedFrame.fourCC).getType(), compressedFrame.p_data+4, compressedFrame.dataSizeBytes-4, compressedFrame.hdrSize-4);
+            if (si)
+            {
+                if (si->sps.size())
+                {
+                    sps = std::move(si->sps);
+                }
+                if (si->pps.size())
+                {
+                    pps = std::move(si->pps);
+                }
+            }
+
+            // We should strip off the prepended header, again.
+            compressedFrame.p_data = compressedFrame.p_data + compressedFrame.hdrSize + sps.size() + pps.size();
+            compressedFrame.dataSizeBytes = compressedFrame.dataSizeBytes - compressedFrame.hdrSize - (sps.size() + pps.size());
 
             if (!mTerminateProcessFrames)
             {
-                mVideoDecoder->setSpsPps(compressedFrame.sps, compressedFrame.pps);
+                mVideoDecoder->setSpsPps(sps, pps);
 
-                // keep pushing the rame while decoder is rerady to accept it
+                // keep pushing the frame while decoder is ready to accept it
                 while(!mTerminateProcessFrames && !mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
                 stats.framesDecoded ++;
             }

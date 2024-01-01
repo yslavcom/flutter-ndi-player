@@ -46,10 +46,7 @@ struct VideoFrameCompressedStr
 	// The video data itself.
 	uint8_t* p_data;
 	size_t dataSizeBytes;
-
-    std::vector<uint8_t> sps;
-    std::vector<uint8_t> pps;
-    bool isKeyFrame;
+    uint32_t hdrSize;
 };
 
 struct AudioFrameStr

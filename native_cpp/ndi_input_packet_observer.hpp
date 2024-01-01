@@ -39,7 +39,6 @@ public:
         , mAudioRxQueue(audioRxQueue)
         , mVidFrameCount(0)
         , mAudFrameCount(0)
-        , mIsFirstFrame(true)
     {}
 
     void clear()
@@ -80,13 +79,13 @@ public:
 
         if (compressed)
         {
-            // We should strip off the prepended header.
             uint32_t hdrSize = ((uint32_t)video->p_data[3] << 24);
             hdrSize |= ((uint32_t)video->p_data[2] << 16);
             hdrSize |= ((uint32_t)video->p_data[1] << 8);
             hdrSize |= ((uint32_t)video->p_data[0]);
 
-            if (hdrSize >= (uint32_t)video->data_size_in_bytes)
+            auto type = H26x::FourCC(fourCC).getType();
+            if (hdrSize >= (uint32_t)video->data_size_in_bytes || (type != H26x::FourCcType::H264 && type != H26x::FourCcType::Hevc))
             {
                 DBG_NDI_INP_OBS("Empty payload\n");
                 if (releaseCb)
@@ -97,92 +96,44 @@ public:
             }
             else
             {
-                auto si = H26x::tryParseServiceInfo(H26x::FourCC(fourCC).getType(), video->p_data+4, video->data_size_in_bytes-4, hdrSize-4);
-                std::vector<uint8_t> sps;
-                std::vector<uint8_t> pps;
+                FrameQueue::VideoFrameCompressedStr frame;
 
-                bool pushFrames = true;
-                if (mIsFirstFrame)
+                frame.xres = video->xres;
+                frame.yres = video->yres;
+                frame.fourCC = fourCC;
+                frame.frameRateN = video->frame_rate_N;
+                frame.frameRateD = video->frame_rate_D;
+                frame.aspectRatio = video->picture_aspect_ratio;
+                frame.p_data = video->p_data;
+                frame.dataSizeBytes = video->data_size_in_bytes;
+                frame.hdrSize = hdrSize;
+
+                switch(video->frame_format_type)
                 {
-                    pushFrames = false;
-                    if (si.has_value())
-                    {
-                        if (si->sps.size() && si->pps.size())
-                        {
-                            mIsFirstFrame = false;
-                            pushFrames = true;
+                case NDIlib_frame_format_type_progressive:
+                    frame.frameFormatType = FrameQueue::FrameFormatType::progressive;
+                break;
 
-                            LOGW("The 1st key frame\n");
-                        }
+                case NDIlib_frame_format_type_interleaved:
+                    frame.frameFormatType = FrameQueue::FrameFormatType::interleaved;
+                break;
 
-                        if (si->sps.size())
-                        {
-                            sps = std::move(si->sps);
-                        }
-                        if (si->pps.size())
-                        {
-                            pps = std::move(si->pps);
-                        }
-                    }
+                case NDIlib_frame_format_type_field_0:
+                    frame.frameFormatType = FrameQueue::FrameFormatType::field_0;
+                break;
+
+                case NDIlib_frame_format_type_field_1:
+                    frame.frameFormatType = FrameQueue::FrameFormatType::field_1;
+                break;
+
+                case NDIlib_frame_format_type_max:
+                    frame.frameFormatType = FrameQueue::FrameFormatType::unknown;
+                break;
                 }
 
-                if (!pushFrames)
-                {
-                    LOGW("Wait for the first key frame\n");
-                }
+                frame.opaque = (void*)video.release();
 
-                auto type = H26x::FourCC(fourCC).getType();
-                if (pushFrames || (type != H26x::FourCcType::H264 && type != H26x::FourCcType::Hevc))
-                {
-#if 0
-                    auto p = video->p_data + hdrSize;
-                    DBG_NDI_INP_OBS("%s: bytes: %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x\n",
-                        p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-#endif
-
-                    FrameQueue::VideoFrameCompressedStr frame;
-
-                    frame.isKeyFrame = si->isKeyFrame;
-
-                    frame.sps = std::move(sps);
-                    frame.pps = std::move(pps);
-
-                    frame.xres = video->xres;
-                    frame.yres = video->yres;
-                    frame.fourCC = fourCC;
-                    frame.frameRateN = video->frame_rate_N;
-                    frame.frameRateD = video->frame_rate_D;
-                    frame.aspectRatio = video->picture_aspect_ratio;
-                    frame.p_data = video->p_data + hdrSize + frame.sps.size() + frame.pps.size();
-                    frame.dataSizeBytes = video->data_size_in_bytes - hdrSize - (frame.sps.size() + frame.pps.size());
-
-                    switch(video->frame_format_type)
-                    {
-                    case NDIlib_frame_format_type_progressive:
-                        frame.frameFormatType = FrameQueue::FrameFormatType::progressive;
-                    break;
-
-                    case NDIlib_frame_format_type_interleaved:
-                        frame.frameFormatType = FrameQueue::FrameFormatType::interleaved;
-                    break;
-
-                    case NDIlib_frame_format_type_field_0:
-                        frame.frameFormatType = FrameQueue::FrameFormatType::field_0;
-                    break;
-
-                    case NDIlib_frame_format_type_field_1:
-                        frame.frameFormatType = FrameQueue::FrameFormatType::field_1;
-                    break;
-
-                    case NDIlib_frame_format_type_max:
-                        frame.frameFormatType = FrameQueue::FrameFormatType::unknown;
-                    break;
-                    }
-
-                    frame.opaque = (void*)video.release();
-
-                    mVideoRxQueue.push(std::make_pair(frame, releaseCb));
-                }
+                mVideoRxQueue.push(std::make_pair(frame, releaseCb));
             }
         }
         else
@@ -318,6 +269,4 @@ private:
 
         return {};
     }
-
-    bool mIsFirstFrame;
 };
