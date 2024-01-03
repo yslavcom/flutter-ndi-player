@@ -198,6 +198,22 @@ void stopProgram(int64_t progrIdx)
 #endif
 }
 
+static void restartProgramResources()
+{
+    mPlayer.reset(new Player);
+    mPlayer->setRenderObserver(getRenderVidFrame());
+    auto videoDecoder = getVideoDecoder();
+    videoDecoder->terminate();
+    videoDecoder->setVidFramesToDecode(&mVidFramesToDecode);
+    videoDecoder->setDecodedFramesQueue(&mVidFramesDecoded);
+    mPlayer->setDecoder(videoDecoder);
+    getRenderVidFrame()->setDecoder(videoDecoder);
+    mRxFrameController.installVideoFrameObs(mPlayer.get());
+    mRxFrameController.installAudioFrameObs(mPlayer.get());
+
+    mPlayer->reStart();
+}
+
 EXPORT
 void startProgram(int64_t progrIdx)
 {
@@ -217,20 +233,7 @@ void startProgram(int64_t progrIdx)
 
     if (ProgramRx->createReceiver(name, url, mProgramQuality))
     {
-    //    if (!mPlayer)
-        {
-            mPlayer.reset(new Player);
-            mPlayer->setRenderObserver(getRenderVidFrame());
-            auto videoDecoder = getVideoDecoder();
-            videoDecoder->terminate();
-            videoDecoder->setVidFramesToDecode(&mVidFramesToDecode);
-            videoDecoder->setDecodedFramesQueue(&mVidFramesDecoded);
-            mPlayer->setDecoder(videoDecoder);
-            getRenderVidFrame()->setDecoder(videoDecoder);
-            mRxFrameController.installVideoFrameObs(mPlayer.get());
-            mRxFrameController.installAudioFrameObs(mPlayer.get());
-        }
-        mPlayer->reStart();
+        restartProgramResources();
 
         mCapturePacketsThread.start([](bool stop){
                 (void)stop;
