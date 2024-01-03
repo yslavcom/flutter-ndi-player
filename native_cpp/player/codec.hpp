@@ -30,6 +30,7 @@ public:
     virtual ~Decoder(){}
 
     virtual bool create(uint32_t fourcc) = 0;
+    virtual bool terminate() = 0;
     virtual bool configure() = 0;
     virtual bool start() = 0;
     virtual bool stop() = 0;

@@ -217,11 +217,12 @@ void startProgram(int64_t progrIdx)
 
     if (ProgramRx->createReceiver(name, url, mProgramQuality))
     {
-        if (!mPlayer)
+    //    if (!mPlayer)
         {
             mPlayer.reset(new Player);
             mPlayer->setRenderObserver(getRenderVidFrame());
             auto videoDecoder = getVideoDecoder();
+            videoDecoder->terminate();
             videoDecoder->setVidFramesToDecode(&mVidFramesToDecode);
             videoDecoder->setDecodedFramesQueue(&mVidFramesDecoded);
             mPlayer->setDecoder(videoDecoder);

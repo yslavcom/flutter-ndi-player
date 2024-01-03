@@ -39,6 +39,7 @@ public:
 
     // class Decoder
     virtual bool create(uint32_t fourcc) override;
+    virtual bool terminate() override;
     virtual bool configure() override;
     virtual bool start() override;
     virtual bool stop() override;

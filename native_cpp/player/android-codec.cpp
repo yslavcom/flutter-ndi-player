@@ -9,6 +9,7 @@
 
 #define _DBG_ANDRDEC
 #define _DBG_ANDRDEC_ERR
+#define _DBG_CFG
 
 #ifdef _DBG_ANDRDEC
     #define DBG_ANDRDEC(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -21,6 +22,14 @@
 #else
     #define DBG_ANDRDEC_ERR(format, ...)
 #endif
+
+#ifdef _DBG_CFG
+    #define DBG_CFG(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_CFG(format, ...)
+#endif
+
+
 
 
 AndroidDecoder::AndroidDecoder(RequestSetupCb cb)
@@ -186,6 +195,18 @@ bool AndroidDecoder::create(uint32_t fourcc)
     return true;
 }
 
+bool AndroidDecoder::terminate()
+{
+    using namespace std::chrono_literals;
+
+    release();
+
+    // wait to finish;
+    std::this_thread::sleep_for(100ms);
+
+    return true;
+}
+
 void AndroidDecoder::setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps)
 {
     if (sps.size())
@@ -203,7 +224,7 @@ bool AndroidDecoder::configure()
 {
 //    std::lock_guard lk(mDecMu);
 
-    DBG_ANDRDEC("AndroidDecoder::configure, isValid:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
+    DBG_CFG("AndroidDecoder::configure, isValid:%d, mH264Type:%s, mXRes:%d, mYRes:%d\n",
         isValid(), mH264Type, mXres, mYres);
 
     if (!isValid() || !mDecoderLoop) return false;
