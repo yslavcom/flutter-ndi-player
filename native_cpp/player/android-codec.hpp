@@ -52,6 +52,8 @@ public:
     virtual void setSpsPps(std::vector<uint8_t> sps, std::vector<uint8_t> pps) override;
     virtual void diagnostics(void* userData) override;
 
+    virtual void connecting() override;
+
 private:
 
     static void onAsyncInputAvailable(AMediaCodec *codec, void *userdata, int32_t index);

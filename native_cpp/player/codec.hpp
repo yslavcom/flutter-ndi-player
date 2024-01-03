@@ -44,6 +44,8 @@ public:
     virtual void init(void* nativeWindow) = 0;
     virtual void diagnostics(void* userData) = 0;
 
+    virtual void connecting() = 0;
+
     void setVidFramesToDecode(FrameQueue::VideoRx* vidFramesToDecode)
     {
         mVidFramesToDecode = vidFramesToDecode;

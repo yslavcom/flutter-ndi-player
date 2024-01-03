@@ -18,6 +18,7 @@ DecoderLoop::DecoderLoop(Video::Decoder* decoder, std::mutex& decMu, FrameQueue:
     , mDecodedVideoFrames(decodedVideoFrames)
     , mTerminateProcessFrames{false}
     , mDecMu(decMu)
+    , mStart(true)
 {
     DBG_DECLOOP("DecoderLoop:%p, %p, %p\n", mVideoDecoder, mVidFramesToDecode, mDecodedVideoFrames);
 }
@@ -48,6 +49,11 @@ bool DecoderLoop::run()
     return true;
 }
 
+void DecoderLoop::init()
+{
+    mStart = true;
+}
+
 DecoderLoop::Statistics DecoderLoop::processFrames()
 {
     Statistics stats{};
@@ -63,6 +69,13 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
     while(!mTerminateProcessFrames)
     {
+        auto cleanupFrame = [](FrameQueue::ReleaseCb cb, void* opaque){
+            if (cb)
+            {
+                cb(opaque);
+            }
+        };
+
         if (mVidFramesToDecode->getCount())
         {
             FrameQueue::VideoFrame frame;
@@ -85,6 +98,26 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
                 }
             }
 
+            bool isContinue = true;
+            if (mStart)
+            {
+                isContinue = false;
+                if (si)
+                {
+                    isContinue = si->isKeyFrame;
+                    if (isContinue)
+                    {
+                        mStart = false;
+                    }
+                }
+            }
+
+            if (!isContinue)
+            {
+                cleanupFrame(frame.second, compressedFrame.opaque);
+                continue;
+            }
+
             // We should strip off the prepended header, again.
             compressedFrame.p_data = compressedFrame.p_data + compressedFrame.hdrSize + sps.size() + pps.size();
             compressedFrame.dataSizeBytes = compressedFrame.dataSizeBytes - compressedFrame.hdrSize - (sps.size() + pps.size());
@@ -95,6 +128,9 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
 
                 // keep pushing the frame while decoder is ready to accept it
                 while(!mTerminateProcessFrames && !mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));
+
+                cleanupFrame(frame.second, compressedFrame.opaque);
+
                 stats.framesDecoded ++;
             }
         }

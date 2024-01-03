@@ -95,7 +95,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
         auto y = yRes;
 
         std::visit(FrameQueue::overloaded {
-            [this, x, y](FrameQueue::VideoFrameStr& arg)
+            [this, x, y, cleanupCb = frame->second](FrameQueue::VideoFrameStr& arg)
             {
                 DBG_PLAYER_VID("Uncompressed, x:%d, y:%d\n", arg.xres, arg.yres);
 
@@ -104,6 +104,12 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                 auto scaledFrame = convScaleFrame(arg, x, y, size);
                 DBG_PLAYER_VID("Render uncompressed\n");
                 mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
+
+                // It must be cleaned after all observers had a chance to process the frame
+                if (cleanupCb)
+                {
+                    cleanupCb(arg.opaque);
+                }
             },
             [this, cleanupCb = frame->second](FrameQueue::VideoFrameCompressedStr& arg)
             {
@@ -134,6 +140,10 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 
                 case State::Connecting:
                     mState = State::Connected;
+                    if (mVideoDecoder)
+                    {
+                        mVideoDecoder->connecting();
+                    }
                     sendToDecode(arg, H26x::FourCC{arg.fourCC});
                 break;
 

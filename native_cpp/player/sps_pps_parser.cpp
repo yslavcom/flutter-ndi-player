@@ -6,6 +6,7 @@
 #include <cassert>
 
 // #define _DBG_SPS
+
 #ifdef _DBG_SPS
     #define DBG_SPS(format, ...) LOGW(format, ## __VA_ARGS__)
 #else
@@ -82,8 +83,6 @@ std::optional<ServiceInfo> tryParseServiceInfo(FourCcType type, const uint8_t * 
 
             DBG_SPS("NALType[%d]:%d\n", i, NALType[i]);
         }
-
-        // DBG_SPS("spsSize:%d,ppsSize:%d, isKeyFrame:%d\n", spsSize, spsSize, isKeyFrame);
 
         si.sps.resize(spsSize);
         std::memcpy(si.sps.data(), (uint8_t*)buffer + spsStartIdx, spsSize);

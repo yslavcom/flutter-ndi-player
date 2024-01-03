@@ -344,6 +344,7 @@ void AndroidDecoder::init(void* nativeWindow)
         mDecoderLoop.reset(new DecoderLoop(this, mDecMu, mVidFramesToDecode, mDecodedVideoFrames));
 
         DBG_ANDRDEC("AndroidDecoder::init, mDecoderLoop:%p\n", mDecoderLoop.get());
+        mDecoderLoop->init();
 
         mIsSurfaceWindow = true;
     }
@@ -389,6 +390,14 @@ void AndroidDecoder::diagnostics(void* userData)
     auto isTransient =  AMediaCodecActionCode_isTransient(self->mCodec);
     DBG_ANDRDEC("isRecoverable:%d, isTransient:%d\n", 0, 0);
 #endif
+}
+
+void AndroidDecoder::connecting()
+{
+    if (mDecoderLoop)
+    {
+        mDecoderLoop->init();
+    }
 }
 
 void AndroidDecoder::AMediaCodecOnFrameRendered(AMediaCodec *codec, void *userdata, int64_t mediaTimeUs, int64_t systemNano)

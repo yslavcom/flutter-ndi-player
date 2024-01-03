@@ -77,13 +77,6 @@ void RxFrameController::processVideoQueue()
             {
                 el->onFrame(&frame, queue.getCount());
             }
-
-            // It must be cleaned after all observers had a chance to process the frame
-            if (frame.second)
-            {
-                FrameQueue::release(frame.first, frame.second);
-            }
-
             mFrameCount++;
         }
     }

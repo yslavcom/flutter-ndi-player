@@ -12,6 +12,7 @@ public:
     DecoderLoop(Video::Decoder* decoder, std::mutex& decMu, FrameQueue::VideoRx* vidFramesToDecode, FrameQueue::VideoRx* decodedVideoFrames);
     ~DecoderLoop();
     bool run();
+    void init();
 
 private:
     Video::Decoder* mVideoDecoder;
@@ -34,4 +35,6 @@ private:
     std::atomic<bool> mTerminateProcessFrames;
 
     std::mutex& mDecMu;
+
+    bool mStart;
 };
