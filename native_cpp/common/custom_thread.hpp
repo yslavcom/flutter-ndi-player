@@ -4,6 +4,15 @@
 
 #include <thread>
 #include <atomic>
+#include <string>
+
+#define _DBG_THREAD
+
+#ifdef _DBG_THREAD
+    #define DBG_THREAD LOGW
+#else
+    #define DBG_THREAD
+#endif
 
 class CustomThread final
 {
@@ -14,20 +23,13 @@ public:
     }
 
     template <typename Callback, typename... Args>
-    bool start(Callback cb, Args ...arg)
+    bool start(std::string name, Callback cb, Args ...arg)
     {
-#if 0
-        if (mThread.joinable())
-        {
-            mStop = true;
-            mThread.join();
-        }
-
-        mStop = false;
-#endif
+        mDbgName = name;
         if (!mThread.joinable())
         {
-            auto lambda = [this](Callback cb, Args... arg){
+            auto lambda = [this](Callback cb, Args... arg)
+            {
                 while(!mStop)
                 {
                     cb(mStop, arg...);
@@ -44,6 +46,7 @@ public:
     {
         if (mThread.joinable())
         {
+            DBG_THREAD("Thread terminate\n");
             mStop = true;
             mThread.join();
         }
@@ -53,5 +56,7 @@ public:
 private:
     std::thread mThread;
     std::atomic<bool> mStop{false};
+
+    std::string mDbgName;
 };
 

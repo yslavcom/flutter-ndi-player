@@ -101,8 +101,6 @@ bool NdiApp::capturePackets()
     {
         return false;
     }
-
-    //return captureBlockV2(mRecvInst);
     return captureBlock(mRecvInst);
 }
 
@@ -111,7 +109,6 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
     std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
     std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
 
-    //NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 100);
     NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), nullptr, 5);
 
 #ifdef _DBG_VID_RX
@@ -158,7 +155,6 @@ bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
         }
 
         case NDIlib_frame_type_metadata:
-            // NDIlib_recv_free_metadata(rxInst->src(), meta.get());
             break;
 
         case NDIlib_frame_type_error:

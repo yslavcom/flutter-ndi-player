@@ -76,7 +76,7 @@ std::unique_ptr<NdiApp> NdiRxProg::mNdiApp;
 std::once_flag NdiRxProg::mInitFlag;
 
 auto ProgramRx = NdiRxProg::getInstance();
-CustomThread mCapturePacketsThread;
+std::unique_ptr<CustomThread> mCapturePacketsThread;
 
 std::optional<int64_t> mCurrentProgramIdx;
 
@@ -150,7 +150,7 @@ class NdiInputControl: public InputControl
 };
 NdiInputControl mNdiInputControl;
 RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue, &mNdiInputControl);
-CustomThread mRxFrameControllerThread;
+std::unique_ptr<CustomThread> mRxFrameControllerThread;
 std::mutex mVideoDecoderFrameMutex;
 FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
 FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
@@ -216,6 +216,8 @@ void startProgram(int64_t progrIdx)
 
     if (mCurrentProgramIdx)
     {
+        mCapturePacketsThread = nullptr;
+        mRxFrameControllerThread = nullptr;
         stopProgram(*mCurrentProgramIdx);
     }
     mCurrentProgramIdx = progrIdx;
@@ -230,20 +232,17 @@ void startProgram(int64_t progrIdx)
     {
         restartProgramResources();
 
-        mCapturePacketsThread.start([](bool stop){
+        mCapturePacketsThread.reset(new CustomThread());
+        mCapturePacketsThread->start("mCapturePacketsThread", [](const bool stop){
                 (void)stop;
-                for (;;)
-                {
-                    ProgramRx->capturePackets();
-                }
+                ProgramRx->capturePackets();
             });
 
-        mRxFrameControllerThread.start([](bool stop){
+
+        mRxFrameControllerThread.reset(new CustomThread());
+        mRxFrameControllerThread->start("mRxFrameControllerThread", [](const bool stop){
             (void)stop;
-            for (;;)
-            {
-                mRxFrameController.run();
-            }
+            mRxFrameController.run();
         });
     }
 }

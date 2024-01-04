@@ -73,7 +73,6 @@ unsigned NdiRx::trackNdiSourcesBackgroundBlock(bool& risChanged) // a blocking f
             std::lock_guard lk(mSourceMutex);
 
             auto ndiSources = NDIlib_find_get_current_sources(pNDI_find, &sourcesCount);
-//            DBG_RX("%s:sources:%p, count:%d", __func__, ndiSources, sourcesCount);
             if (sourcesCount && ndiSources)
             {
                 if (mSourceContainer.getSourceCount() != sourcesCount)
@@ -141,14 +140,16 @@ void NdiRx::removeObserver(InputObserver* obs)
 
 bool NdiRx::scanNdiSources()
 {
-    #pragma GCC diagnostic ignored "-Wunused-value"
-    mShadowsourceTrackThread.start([this](bool stop){
-        if (!start())
-        {
-            return false;
-        }
-        while(!stop)
-        {
+    if (start())
+    {
+        #pragma GCC diagnostic ignored "-Wunused-value"
+        mShadowsourceTrackThread.start("mShadowsourceTrackThread", [this](const bool stop){
+#if 0
+            if (!start() || stop)
+            {
+                return false;
+            }
+#endif
             bool isContentsChanged = false; // must be preset to false
             auto count = trackNdiSourcesBackgroundBlock(isContentsChanged);
             DBG_RX("scanNdiSources[%s]:%d\n", __func__, count);
@@ -170,10 +171,14 @@ bool NdiRx::scanNdiSources()
                 updateObserversAboutInputState(sources);
 
             }
-            std::this_thread::yield();
-        }
-        return true;
-    });
+            if (!stop)
+            {
+                std::this_thread::yield();
+            }
+
+            return true;
+        });
+    }
 
     return true;
 }
