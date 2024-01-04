@@ -49,11 +49,5 @@ private:
     void updateObserversAboutInputState(std::vector<std::string> sources);
     std::set<InputObserver*> mInputSinkObservers;
     std::mutex mSourceMutex;
-
-#if 0
-#ifdef ANDROID_OUT
-    NsdManager m_nsdManager;
-#endif
-#endif
 };
 

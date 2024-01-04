@@ -190,12 +190,7 @@ void stopProgram(int64_t progrIdx)
     mRxFrameController.uninstallAudioFrameObs(mPlayer.get());
 
     mPlayer = nullptr;
-#if 1
     mVidFramesToDecode.flush();
-#endif
-#if 0
-    ProgramRx->stopReceiver();
-#endif
 }
 
 static void restartProgramResources()

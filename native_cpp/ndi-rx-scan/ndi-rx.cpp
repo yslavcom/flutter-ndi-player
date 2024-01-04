@@ -26,12 +26,6 @@ NdiRx::~NdiRx()
 
 bool NdiRx::start()
 {
-#if 0
-#ifdef ANDROID_OUT
-    m_nsdManager = (NsdManager)getSystemService(Context.NSD_SERVICE);
-#endif
-#endif
-
     if (!NDIlib_initialize())
     {
         LOGE("%s:Failed to NDIlib_initialize\n", __func__);

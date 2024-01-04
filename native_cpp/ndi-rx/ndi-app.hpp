@@ -63,7 +63,6 @@ private:
 
 
             mVal = NDIlib_recv_create_v4(&arg, ndiConfig);
-//            mVal = NDIlib_recv_create_v3(&arg);
         }
         RecvClass(const RecvClass&) = delete;
         RecvClass& operator=(const RecvClass&) = delete;

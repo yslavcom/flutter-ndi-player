@@ -4,7 +4,6 @@
 
 #include "texture.hpp"
 #include "codec.hpp"
-#include "nal_parse.hpp"
 
 #include "interfaces/frame_observer.hpp"
 #include "common/frame-queue.hpp"
@@ -42,8 +41,4 @@ private:
         Connected
     };
     State mState;
-#if 0
-    // SPS/PPS are retrieved at RX end, no need to parse here at the moment
-    std::unique_ptr<NalParse> mNalParse;
-#endif
 };

@@ -186,8 +186,6 @@ bool AndroidDecoder::create(uint32_t fourcc)
     AMediaCodec_setAsyncNotifyCallback(mCodec, callback, this);
 #endif
 
-//    AMediaCodec_setOnFrameRenderedCallback(mCodec, &AndroidDecoder::AMediaCodecOnFrameRendered, this);
-
     mFormat = AMediaFormat_new();
     DBG_ANDRDEC("mFormat:%p\n", mFormat);
     if (!mFormat) return false;
@@ -269,7 +267,7 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
     std::chrono::microseconds us = std::chrono::duration_cast< std::chrono::microseconds >(
         std::chrono::system_clock::now().time_since_epoch()
     );
-#if 1
+
     if (mIsStarted)
     {
         auto timeoutUs = 40000;
@@ -296,36 +294,6 @@ bool AndroidDecoder::enqueueFrame(const uint8_t* frameBuf, size_t frameSize)
         }
     }
     return false;
-
-#else
-    if (mIsStarted)
-    {
-        //auto presentationTimeUs = 40000;
-        uint64_t presentationTimeUs = us.count();
-        // Submit input data to codec
-
-        if (mInputAvailableBufferIdx.size())
-        {
-            auto inputIndex = mInputAvailableBufferIdx.front();
-            mInputAvailableBufferIdx.pop();
-
-            AMediaCodecBufferInfo bufferInfo;
-            size_t bufferSize = 0;
-            uint8_t* inputBuffer = AMediaCodec_getInputBuffer(mCodec, inputIndex, &bufferSize);
-            if (inputBuffer)
-            {
-                // Copy the H.264 frame to the input buffer
-                memcpy(inputBuffer, frameBuf, std::min(bufferSize, frameSize));
-                DBG_ANDRDEC("Enqueue input buffer, codec:%p, idx:%d, size:%d, presentationTimeUs:%d\n", mCodec, inputIndex, frameSize, presentationTimeUs);
-                media_status_t ret = AMediaCodec_queueInputBuffer(mCodec, inputIndex, 0, frameSize, presentationTimeUs, 0);
-                return ret == AMEDIA_OK;
-            }
-        }
-    }
-
-    return false;
-#endif
-
 }
 
 bool AndroidDecoder::retrieveFrame()

@@ -108,93 +108,66 @@ bool NdiApp::capturePackets()
 
 bool NdiApp::captureBlock(std::shared_ptr<RecvClass> rxInst)
 {
-#define DBG_POLL_NDI_QUEUE (0)
+    std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
+    std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
 
-#if DBG_POLL_NDI_QUEUE
-    NDIlib_recv_queue_t queue{};
-    NDIlib_recv_get_queue(rxInst->src(), &queue);
-
-    if (queue.video_frames || queue.audio_frames)
-#endif
-    {
-#if DBG_POLL_NDI_QUEUE
-        for (;;)
-#endif
-        {
-            std::unique_ptr<NDIlib_video_frame_v2_t> video = std::make_unique<NDIlib_video_frame_v2_t>();
-            std::unique_ptr<NDIlib_audio_frame_v3_t> audio = std::make_unique<NDIlib_audio_frame_v3_t>();
-
-            //NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 100);
-            NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), nullptr, 5);
+    //NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), meta.get(), 100);
+    NDIlib_frame_type_e ret = NDIlib_recv_capture_v3(rxInst->src(), video.get(), audio.get(), nullptr, 5);
 
 #ifdef _DBG_VID_RX
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration<float, std::milli>(now - mLastVideoFrameTime);
-            if (elapsed.count() >= 1000.0)
-            {
-                mLastVideoFrameTime = now;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration<float, std::milli>(now - mLastVideoFrameTime);
+    if (elapsed.count() >= 1000.0)
+    {
+        mLastVideoFrameTime = now;
 
-                if (mDbgPrevVidFrameCount == mDbgVidFrameCount)
-                {
-                    NDIlib_recv_queue_t queue{};
-                    NDIlib_recv_get_queue(rxInst->src(), &queue);
-                    DBG_VID_RX("Vid Frame Rx Count:%d, video_frames:%d\n", mDbgVidFrameCount, queue.video_frames);
-                }
-                else
-                {
-                    DBG_VID_RX("Vid Frame Rx Count:%d\n", mDbgVidFrameCount);
-                }
+        if (mDbgPrevVidFrameCount == mDbgVidFrameCount)
+        {
+            NDIlib_recv_queue_t queue{};
+            NDIlib_recv_get_queue(rxInst->src(), &queue);
+            DBG_VID_RX("Vid Frame Rx Count:%d, video_frames:%d\n", mDbgVidFrameCount, queue.video_frames);
+        }
+        else
+        {
+            DBG_VID_RX("Vid Frame Rx Count:%d\n", mDbgVidFrameCount);
+        }
 
-                mDbgPrevVidFrameCount = mDbgVidFrameCount;
-            }
-            if (ret == NDIlib_frame_type_video)
-            {
-                mDbgVidFrameCount ++;
-            }
+        mDbgPrevVidFrameCount = mDbgVidFrameCount;
+    }
+    if (ret == NDIlib_frame_type_video)
+    {
+        mDbgVidFrameCount ++;
+    }
 #endif // #ifdef _DBG_VID_RX
 
-            switch (ret)
-            {
-                case NDIlib_frame_type_none:
-                    break;
+    switch (ret)
+    {
+        case NDIlib_frame_type_none:
+            break;
 
-                case NDIlib_frame_type_video:
-                {
-#if DBG_POLL_NDI_QUEUE
-                    if (queue.video_frames) queue.video_frames --;
-#endif
-                    handleVideo(std::move(video), rxInst);
-                    break;
-                }
+        case NDIlib_frame_type_video:
+        {
+            handleVideo(std::move(video), rxInst);
+            break;
+        }
 
-                case NDIlib_frame_type_audio:
-                {
-#if DBG_POLL_NDI_QUEUE
-                    if (queue.audio_frames) queue.audio_frames --;
-#endif
-                    handleAudio(std::move(audio), rxInst);
-                    break;
-                }
+        case NDIlib_frame_type_audio:
+        {
+            handleAudio(std::move(audio), rxInst);
+            break;
+        }
 
-                case NDIlib_frame_type_metadata:
-                    // NDIlib_recv_free_metadata(rxInst->src(), meta.get());
-                    break;
+        case NDIlib_frame_type_metadata:
+            // NDIlib_recv_free_metadata(rxInst->src(), meta.get());
+            break;
 
-                case NDIlib_frame_type_error:
-                    LOGE("NDI pack rx error\n");
-                    break;
+        case NDIlib_frame_type_error:
+            LOGE("NDI pack rx error\n");
+            break;
 
-                default:
-                    break;
-            } // switch
-#if DBG_POLL_NDI_QUEUE
-            if (queue.video_frames == 0 && queue.audio_frames == 0)
-            {
-                return true;
-            }
-#endif
-        } // for
-    }
+        default:
+            break;
+    } // switch
     return true;
 }
 

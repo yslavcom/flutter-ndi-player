@@ -38,9 +38,6 @@ Player::Player()
     , mVideoDecoder(nullptr)
     , mAudioInitialised(false)
     , mState(State::Idle)
-#if 0
-    , mNalParse{}
-#endif
 {
 }
 
@@ -162,7 +159,7 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     {
         return;
     }
-#if 1
+
     auto& audio = frame->first;
     if (!mAudioInitialised)
     {
@@ -175,14 +172,6 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     }
 
     audio_push_aud_frame(reinterpret_cast<uintptr_t>(audio.opaque), audio.chanNo, reinterpret_cast<uintptr_t>(audio.samples), audio.samplesNo, audio.stride, audio.planar);
-
-#else
-//    DBG_PLAYER("dump audio, remaining:%d\n", remainingCount);
-    if (frame->second.first)
-    {
-        frame->second.first(frame->second.second, frame->first.opaque);
-    }
-#endif
 }
 
 std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameStr& frame, unsigned xRes, unsigned yRes, size_t& size)
