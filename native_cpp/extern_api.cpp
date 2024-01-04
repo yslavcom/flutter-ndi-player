@@ -186,6 +186,9 @@ void stopProgram(int64_t progrIdx)
 
     LOGW("stopProgram\n");
 
+    mCapturePacketsThread = nullptr;
+    mRxFrameControllerThread = nullptr;
+
     mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
     mRxFrameController.uninstallAudioFrameObs(mPlayer.get());
 
@@ -216,8 +219,6 @@ void startProgram(int64_t progrIdx)
 
     if (mCurrentProgramIdx)
     {
-        mCapturePacketsThread = nullptr;
-        mRxFrameControllerThread = nullptr;
         stopProgram(*mCurrentProgramIdx);
     }
     mCurrentProgramIdx = progrIdx;

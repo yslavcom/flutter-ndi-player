@@ -406,6 +406,12 @@ pub extern "C" fn audio_push_aud_frame(opaque: usize,
     }
 }
 
+#[no_mangle]
+pub extern "C" fn audio_delete_all_samples() {
+    let mut aud_data = AUDIO_DATA.lock().unwrap();
+    aud_data.delete_all();
+}
+
 /// Print device's audio info
 // #[cfg(not(feature = "host_test"))]
 fn audio_probe() {

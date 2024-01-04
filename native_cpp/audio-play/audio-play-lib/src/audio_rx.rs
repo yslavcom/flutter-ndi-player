@@ -58,27 +58,7 @@ pub struct AudioDataCallback
 
 impl Drop for AudioDataCallback {
     fn drop(&mut self) {
-        // Using pattern matching
-
-        if self.cleanup_cb.is_some() {
-
-            if let Some(aud_frame_cache) = &self.aud_frame_cache {
-                self.cleanup(aud_frame_cache);
-            }
-
-            loop {
-                let element = self.aud_frame.pop();
-                match element {
-                    Some(el) => {
-                        self.cleanup(&el);
-                    },
-                    None => {
-                        // no more elements in the queue
-                        return;
-                    }
-                }
-            }
-        }
+        self.delete_all();
     }
 }
 
@@ -102,7 +82,27 @@ impl AudioDataCallback {
         self.context = ctxt;
     }
 
-    pub fn cleanup(&self, aud: &AudioFrameStr) {
+    pub fn delete_all(&mut self) {
+        self.cache_clear();
+
+        debug!("samples count:{}", self.aud_frame.len());
+        loop {
+            let element = self.pop_aud_frame();
+            match element {
+                Some(el) => {
+                    if self.cleanup_cb.is_some() {
+                        self.cleanup(&el);
+                    }
+                },
+                None => {
+                    // no more elements in the queue
+                    return;
+                }
+            }
+        }
+    }
+
+    fn cleanup(&self, aud: &AudioFrameStr) {
         if let Some(cleanup_cb) = self.cleanup_cb {
             unsafe {
                 cleanup_cb(self.context as *const c_void, aud.opaque as *const c_void);
@@ -175,8 +175,8 @@ impl AudioDataCallback {
 
     fn pop_aud_frame(&mut self) -> Option<AudioFrameStr> {
         let frame = self.aud_frame.pop();
-        if let Some(frame) = frame {
-            self.total_queued_samples_per_chan -= frame.samples_no;
+        if frame.is_some() {
+            self.total_queued_samples_per_chan -= frame.unwrap().samples_no;
         }
         frame
     }

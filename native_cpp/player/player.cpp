@@ -43,6 +43,7 @@ Player::Player()
 
 Player::~Player()
 {
+    audio_delete_all_samples();
 }
 
 void Player::setRenderObserver(RenderVidFrameObserver* obs)
