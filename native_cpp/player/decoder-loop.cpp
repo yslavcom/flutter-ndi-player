@@ -81,7 +81,7 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
             FrameQueue::VideoFrame frame;
             mVidFramesToDecode->read(frame);
             auto& compressedFrame = std::get<FrameQueue::VideoFrameCompressedStr>(frame.first);
-
+#if 0
             std::vector<uint8_t> sps;
             std::vector<uint8_t> pps;
             // We should strip off the prepended header (4 reserved to the header).
@@ -117,14 +117,17 @@ DecoderLoop::Statistics DecoderLoop::processFrames()
                 cleanupFrame(frame.second, compressedFrame.opaque);
                 continue;
             }
+#endif // #if 0
 
             // We should strip off the prepended header, again.
-            compressedFrame.p_data = compressedFrame.p_data + compressedFrame.hdrSize + sps.size() + pps.size();
-            compressedFrame.dataSizeBytes = compressedFrame.dataSizeBytes - compressedFrame.hdrSize - (sps.size() + pps.size());
+            compressedFrame.p_data = compressedFrame.p_data + compressedFrame.hdrSize;
+            compressedFrame.dataSizeBytes = compressedFrame.dataSizeBytes - compressedFrame.hdrSize;
 
             if (!mTerminateProcessFrames)
             {
-//                mVideoDecoder->setSpsPps(sps, pps);
+#if 0
+                mVideoDecoder->setSpsPps(sps, pps);
+#endif
 
                 // keep pushing the frame while decoder is ready to accept it
                 while(!mTerminateProcessFrames && !mVideoDecoder->enqueueFrame(compressedFrame.p_data, compressedFrame.dataSizeBytes));

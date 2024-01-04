@@ -6,14 +6,6 @@
 #include <atomic>
 #include <string>
 
-#define _DBG_THREAD
-
-#ifdef _DBG_THREAD
-    #define DBG_THREAD LOGW
-#else
-    #define DBG_THREAD
-#endif
-
 class CustomThread final
 {
 public:
@@ -46,7 +38,6 @@ public:
     {
         if (mThread.joinable())
         {
-            DBG_THREAD("Thread terminate\n");
             mStop = true;
             mThread.join();
         }
