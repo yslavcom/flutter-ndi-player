@@ -76,20 +76,26 @@ overloaded(Ts...) -> overloaded<Ts...>;
 template < class F>
 void release(VideoFrameVariant& var, F cleanup)
 {
-    std::visit( overloaded {
-                        [cleanup](VideoFrameStr& arg){
-                            cleanup(arg.opaque);
-                        },
-                        [cleanup](VideoFrameCompressedStr& arg){
-                            cleanup(arg.opaque);
-                        }
-    }, var);
+    if (cleanup)
+    {
+        std::visit( overloaded {
+                            [cleanup](VideoFrameStr& arg){
+                                cleanup(arg.opaque);
+                            },
+                            [cleanup](VideoFrameCompressedStr& arg){
+                                cleanup(arg.opaque);
+                            }
+        }, var);
+    }
 }
 
 template < class F>
-void release(AudioFrameStr& var, F cleanup)
+void release(AudioFrameStr& var, std::pair<F, void*> ctxt)
 {
-    cleanup(var.opaque);
+    if (ctxt.first)
+    {
+        ctxt.first(ctxt.second, var.opaque);
+    }
 }
 
 template <typename T>
@@ -100,9 +106,16 @@ public:
         : SafeQueue<T>(mu
         , [](T* el)
         {
-            if (el && el->second)
+            if (el)
             {
-                release(el->first, el->second);
+                if constexpr (std::is_same_v<T, AudioFrameStr>)
+                {
+                    release(el->first, el->second);
+                }
+                else
+                {
+                    release(el->first, el->second);
+                }
             }
         }
         , 500)
