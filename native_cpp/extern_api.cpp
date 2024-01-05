@@ -1,19 +1,7 @@
-#include "ndi-rx-scan/ndi-rx.hpp"
-#include "ndi-rx/ndi-app.hpp"
-#include "ndi_src_observer.hpp"
-#include "ndi_input_packet_observer.hpp"
-#include "player/render_vid_frame.hpp"
-#include "player/player.hpp"
-#include "player/codec.hpp"
-
-#include  "interfaces/input-control.hpp"
-#include  "rx-frames-controller/rx-frame-controller.hpp"
-
+#include "program_switch.hpp"
 #include "DartApiDL/include/dart_api_dl.c"
 
 #include "common/logger.hpp"
-#include "common/frame-queue.hpp"
-#include "common/custom_thread.hpp"
 
 #include <memory>
 #include <mutex>
@@ -25,68 +13,8 @@
 
 namespace
 {
+int64_t DartApiMessagePort = -1;
 
-// Scan Singleton
-class NdiRxScan
-{
-public:
-    static NdiRx* getInstance()
-    {
-        std::call_once(mInitFlag, &NdiRxScan::buildInstance);
-        return mNdiRx.get();
-    }
-
-private:
-    static std::unique_ptr<NdiRx> mNdiRx;
-    static std::once_flag mInitFlag;
-    static void buildInstance()
-    {
-        mNdiRx.reset(new NdiRx);
-    }
-};
-
-std::unique_ptr<NdiRx> NdiRxScan::mNdiRx;
-std::once_flag NdiRxScan::mInitFlag;
-
-auto Scan = NdiRxScan::getInstance();
-NdiSrcObserver mNdiSrcObserver;
-
-// Start Program Rx Singleton
-class NdiRxProg: public InputControl
-{
-public:
-    static NdiApp* getInstance()
-    {
-        std::call_once(mInitFlag, &NdiRxProg::buildInstance);
-        return mNdiApp.get();
-    }
-
-
-
-private:
-    static std::unique_ptr<NdiApp> mNdiApp;
-    static std::once_flag mInitFlag;
-    static void buildInstance()
-    {
-        mNdiApp.reset(new NdiApp);
-    }
-};
-
-std::unique_ptr<NdiApp> NdiRxProg::mNdiApp;
-std::once_flag NdiRxProg::mInitFlag;
-
-auto ProgramRx = NdiRxProg::getInstance();
-std::unique_ptr<CustomThread> mCapturePacketsThread;
-
-std::optional<int64_t> mCurrentProgramIdx;
-
-std::mutex mFrameRxMutex;
-FrameQueue::VideoRx mVideoRxQueue(mFrameRxMutex);
-FrameQueue::AudioRx mAudioRxQueue(mFrameRxMutex);
-
-NdiInputPacketsObserver mNdiInputPacketsObserver(mVideoRxQueue, mAudioRxQueue);
-
-std::vector<std::string> mSources;
 struct CharFromSources
 {
     CharFromSources() = default;
@@ -95,29 +23,26 @@ struct CharFromSources
         mCharLen = 0;
         for (auto& el : sources)
         {
-            if ((mCharLen + el.size() + END_STRING_LEN) < mSourcesChars.size())
+            if ((mCharLen + el.size() + END_STRING_LEN) > mSourcesChars.size())
             {
-                memcpy(&mSourcesChars[mCharLen], el.c_str(), el.size());
-                mSourcesChars[mCharLen + el.size()] = '\r';
-                mSourcesChars[mCharLen + el.size() + 1] = '\n';
-                mCharLen += (el.size() + END_STRING_LEN);
+                mSourcesChars.resize(mCharLen + el.size() + END_STRING_LEN);
             }
-            else
-            {
-                LOGE("Failed to fit a source name:%s\n", el.c_str());
-            }
+
+            memcpy(&mSourcesChars[mCharLen], el.c_str(), el.size());
+            mSourcesChars[mCharLen + el.size()] = '\r';
+            mSourcesChars[mCharLen + el.size() + 1] = '\n';
+            mCharLen += (el.size() + END_STRING_LEN);
         }
     }
 
     // The strings are copied in the single array and are seprated by 0.
     // Pre-allocate long enough array for storing the NDI source names.
     // We do not want to change it's location dynamically because the contents mightbe updated at any moment.
-    std::array<uint8_t, 1024> mSourcesChars;
+    std::vector<uint8_t> mSourcesChars;
     unsigned mCharLen;
     static constexpr unsigned END_STRING_LEN = 2;
 };
 CharFromSources mCharFromSources;
-int64_t DartApiMessagePort = -1;
 
 void sendMsgToFlutter(std::vector<std::string> sources)
 {
@@ -125,7 +50,6 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     {
         return;
     }
-    mSources = sources;
     mCharFromSources = CharFromSources{sources};
 
     Dart_CObject obj;
@@ -136,26 +60,15 @@ void sendMsgToFlutter(std::vector<std::string> sources)
     Dart_PostCObject_DL(DartApiMessagePort, &obj);
 }
 
-NdiApp::Quality mProgramQuality = NdiApp::Quality::High;
-
-std::unique_ptr<Player> mPlayer;
-
-class NdiInputControl: public InputControl
+int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
 {
-    // InputControl interface
-    virtual void restart() override
-    {
-        ProgramRx->requestKeyFrame();
-    }
-};
-NdiInputControl mNdiInputControl;
-RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue, &mNdiInputControl);
-std::unique_ptr<CustomThread> mRxFrameControllerThread;
-std::mutex mVideoDecoderFrameMutex;
-FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
+    LOGW("%s, count:%d\n", __func__, sources.size());
+    sendMsgToFlutter(sources);
+    return sources.size();
+}
 
-// consider removing it
-FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
+Monitor::ProgramSwitch mProgramSwitch(notifyUI_NdiSourceChange);
+
 } // anonymous namespace
 
 EXPORT
@@ -174,96 +87,23 @@ void setDartApiMessagePort(int64_t port)
 }
 
 EXPORT
-int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
-{
-    LOGW("%s, count:%d\n", __func__, sources.size());
-    sendMsgToFlutter(sources);
-    return sources.size();
-}
-
-EXPORT
 void stopProgram(int64_t progrIdx)
 {
     (void)progrIdx;
 
-    LOGW("stopProgram\n");
-
-    mCapturePacketsThread = nullptr;
-    mRxFrameControllerThread = nullptr;
-
-    mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
-    mRxFrameController.uninstallAudioFrameObs(mPlayer.get());
-
-    mPlayer = nullptr;
-
-    mVideoRxQueue.flush();
-    mAudioRxQueue.flush();
-    mVidFramesToDecode.flush();
-}
-
-static void restartProgramResources()
-{
-    mPlayer.reset(new Player);
-    mPlayer->setRenderObserver(getRenderVidFrame());
-    auto videoDecoder = getVideoDecoder();
-    videoDecoder->terminate();
-    videoDecoder->setVidFramesToDecode(&mVidFramesToDecode);
-    videoDecoder->setDecodedFramesQueue(&mVidFramesDecoded);
-    mPlayer->setDecoder(videoDecoder);
-    getRenderVidFrame()->setDecoder(videoDecoder);
-    mRxFrameController.installVideoFrameObs(mPlayer.get());
-    mRxFrameController.installAudioFrameObs(mPlayer.get());
-
-    mPlayer->reStart();
+    mProgramSwitch.stopProgram();
 }
 
 EXPORT
 void startProgram(int64_t progrIdx)
 {
-    LOGW("%s:%ld\n", __func__, progrIdx);
-
-    if (mCurrentProgramIdx)
-    {
-        stopProgram(*mCurrentProgramIdx);
-    }
-    mCurrentProgramIdx = progrIdx;
-
-    auto name = Scan->getSourceName(progrIdx);
-    auto url = Scan->getSourceUrl(progrIdx);
-
-    mNdiInputPacketsObserver.clear();
-    ProgramRx->addObserver(&mNdiInputPacketsObserver);
-
-    if (ProgramRx->createReceiver(name, url, mProgramQuality))
-    {
-        restartProgramResources();
-
-        mCapturePacketsThread.reset(new CustomThread());
-        mCapturePacketsThread->start("mCapturePacketsThread", [](const bool stop){
-                (void)stop;
-                ProgramRx->capturePackets();
-            });
-
-
-        mRxFrameControllerThread.reset(new CustomThread());
-        mRxFrameControllerThread->start("mRxFrameControllerThread", [](const bool stop){
-            (void)stop;
-            mRxFrameController.run();
-        });
-    }
+    mProgramSwitch.startProgram(progrIdx);
 }
 
 EXPORT
 int32_t scanNdiSources()
 {
-    LOGW("%s\n", __func__);
-
-    mNdiSrcObserver.setup(notifyUI_NdiSourceChange);
-
-    Scan->start();
-    Scan->addObserver(&mNdiSrcObserver);
-    Scan->scanNdiSources();
-    return 0;
+    return mProgramSwitch.scanNdiSources();
 }
 
 enum
@@ -277,11 +117,11 @@ int getOverflowCount(int type)
 {
     if (type == kVideoQueueType)
     {
-        return (int)mVideoRxQueue.getOverflowCount();
+        return mProgramSwitch.getVideoOverflowCount();
     }
     else if (type == kAudioQueueType)
     {
-        return (int)mAudioRxQueue.getOverflowCount();
+        return mProgramSwitch.getAudioOverflowCount();
     }
     return 0;
 }
@@ -291,11 +131,11 @@ int getRxQueueLen(int type)
 {
     if (type == kVideoQueueType)
     {
-        return mVideoRxQueue.getCount();
+        return mProgramSwitch.getVideoQueueLen();
     }
     else if (type == kAudioQueueType)
     {
-        return mAudioRxQueue.getCount();
+        return mProgramSwitch.getAudioQueueLen();
     }
     return 0;
 }
@@ -315,7 +155,7 @@ void* getArray(int type, int* size)
     }
     else if (type == kGetVidAudFramesCount)
     {
-        auto count = mNdiInputPacketsObserver.getRxFrameCount();
+        auto count = mProgramSwitch.getRxFrameCount();
         auto ptr = (int*)malloc(sizeof(int)*2);
         if (ptr)
         {

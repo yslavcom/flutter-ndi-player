@@ -9,9 +9,9 @@
 
 class NdiSrcObserver: public InputObserver
 {
+public:
     using UiUpdateCb = std::function<int32_t(std::vector<std::string>)>;
 
-public:
     virtual void updateInputState(std::vector<std::string> inputNames) override
     {
         mInputNames = inputNames;
