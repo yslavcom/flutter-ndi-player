@@ -153,6 +153,8 @@ RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue, &mNdiInputCon
 std::unique_ptr<CustomThread> mRxFrameControllerThread;
 std::mutex mVideoDecoderFrameMutex;
 FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
+
+// consider removing it
 FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
 } // anonymous namespace
 
@@ -193,6 +195,9 @@ void stopProgram(int64_t progrIdx)
     mRxFrameController.uninstallAudioFrameObs(mPlayer.get());
 
     mPlayer = nullptr;
+
+    mVideoRxQueue.flush();
+    mAudioRxQueue.flush();
     mVidFramesToDecode.flush();
 }
 

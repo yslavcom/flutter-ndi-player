@@ -100,13 +100,10 @@ public:
         : SafeQueue<T>(mu
         , [](T* el)
         {
-            (void)el;
-#if 0
             if (el && el->second)
             {
                 release(el->first, el->second);
             }
-#endif
         }
         , 500)
     {
