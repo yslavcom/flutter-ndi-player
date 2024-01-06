@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ndi_src_observer.hpp"
+#include "player/sps_pps_parser.hpp"
 
 #include <cstdint>
 #include <optional>
@@ -37,5 +38,7 @@ private:
     void updateAboutChange();
 
     NdiSourceChangeNotify mNdiSourceChangeNotify;
+
+    void onInformCompressedType(H26x::FourCcType vidFourCcType);
 };
 }

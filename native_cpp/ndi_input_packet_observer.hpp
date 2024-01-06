@@ -7,10 +7,11 @@
 #include "common/logger.hpp"
 
 #include <iostream>
+#include <functional>
 
 // #define _DBG_NDI_INP_OBS
 // #define _DBG_AUD_LOG
-// #define _DBG_COMPRESSED_LOG
+#define _DBG_COMPRESSED_LOG
 
 #ifdef _DBG_NDI_INP_OBS
     #define DBG_NDI_INP_OBS(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -34,11 +35,14 @@
 class NdiInputPacketsObserver : public InputPacketsObserver
 {
 public:
+    using InformCompressedType = std::function<void(H26x::FourCcType)>;
+
     NdiInputPacketsObserver(FrameQueue::VideoRx& videoRxQueue, FrameQueue::AudioRx& audioRxQueue)
         : mVideoRxQueue(videoRxQueue)
         , mAudioRxQueue(audioRxQueue)
         , mVidFrameCount(0)
         , mAudFrameCount(0)
+        , mInformCompressedType{}
     {}
 
     void clear()
@@ -50,6 +54,11 @@ public:
     std::pair<unsigned, unsigned> getRxFrameCount() const
     {
         return {mVidFrameCount, mAudFrameCount};
+    }
+
+    void setInformCompressedTypeCallback(InformCompressedType informCompressedType)
+    {
+        mInformCompressedType = informCompressedType;
     }
 
     void receivedVideoPack(std::unique_ptr<NDIlib_video_frame_v2_t> video, std::function<void(void* userData)> releaseCb) override
@@ -85,7 +94,20 @@ public:
             hdrSize |= ((uint32_t)video->p_data[0]);
 
             auto type = H26x::FourCC(fourCC).getType();
-            if (hdrSize >= (uint32_t)video->data_size_in_bytes || (type != H26x::FourCcType::H264 && type != H26x::FourCcType::Hevc))
+            if (mInformCompressedType)
+            {
+                mInformCompressedType(type);
+            }
+            if (type != H26x::FourCcType::H264 && type != H26x::FourCcType::Hevc)
+            {
+                DBG_NDI_INP_OBS("Empty payload\n");
+                if (releaseCb)
+                {
+                    releaseCb(video.release());
+                }
+                return;
+            }
+            else if (hdrSize >= (uint32_t)video->data_size_in_bytes)
             {
                 DBG_NDI_INP_OBS("Empty payload\n");
                 if (releaseCb)
@@ -269,4 +291,6 @@ private:
 
         return {};
     }
+
+    InformCompressedType mInformCompressedType;
 };

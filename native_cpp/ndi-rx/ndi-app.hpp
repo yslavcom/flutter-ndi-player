@@ -26,8 +26,11 @@ public:
     NdiApp();
     ~NdiApp();
 
-    bool createReceiver(const std::string& name, const std::string& url, Quality quality);
+    bool createReceiver(Quality quality);
+    bool createReceiverUcompressed(Quality quality);
+    bool connect(const std::string& name, const std::string& url);
     bool stopReceiver();
+    void disconnectReceiver();
     bool capturePackets();
 
     void requestKeyFrame();

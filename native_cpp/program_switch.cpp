@@ -14,6 +14,14 @@
 #include "common/frame-queue.hpp"
 #include "common/custom_thread.hpp"
 
+#define _DBG_PROG_SWITCH
+
+#ifdef _DBG_PROG_SWITCH
+    #define DBG_PROG_SWITCH(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_PROG_SWITCH(format, ...)
+#endif
+
 namespace Monitor
 {
 namespace {
@@ -99,7 +107,8 @@ FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
 
 ProgramSwitch::ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify)
     : mNdiSourceChangeNotify(ndiSourceChangeNotify)
-{}
+{
+}
 
 void ProgramSwitch::reStartProgram()
 {
@@ -113,14 +122,19 @@ void ProgramSwitch::startProgramUnsafe()
 
     stopProgram();
 
+    mNdiInputPacketsObserver.setInformCompressedTypeCallback([this](H26x::FourCcType vidFourCcType){
+        onInformCompressedType(vidFourCcType);
+    });
+
     auto name = Scan->getSourceName(*mCurrentProgramIdx);
     auto url = Scan->getSourceUrl(*mCurrentProgramIdx);
 
     mNdiInputPacketsObserver.clear();
     ProgramRx->addObserver(&mNdiInputPacketsObserver);
 
-    if (ProgramRx->createReceiver(name, url, mProgramQuality))
+    if (ProgramRx->createReceiver(mProgramQuality))
     {
+        ProgramRx->connect(name, url);
         restartProgramResources();
 
         mCapturePacketsThread.reset(new CustomThread());
@@ -224,6 +238,27 @@ std::pair<unsigned, unsigned> ProgramSwitch::getRxFrameCount() const
 void ProgramSwitch::updateAboutChange()
 {
     // TODO: implement me
+}
+
+void ProgramSwitch::onInformCompressedType(H26x::FourCcType vidFourCcType)
+{
+    switch (vidFourCcType)
+    {
+    case H26x::FourCcType::Unknown:
+        // switch to uncompressed mode
+        ProgramRx->disconnectReceiver();
+        if (ProgramRx->createReceiverUcompressed(mProgramQuality))
+        {
+            auto name = Scan->getSourceName(*mCurrentProgramIdx);
+            auto url = Scan->getSourceUrl(*mCurrentProgramIdx);
+            ProgramRx->connect(name, url);
+        }
+    break;
+    case H26x::FourCcType::H264:
+    break;
+    case H26x::FourCcType::Hevc:
+    break;
+    }
 }
 
 } // namespace Monitor

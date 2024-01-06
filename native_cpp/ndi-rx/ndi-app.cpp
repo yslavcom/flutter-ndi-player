@@ -10,7 +10,7 @@
 #include <cassert>
 
 
-// #define _DBG_NDI_APP
+#define _DBG_NDI_APP
 // #define _DBG_AUD_RX
 // #define _DBG_VID_RX
 
@@ -51,24 +51,13 @@ void NdiApp::requestKeyFrame()
     }
 }
 
-bool NdiApp::createReceiver(const std::string& name, const std::string& url, Quality quality)
+bool NdiApp::createReceiver(Quality quality)
 {
-    const NDIlib_source_t ndiSources(name.c_str(), url.c_str());
-
-    // TODO: use NDIlib_recv_color_format_compressed_v5 to pass compressed video through without automatic decompression
     NDIlib_recv_create_v3_t recvDescHi{};
 
-    if (mUncompressedShq)
-    {
-        // SHQ, decompressed
-        recvDescHi.color_format = NDIlib_recv_color_format_fastest;
-    }
-    else
-    {
-        // Allow SpeedHQ frames, compressed H.264 frames, HEVC frames and HEVC/H264 with alpha, along with
-        // compressed audio frames and OPUS support.
-        recvDescHi.color_format = (NDIlib_recv_color_format_e)NDIlib_recv_color_format_ex_compressed_v5_with_audio;
-    }
+    // Allow SpeedHQ frames, compressed H.264 frames, HEVC frames and HEVC/H264 with alpha, along with
+    // compressed audio frames and OPUS support.
+    recvDescHi.color_format = (NDIlib_recv_color_format_e)NDIlib_recv_color_format_ex_compressed_v5_with_audio;
 
     recvDescHi.bandwidth = (quality == Quality::High) ? NDIlib_recv_bandwidth_highest : NDIlib_recv_bandwidth_lowest;
     recvDescHi.allow_video_fields = true;
@@ -81,7 +70,34 @@ bool NdiApp::createReceiver(const std::string& name, const std::string& url, Qua
     }
     mRecvInst = rxInst;
 
+    return true;
+}
+
+bool NdiApp::createReceiverUcompressed(Quality quality)
+{
+    NDIlib_recv_create_v3_t recvDescHi{};
+
+    // SHQ, decompressed
+    recvDescHi.color_format = NDIlib_recv_color_format_fastest;
+
+    recvDescHi.bandwidth = (quality == Quality::High) ? NDIlib_recv_bandwidth_highest : NDIlib_recv_bandwidth_lowest;
+    recvDescHi.allow_video_fields = true;
+
+    mRecvInst.reset();
+    std::shared_ptr<RecvClass> rxInst = std::make_shared<RecvClass>(recvDescHi);
+    if (!rxInst)
+    {
+        return false;
+    }
+    mRecvInst = rxInst;
+
+    return true;
+}
+
+bool NdiApp::connect(const std::string& name, const std::string& url)
+{
     // Connect to our sources
+    const NDIlib_source_t ndiSources(name.c_str(), url.c_str());
     NDIlib_recv_connect(mRecvInst->src(), &ndiSources);
     mDbgVidFrameCount = 0;
 
@@ -93,6 +109,12 @@ bool NdiApp::stopReceiver()
     mRecvInst = nullptr;
     mDbgVidFrameCount = 0;
     return true;
+}
+
+void NdiApp::disconnectReceiver()
+{
+    NDIlib_recv_destroy(mRecvInst->src());
+    mRecvInst = nullptr;
 }
 
 bool NdiApp::capturePackets()
