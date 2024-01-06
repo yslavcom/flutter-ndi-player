@@ -10,11 +10,12 @@
 #include "common/conv-scale.hpp"
 
 #include <memory>
+#include <optional>
 
 class Player: public VideoFrameObserver, public AudioFrameObserver
 {
 public:
-    Player();
+    Player(std::function<void()> notifyFn = nullptr);
     virtual ~Player();
 
     void setRenderObserver(RenderVidFrameObserver* obs);
@@ -41,4 +42,9 @@ private:
         Connected
     };
     State mState;
+
+    std::optional<unsigned> mXres;
+    std::optional<unsigned> mYres;
+
+    std::function<void()> mNotifyFn;
 };

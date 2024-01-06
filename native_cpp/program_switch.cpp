@@ -168,7 +168,9 @@ void ProgramSwitch::stopProgram()
 
 void ProgramSwitch::restartProgramResources()
 {
-    mPlayer.reset(new Player);
+    mPlayer.reset(new Player([this](){
+        ProgramSwitch::updateAboutChange();
+    }));
     mPlayer->setRenderObserver(getRenderVidFrame());
     auto videoDecoder = getVideoDecoder();
     videoDecoder->terminate();
@@ -217,6 +219,11 @@ uint32_t ProgramSwitch::getAudioQueueLen() const
 std::pair<unsigned, unsigned> ProgramSwitch::getRxFrameCount() const
 {
     return mNdiInputPacketsObserver.getRxFrameCount();
+}
+
+void ProgramSwitch::updateAboutChange()
+{
+    // TODO: implement me
 }
 
 } // namespace Monitor

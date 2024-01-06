@@ -14,6 +14,7 @@
 // #define _DBG_PLAYER
 // #define _DBG_PLAYER_AUD
 // #define _DBG_PLAYER_VID
+#define _DBG_RECOVER_VID
 
 #ifdef _DBG_PLAYER
     #define DBG_PLAYER(format, ...) LOGW(format, ## __VA_ARGS__)
@@ -33,11 +34,19 @@
     #define DBG_PLAYER_VID(format, ...)
 #endif
 
-Player::Player()
+#ifdef _DBG_RECOVER_VID
+    #define DBG_RECOVER_VID(format, ...) LOGW(format, ## __VA_ARGS__)
+#else
+    #define DBG_RECOVER_VID(format, ...)
+#endif
+
+Player::Player(std::function<void()> notifyFn)
     : mRenderVidFrameObserver(nullptr)
     , mVideoDecoder(nullptr)
     , mAudioInitialised(false)
     , mState(State::Idle)
+    , mXres{}, mYres{}
+    , mNotifyFn(notifyFn)
 {
 }
 
@@ -61,6 +70,8 @@ void Player::reStart()
 {
     std::lock_guard lk(mDecoderMu);
     mState = State::Connecting;
+    mXres = {};
+    mYres = {};
 }
 
 void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
@@ -86,6 +97,7 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
     {
         DBG_PLAYER_VID("Bad dimensions: %d/%d\n", xRes, yRes);
     }
+
     // render the frame
     if (xRes && yRes)
     {
@@ -149,6 +161,20 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
                     sendToDecode(arg, H26x::FourCC{arg.fourCC});
                 break;
                 }
+
+                if (mXres.has_value() && mYres.has_value())
+                {
+                    if (arg.xres != *mXres || arg.yres != *mYres)
+                    {
+                        if (mNotifyFn)
+                        {
+                            DBG_RECOVER_VID("Dimensions changed (old {%d, %d}, new {%d, %d})\n", *mXres, *mYres, arg.xres, arg.yres);
+                            mNotifyFn();
+                        }
+                    }
+                }
+                mXres = arg.xres;
+                mYres = arg.yres;
             }
         }, frame->first);
     }

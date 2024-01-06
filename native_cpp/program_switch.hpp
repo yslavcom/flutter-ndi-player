@@ -34,6 +34,8 @@ private:
     void reStartProgram();
     void startProgramUnsafe();
 
+    void updateAboutChange();
+
     NdiSourceChangeNotify mNdiSourceChangeNotify;
 };
 }
