@@ -1,5 +1,19 @@
 #pragma once
 
+#include "ndi-rx-scan/ndi-rx.hpp"
+#include "ndi-rx/ndi-app.hpp"
+#include "ndi_input_packet_observer.hpp"
+#include "player/render_vid_frame.hpp"
+#include "player/player.hpp"
+#include "player/codec.hpp"
+
+#include  "interfaces/input-control.hpp"
+#include  "rx-frames-controller/rx-frame-controller.hpp"
+
+#include "common/logger.hpp"
+#include "common/frame-queue.hpp"
+#include "common/custom_thread.hpp"
+
 #include "ndi_src_observer.hpp"
 #include "player/sps_pps_parser.hpp"
 
@@ -8,6 +22,7 @@
 #include <mutex>
 #include <functional>
 #include <string>
+#include <memory>
 
 namespace Monitor
 {
@@ -29,6 +44,8 @@ public:
 
 private:
     std::optional<int64_t> mCurrentProgramIdx;
+    NdiApp::Quality mProgramQuality;
+
     std::mutex m;
 
     void restartProgramResources();
@@ -40,5 +57,46 @@ private:
     NdiSourceChangeNotify mNdiSourceChangeNotify;
 
     void onInformCompressedType(H26x::FourCcType vidFourCcType);
+
+    std::unique_ptr<NdiRx> Scan;
+    NdiSrcObserver mNdiSrcObserver;
+    std::unique_ptr<NdiApp> ProgramRx;
+
+    std::unique_ptr<CustomThread> mCapturePacketsThread;
+
+    std::mutex mFrameRxMutex;
+    FrameQueue::VideoRx mVideoRxQueue;
+    FrameQueue::AudioRx mAudioRxQueue;
+    NdiInputPacketsObserver mNdiInputPacketsObserver;
+
+    std::unique_ptr<Player> mPlayer;
+
+    class NdiInputControl: public InputControl
+    {
+    public:
+        NdiInputControl(NdiApp& ndiApp)
+            : mNdiApp(ndiApp)
+        {}
+
+        virtual ~NdiInputControl(){}
+
+        // InputControl interface
+        virtual void restart() override
+        {
+            mNdiApp.requestKeyFrame();
+        }
+    private:
+        NdiApp& mNdiApp;
+    };
+
+    std::unique_ptr<NdiInputControl> mNdiInputControl;
+
+    std::unique_ptr<RxFrameController> mRxFrameController;
+    std::unique_ptr<CustomThread> mRxFrameControllerThread;
+    std::mutex mVideoDecoderFrameMutex;
+    FrameQueue::VideoRx mVidFramesToDecode;
+
+    // consider removing it
+    FrameQueue::VideoRx mVidFramesDecoded;
 };
 }

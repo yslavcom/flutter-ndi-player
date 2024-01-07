@@ -1,19 +1,5 @@
 #include "program_switch.hpp"
 
-#include "ndi-rx-scan/ndi-rx.hpp"
-#include "ndi-rx/ndi-app.hpp"
-#include "ndi_input_packet_observer.hpp"
-#include "player/render_vid_frame.hpp"
-#include "player/player.hpp"
-#include "player/codec.hpp"
-
-#include  "interfaces/input-control.hpp"
-#include  "rx-frames-controller/rx-frame-controller.hpp"
-
-#include "common/logger.hpp"
-#include "common/frame-queue.hpp"
-#include "common/custom_thread.hpp"
-
 #define _DBG_PROG_SWITCH
 
 #ifdef _DBG_PROG_SWITCH
@@ -26,6 +12,8 @@ namespace Monitor
 {
 namespace {
 // Scan Singleton
+
+#if 0
 class NdiRxScan
 {
 public:
@@ -48,6 +36,7 @@ std::unique_ptr<NdiRx> NdiRxScan::mNdiRx;
 std::once_flag NdiRxScan::mInitFlag;
 
 auto Scan = NdiRxScan::getInstance();
+
 NdiSrcObserver mNdiSrcObserver;
 
 // Start Program Rx Singleton
@@ -73,11 +62,15 @@ std::unique_ptr<NdiApp> NdiRxProg::mNdiApp;
 std::once_flag NdiRxProg::mInitFlag;
 
 auto ProgramRx = NdiRxProg::getInstance();
+#endif
+
+#if 0
 std::unique_ptr<CustomThread> mCapturePacketsThread;
 
 std::mutex mFrameRxMutex;
 FrameQueue::VideoRx mVideoRxQueue(mFrameRxMutex);
 FrameQueue::AudioRx mAudioRxQueue(mFrameRxMutex);
+
 
 NdiInputPacketsObserver mNdiInputPacketsObserver(mVideoRxQueue, mAudioRxQueue);
 
@@ -95,6 +88,8 @@ class NdiInputControl: public InputControl
 };
 
 NdiInputControl mNdiInputControl;
+
+
 RxFrameController mRxFrameController(mVideoRxQueue, mAudioRxQueue, &mNdiInputControl);
 std::unique_ptr<CustomThread> mRxFrameControllerThread;
 std::mutex mVideoDecoderFrameMutex;
@@ -103,11 +98,29 @@ FrameQueue::VideoRx mVidFramesToDecode(mVideoDecoderFrameMutex);
 // consider removing it
 FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
 
+#endif
+
 } // anon namespace
 
 ProgramSwitch::ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify)
-    : mNdiSourceChangeNotify(ndiSourceChangeNotify)
+    : mCurrentProgramIdx{}
+    , mProgramQuality(NdiApp::Quality::High)
+    , mNdiSourceChangeNotify(ndiSourceChangeNotify)
+    , mVideoRxQueue(mFrameRxMutex)
+    , mAudioRxQueue(mFrameRxMutex)
+    , mNdiInputPacketsObserver(mVideoRxQueue, mAudioRxQueue)
+    , mVidFramesToDecode(mVideoDecoderFrameMutex)
+    , mVidFramesDecoded(mVideoDecoderFrameMutex)
 {
+    Scan.reset(new NdiRx);
+    mNdiSrcObserver.setup(mNdiSourceChangeNotify);
+    Scan->addObserver(&mNdiSrcObserver);
+
+    ProgramRx.reset(new NdiApp);
+    mCapturePacketsThread.reset(new CustomThread);
+    mNdiInputControl.reset(new NdiInputControl(*ProgramRx.get()));
+
+    mRxFrameController.reset(new RxFrameController(mVideoRxQueue, mAudioRxQueue, mNdiInputControl.get()));
 }
 
 void ProgramSwitch::reStartProgram()
@@ -138,16 +151,16 @@ void ProgramSwitch::startProgramUnsafe()
         restartProgramResources();
 
         mCapturePacketsThread.reset(new CustomThread());
-        mCapturePacketsThread->start("mCapturePacketsThread", [](const bool stop){
+        mCapturePacketsThread->start("mCapturePacketsThread", [this](const bool stop){
                 (void)stop;
                 ProgramRx->capturePackets();
             });
 
 
         mRxFrameControllerThread.reset(new CustomThread());
-        mRxFrameControllerThread->start("mRxFrameControllerThread", [](const bool stop){
+        mRxFrameControllerThread->start("mRxFrameControllerThread", [this](const bool stop){
             (void)stop;
-            mRxFrameController.run();
+            mRxFrameController->run();
         });
     }
 }
@@ -170,8 +183,8 @@ void ProgramSwitch::stopProgram()
     mCapturePacketsThread = nullptr;
     mRxFrameControllerThread = nullptr;
 
-    mRxFrameController.uninstallVideoFrameObs(mPlayer.get());
-    mRxFrameController.uninstallAudioFrameObs(mPlayer.get());
+    mRxFrameController->uninstallVideoFrameObs(mPlayer.get());
+    mRxFrameController->uninstallAudioFrameObs(mPlayer.get());
 
     mPlayer = nullptr;
 
@@ -192,8 +205,8 @@ void ProgramSwitch::restartProgramResources()
     videoDecoder->setDecodedFramesQueue(&mVidFramesDecoded);
     mPlayer->setDecoder(videoDecoder);
     getRenderVidFrame()->setDecoder(videoDecoder);
-    mRxFrameController.installVideoFrameObs(mPlayer.get());
-    mRxFrameController.installAudioFrameObs(mPlayer.get());
+    mRxFrameController->installVideoFrameObs(mPlayer.get());
+    mRxFrameController->installAudioFrameObs(mPlayer.get());
 
     mPlayer->reStart();
 }
@@ -202,10 +215,7 @@ int32_t ProgramSwitch::scanNdiSources()
 {
     LOGW("%s\n", __func__);
 
-    mNdiSrcObserver.setup(mNdiSourceChangeNotify);
-
     Scan->start();
-    Scan->addObserver(&mNdiSrcObserver);
     Scan->scanNdiSources();
     return 0;
 }
