@@ -5,6 +5,7 @@
 #include <mutex>
 #include <queue>
 #include <vector>
+#include <variant>
 
 #define _DBG_MSG_QUEUE
 
@@ -16,26 +17,38 @@
 
 namespace Msg
 {
-using MsgBody = std::vector<uint8_t>;
+using MsgBody = std::variant<std::vector<uint8_t>, uint32_t>;
 
-enum class MsgType
+enum class Type
 {
     StartProgram,
     DisconnectProgram,
     RestartProgram,
-    SwitchToUncompressed
+    SwitchToUncompressed,
+    StopProgram,
+    ScanNdiSources
 };
 struct Msg
 {
-    MsgType type;
+    Type type;
     // contents depend on type
     MsgBody body;
 
     Msg() = default;
-    Msg(MsgType _type, MsgBody _body)
+    Msg(Type _type, MsgBody _body)
         : type(_type)
         , body(_body)
     {}
+    Msg(Type _type)
+        : type(_type)
+    {}
+    Msg(Type _type, uint32_t wrd)
+        : type(_type)
+        , body{wrd}
+    {
+
+    }
+
     Msg(const Msg& rhs) = delete;
     Msg& operator=(const Msg& rhs) = delete;
     Msg(Msg&& rhs)

@@ -102,7 +102,7 @@ FrameQueue::VideoRx mVidFramesDecoded(mVideoDecoderFrameMutex);
 
 } // anon namespace
 
-ProgramSwitch::ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify)
+ProgramSwitch::ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify, Msg::Queue& msgQueue)
     : mCurrentProgramIdx{}
     , mProgramQuality(NdiApp::Quality::High)
     , mNdiSourceChangeNotify(ndiSourceChangeNotify)
@@ -111,6 +111,7 @@ ProgramSwitch::ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify)
     , mNdiInputPacketsObserver(mVideoRxQueue, mAudioRxQueue)
     , mVidFramesToDecode(mVideoDecoderFrameMutex)
     , mVidFramesDecoded(mVideoDecoderFrameMutex)
+    , mMsgQueue(msgQueue)
 {
     Scan.reset(new NdiRx);
     mNdiSrcObserver.setup(mNdiSourceChangeNotify);
@@ -121,11 +122,14 @@ ProgramSwitch::ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify)
     mNdiInputControl.reset(new NdiInputControl(*ProgramRx.get()));
 
     mRxFrameController.reset(new RxFrameController(mVideoRxQueue, mAudioRxQueue, mNdiInputControl.get()));
+
+    mNdiInputPacketsObserver.setInformCompressedTypeCallback([this](H26x::FourCcType vidFourCcType){
+        onInformCompressedType(vidFourCcType);
+    });
 }
 
 void ProgramSwitch::reStartProgram()
 {
-    std::lock_guard lk(m);
     startProgramUnsafe();
 }
 
@@ -134,10 +138,6 @@ void ProgramSwitch::startProgramUnsafe()
     if (!mCurrentProgramIdx) return;
 
     stopProgram();
-
-    mNdiInputPacketsObserver.setInformCompressedTypeCallback([this](H26x::FourCcType vidFourCcType){
-        onInformCompressedType(vidFourCcType);
-    });
 
     auto name = Scan->getSourceName(*mCurrentProgramIdx);
     auto url = Scan->getSourceUrl(*mCurrentProgramIdx);
@@ -169,8 +169,6 @@ void ProgramSwitch::startProgram(int64_t progrIdx)
 {
 
     LOGW("%s:%ld\n", __func__, progrIdx);
-
-    std::lock_guard lk(m);
 
     mCurrentProgramIdx = progrIdx;
     startProgramUnsafe();
@@ -209,6 +207,18 @@ void ProgramSwitch::restartProgramResources()
     mRxFrameController->installAudioFrameObs(mPlayer.get());
 
     mPlayer->reStart();
+}
+
+void ProgramSwitch::switchToUncompressed()
+{
+    // switch to uncompressed mode
+    ProgramRx->disconnectReceiver();
+    if (ProgramRx->createReceiverUcompressed(mProgramQuality))
+    {
+        auto name = Scan->getSourceName(*mCurrentProgramIdx);
+        auto url = Scan->getSourceUrl(*mCurrentProgramIdx);
+        ProgramRx->connect(name, url);
+    }
 }
 
 int32_t ProgramSwitch::scanNdiSources()
@@ -255,14 +265,7 @@ void ProgramSwitch::onInformCompressedType(H26x::FourCcType vidFourCcType)
     switch (vidFourCcType)
     {
     case H26x::FourCcType::Unknown:
-        // switch to uncompressed mode
-        ProgramRx->disconnectReceiver();
-        if (ProgramRx->createReceiverUcompressed(mProgramQuality))
-        {
-            auto name = Scan->getSourceName(*mCurrentProgramIdx);
-            auto url = Scan->getSourceUrl(*mCurrentProgramIdx);
-            ProgramRx->connect(name, url);
-        }
+        mMsgQueue.push(Msg::Type::SwitchToUncompressed);
     break;
     case H26x::FourCcType::H264:
     break;

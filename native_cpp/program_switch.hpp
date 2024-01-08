@@ -13,6 +13,7 @@
 #include "common/logger.hpp"
 #include "common/frame-queue.hpp"
 #include "common/custom_thread.hpp"
+#include "common/msg_queue.hpp"
 
 #include "ndi_src_observer.hpp"
 #include "player/sps_pps_parser.hpp"
@@ -31,7 +32,7 @@ using NdiSourceChangeNotify = NdiSrcObserver::UiUpdateCb;
 class ProgramSwitch
 {
 public:
-    ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify);
+    ProgramSwitch(NdiSourceChangeNotify ndiSourceChangeNotify, Msg::Queue& msgQueue);
 
     void startProgram(int64_t progrIdx);
     void stopProgram();
@@ -41,15 +42,14 @@ public:
     uint32_t getVideoQueueLen() const;
     uint32_t getAudioQueueLen() const;
     std::pair<unsigned, unsigned> getRxFrameCount() const;
+    void reStartProgram();
+    void switchToUncompressed();
 
 private:
     std::optional<int64_t> mCurrentProgramIdx;
     NdiApp::Quality mProgramQuality;
 
-    std::mutex m;
-
     void restartProgramResources();
-    void reStartProgram();
     void startProgramUnsafe();
 
     void updateAboutChange();
@@ -98,5 +98,7 @@ private:
 
     // consider removing it
     FrameQueue::VideoRx mVidFramesDecoded;
+
+    Msg::Queue& mMsgQueue;
 };
 }

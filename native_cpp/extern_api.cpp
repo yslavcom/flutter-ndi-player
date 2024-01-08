@@ -1,7 +1,7 @@
-#include "program_switch.hpp"
-#include "DartApiDL/include/dart_api_dl.c"
-
+#include "control_player.hpp"
 #include "common/logger.hpp"
+
+#include "DartApiDL/include/dart_api_dl.c"
 
 #include <memory>
 #include <mutex>
@@ -67,7 +67,7 @@ int32_t notifyUI_NdiSourceChange(std::vector<std::string> sources)
     return sources.size();
 }
 
-Monitor::ProgramSwitch mProgramSwitch(notifyUI_NdiSourceChange);
+ControlPlayer mControlPlayer(notifyUI_NdiSourceChange);
 
 } // anonymous namespace
 
@@ -91,19 +91,20 @@ void stopProgram(int64_t progrIdx)
 {
     (void)progrIdx;
 
-    mProgramSwitch.stopProgram();
+    mControlPlayer.getMsgQueue().push({Msg::Type::StopProgram});
 }
 
 EXPORT
 void startProgram(int64_t progrIdx)
 {
-    mProgramSwitch.startProgram(progrIdx);
+    mControlPlayer.getMsgQueue().push({Msg::Type::StartProgram, (uint32_t)progrIdx});
 }
 
 EXPORT
 int32_t scanNdiSources()
 {
-    return mProgramSwitch.scanNdiSources();
+    mControlPlayer.getMsgQueue().push({Msg::Type::ScanNdiSources});
+    return 0;
 }
 
 enum
@@ -117,11 +118,11 @@ int getOverflowCount(int type)
 {
     if (type == kVideoQueueType)
     {
-        return mProgramSwitch.getVideoOverflowCount();
+        return mControlPlayer.getProgramSwitch().getVideoOverflowCount();
     }
     else if (type == kAudioQueueType)
     {
-        return mProgramSwitch.getAudioOverflowCount();
+        return mControlPlayer.getProgramSwitch().getAudioOverflowCount();
     }
     return 0;
 }
@@ -131,11 +132,11 @@ int getRxQueueLen(int type)
 {
     if (type == kVideoQueueType)
     {
-        return mProgramSwitch.getVideoQueueLen();
+        return mControlPlayer.getProgramSwitch().getVideoQueueLen();
     }
     else if (type == kAudioQueueType)
     {
-        return mProgramSwitch.getAudioQueueLen();
+        return mControlPlayer.getProgramSwitch().getAudioQueueLen();
     }
     return 0;
 }
@@ -155,7 +156,7 @@ void* getArray(int type, int* size)
     }
     else if (type == kGetVidAudFramesCount)
     {
-        auto count = mProgramSwitch.getRxFrameCount();
+        auto count = mControlPlayer.getProgramSwitch().getRxFrameCount();
         auto ptr = (int*)malloc(sizeof(int)*2);
         if (ptr)
         {
