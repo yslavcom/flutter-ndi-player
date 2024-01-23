@@ -1,7 +1,7 @@
 #include "ndi-app.hpp"
 
-// #include <Processing.NDI.Lib.h>
-#include <Processing.NDI.Advanced.h>
+#include <Processing.NDI.Lib.h>
+//#include <Processing.NDI.Advanced.h>
 
 #include "common/logger.hpp"
 
@@ -47,7 +47,7 @@ void NdiApp::requestKeyFrame()
     if (mRecvInst)
     {
         DBG_NDI_APP("Request key frame\n");
-        NDIlib_recv_request_keyframe(mRecvInst->src());
+//        NDIlib_recv_request_keyframe(mRecvInst->src());
     }
 }
 
@@ -57,7 +57,8 @@ bool NdiApp::createReceiver(Quality quality)
 
     // Allow SpeedHQ frames, compressed H.264 frames, HEVC frames and HEVC/H264 with alpha, along with
     // compressed audio frames and OPUS support.
-    recvDescHi.color_format = (NDIlib_recv_color_format_e)NDIlib_recv_color_format_ex_compressed_v5_with_audio;
+    recvDescHi.color_format = NDIlib_recv_color_format_best;//(NDIlib_recv_color_format_e)NDIlib_recv_color_format_ex_compressed_v5_with_audio;
+    //recvDescHi.color_format = NDIlib_recv_color_format_fastest;
 
     recvDescHi.bandwidth = (quality == Quality::High) ? NDIlib_recv_bandwidth_highest : NDIlib_recv_bandwidth_lowest;
     recvDescHi.allow_video_fields = true;

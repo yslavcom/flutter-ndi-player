@@ -70,7 +70,7 @@ public:
 
         uint32_t fourCC = __builtin_bswap32(video->FourCC);
 
-        auto optCompressed = isCompressed((NDIlib_FourCC_video_type_ex_e)video->FourCC);
+        auto optCompressed = isCompressed((NDIlib_recv_color_format_e)video->FourCC);
 
         if (!optCompressed.has_value())
         {
@@ -198,8 +198,11 @@ private:
     unsigned mVidFrameCount;
     unsigned mAudFrameCount;
 
-    std::optional<bool> isCompressed(NDIlib_FourCC_video_type_ex_e type) const
+    std::optional<bool> isCompressed(NDIlib_recv_color_format_e type) const
     {
+#if 1
+        return type == NDIlib_recv_color_format_max;
+#else
         switch(type)
         {
     	// SpeedHQ formats at the highest bandwidth.
@@ -290,6 +293,7 @@ private:
         }
 
         return {};
+#endif
     }
 
     InformCompressedType mInformCompressedType;
