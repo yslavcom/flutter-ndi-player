@@ -55,18 +55,6 @@ private:
         2) A valid vendor |ID is required to unlock the decompression of the SHQ2 frame (recvDescHi.color_format = NDIlib_recv_color_format_fastest)
         */
 
-#if 0
-            const char* ndiConfig = R"({
-                "ndi": {
-                    "rudp": { "recv": {"enable": true}},
-                    "tcp": { "recv": {"enable": false}}
-                }
-            })";
-#else
-            #include "ndi-conf.hpp"
-#endif
-
-
             mVal = NDIlib_recv_create_v3(&arg);///*NDIlib_recv_create_v4*/(&arg, ndiConfig);
         }
         RecvClass(const RecvClass&) = delete;
