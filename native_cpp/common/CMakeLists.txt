@@ -15,16 +15,16 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g0")
 
 if (ANDROID)
-    set(ffmpeg_dir /home/iaroslav/Downloads/personal/Flutter/prj/TestDrive/ffmpeg-android-maker/output)
-    set(ffmpeg_libs ${ffmpeg_dir}/lib/${ANDROID_ABI})
-    set(ffmpeg_include_dir ${ffmpeg_dir}/include/${ANDROID_ABI})
-    include_directories(${ffmpeg_include_dir})
+    # set(ffmpeg_dir /home/iaroslav/Downloads/personal/Flutter/prj/TestDrive/ffmpeg-android-maker/output)
+    # set(ffmpeg_libs ${ffmpeg_dir}/lib/${ANDROID_ABI})
+    # set(ffmpeg_include_dir ${ffmpeg_dir}/include/${ANDROID_ABI})
+    # include_directories(${ffmpeg_include_dir})
 
-    set(
-        # List variable name
-        ffmpeg_libs_names
-        # Values in the list
-        avutil avformat avcodec swscale swresample)
+    # set(
+    #     # List variable name
+    #     ffmpeg_libs_names
+    #     # Values in the list
+    #     avutil avformat avcodec swscale swresample)
 
     foreach (ffmpeg_lib_name ${ffmpeg_libs_names})
         add_library(
