@@ -26,7 +26,7 @@ public:
     void setDecoder(Video::Decoder* decoder);
 
 private:
-    virtual void onRender(std::unique_ptr<uint8_t[]>, size_t size) override;
+    virtual void onRender(uint8_t* frameBytes, size_t size) override;
 
     std::set<uint8_t*> mCleanupMemPtr;
 

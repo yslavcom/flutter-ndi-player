@@ -7,7 +7,7 @@
 
 #include "interfaces/frame_observer.hpp"
 #include "common/frame-queue.hpp"
-#include "common/conv-scale.hpp"
+//#include "common/conv-scale.hpp"
 
 #include <memory>
 #include <optional>
@@ -26,8 +26,8 @@ private:
     void onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount) override ;
     void onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount) override ;
 
-    std::unique_ptr<uint8_t[]> convScaleFrame(const FrameQueue::VideoFrameStr& frame, unsigned xRes, unsigned yRes, size_t& size);
-    std::unique_ptr<ConvertScale> mConvertScale;
+//    std::unique_ptr<uint8_t[]> convScaleFrame(const FrameQueue::VideoFrameStr& frame, unsigned xRes, unsigned yRes, size_t& size);
+//    std::unique_ptr<ConvertScale> mConvertScale;
 
     RenderVidFrameObserver* mRenderVidFrameObserver;
     Video::Decoder* mVideoDecoder;

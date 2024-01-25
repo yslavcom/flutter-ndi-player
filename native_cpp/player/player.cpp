@@ -111,9 +111,9 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
 
                 // uncompressed frame
                 size_t size = 0;
-                auto scaledFrame = convScaleFrame(arg, x, y, size);
+                // auto scaledFrame = convScaleFrame(arg, x, y, size);
                 DBG_PLAYER_VID("Render uncompressed\n");
-                mRenderVidFrameObserver->onRender(std::move(scaledFrame), size);
+                mRenderVidFrameObserver->onRender(arg.data, size);
 
                 // It must be cleaned after all observers had a chance to process the frame
                 if (cleanupCb)
@@ -201,6 +201,7 @@ void Player::onFrame(FrameQueue::AudioFrame* frame, size_t remainingCount)
     audio_push_aud_frame(reinterpret_cast<uintptr_t>(audio.opaque), audio.chanNo, reinterpret_cast<uintptr_t>(audio.samples), audio.samplesNo, audio.stride, audio.planar);
 }
 
+#if 0
 std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameStr& frame, unsigned xRes, unsigned yRes, size_t& size)
 {
     const int outputPixelComponentscount = 4; //RGBA
@@ -234,4 +235,4 @@ std::unique_ptr<uint8_t[]> Player::convScaleFrame(const FrameQueue::VideoFrameSt
         size, xRes, yRes, frame.xres, frame.yres, frame.stride, bytes_in_line);
     return nullptr;
 }
-
+#endif
