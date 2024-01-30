@@ -11,7 +11,7 @@
 
 // #define _DBG_NDI_INP_OBS
 // #define _DBG_AUD_LOG
-#define _DBG_COMPRESSED_LOG
+// #define _DBG_COMPRESSED_LOG
 
 #ifdef _DBG_NDI_INP_OBS
     #define DBG_NDI_INP_OBS(format, ...) LOGW(format, ## __VA_ARGS__)

@@ -107,12 +107,12 @@ void Player::onFrame(FrameQueue::VideoFrame* frame, size_t remainingCount)
         std::visit(FrameQueue::overloaded {
             [this, x, y, cleanupCb = frame->second](FrameQueue::VideoFrameStr& arg)
             {
-                DBG_PLAYER_VID("Uncompressed, x:%d, y:%d\n", arg.xres, arg.yres);
+                LOGW("Uncompressed, x:%d, y:%d, stride:%d\n", arg.xres, arg.yres, arg.stride);
 
                 // uncompressed frame
-                size_t size = 0;
+                size_t size = arg.xres * arg.yres * (!arg.stride ? 1 : (arg.stride/arg.xres));
                 // auto scaledFrame = convScaleFrame(arg, x, y, size);
-                DBG_PLAYER_VID("Render uncompressed\n");
+                //LOGW("Render uncompressed, mRenderVidFrameObserver:%p\n", mRenderVidFrameObserver);
                 mRenderVidFrameObserver->onRender(arg.data, size);
 
                 // It must be cleaned after all observers had a chance to process the frame

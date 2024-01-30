@@ -140,8 +140,9 @@ Java_com_example_ndi_1player_TextureHelper_setTextureCb(JNIEnv* env, jobject obj
     auto yRes = ANativeWindow_getHeight(mWindow);
     getRenderVidFrame()->setOutDim(xRes, yRes);
 
-    //ANativeWindow_setBuffersGeometry(mWindow, xRes, yRes, WINDOW_FORMAT_RGBA_8888);
-    ANativeWindow_setBuffersGeometry(mWindow, xRes, yRes, AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420);
+    ANativeWindow_setBuffersGeometry(mWindow, xRes, yRes, WINDOW_FORMAT_RGBA_8888);
+    // ANativeWindow_setBuffersGeometry(mWindow, xRes, yRes, AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420);
+
 
     LOGW("NativeWindowType:%p\n", mWindow);
 
@@ -167,7 +168,7 @@ namespace // #ifdef ANDROID_PLATFORM
 void RenderVidFrame::onRender(uint8_t* frameBytes, size_t size)
 {
 #ifdef ANDROID_PLATFORM
-    DBG_RENDER("onRender, mWindow:%p, frameBytes:%p, size:%d\n", mWindow, frameBytes, size);
+    DBG_RENDER("onRender, mWindow:%p, frameBytes:%p, size:%d\n", ::mWindow, frameBytes, size);
     if (!frameBytes || !size)
     {
         //nothing to do
@@ -191,12 +192,20 @@ void RenderVidFrame::onRender(uint8_t* frameBytes, size_t size)
             }
             else
             {
+                //LOGW("onRender, width:%d, height:%d, bits:%d, stride:%d\n", buffer.width, buffer.height, buffer.bits, buffer.stride);
+
+
                 // Copy RGBA data to buffer
                 for (int y = 0; y < buffer.height; y++)
                 {
-                    uint8_t* dst = (uint8_t*) buffer.bits + y * buffer.stride * 4;
-                    uint8_t* src = frameBytes + y * mXres * 4;
-                    memcpy(dst, src, buffer.width * 4);
+                    //uint8_t* dst = (uint8_t*) buffer.bits + y * buffer.stride * 4;
+                    //uint8_t* src = frameBytes + y * mXres * 4;
+
+                    uint8_t* dst = (uint8_t*) buffer.bits + y * buffer.stride * 2;
+
+                    uint8_t* src = frameBytes + y * mXres * 2;
+
+                    memcpy(dst, src, buffer.width * 2);
                 }
                 // LOGW("buffer.width:%d, buffer.height:%d\n", buffer.width, buffer.height);
 
