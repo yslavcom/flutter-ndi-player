@@ -83,8 +83,13 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
+bool UNLOCKED = false;
+int LOCK_TIMEOUT_SEC = 3;
+double DEMO_MODE_TRANSPARENCY = 0.1;
+
 class _HomePageState extends State<HomePage> {
   bool isDebugInfoVisible = kDebugMode;
+  bool demoMode = false;
   var _debugInfo = DebugInfo();
   late Timer _timer;
 
@@ -100,6 +105,7 @@ class _HomePageState extends State<HomePage> {
   @override
   initState() {
     super.initState();
+
     ProgramControl().registerListUpdateCallback(updateListView);
 
     initializeController();
@@ -136,25 +142,50 @@ class _HomePageState extends State<HomePage> {
     // Program names list
     programNames = ProgramControl().getProgramsName();
 
-    // Build
-    return Scaffold(
-        backgroundColor: theme.colorScheme.background,
-        body: Stack(children: [
-          // The widget that appears later in the list will be drawn on top of the widgets that come before it
-          visibleWidget(true,
-              Opacity(opacity: textureOpacity, child: textureContainer())),
-          visibleWidget(isSourceListVisible,
-              Opacity(opacity: 1.0, child: sourceListContainer(theme))),
-          GestureDetector(
-            onDoubleTap: () {
-              setState(() {
-                toggleSourceListVisibility();
-                adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
-              });
-            },
-          ),
-          if (isDebugInfoVisible) debugInfo(theme),
-        ]));
+    if (demoMode)
+    {
+      // Build
+      return Scaffold(
+          backgroundColor: Colors.orange,
+          body: Stack(children: [
+            // The widget that appears later in the list will be drawn on top of the widgets that come before it
+            visibleWidget(true,
+                Opacity(opacity: textureOpacity, child: textureContainer())),
+            visibleWidget(isSourceListVisible,
+                Opacity(opacity: 1.0, child: sourceListContainer(theme))),
+            GestureDetector(
+              onDoubleTap: () {
+                setState(() {
+                  toggleSourceListVisibility();
+                  adjustTextureTransparency(isSourceListVisible ? getVideoTransparency(0.5) : getVideoTransparency(1.0));
+                });
+              },
+            ),
+            if (isDebugInfoVisible) debugInfo(theme),
+          ]));
+    }
+    else
+    {
+      // Build
+      return Scaffold(
+          backgroundColor: theme.colorScheme.background,
+          body: Stack(children: [
+            // The widget that appears later in the list will be drawn on top of the widgets that come before it
+            visibleWidget(true,
+                Opacity(opacity: textureOpacity, child: textureContainer())),
+            visibleWidget(isSourceListVisible,
+                Opacity(opacity: 1.0, child: sourceListContainer(theme))),
+            GestureDetector(
+              onDoubleTap: () {
+                setState(() {
+                  toggleSourceListVisibility();
+                  adjustTextureTransparency(isSourceListVisible ? getVideoTransparency(0.5) : getVideoTransparency(1.0));
+                });
+              },
+            ),
+            if (isDebugInfoVisible) debugInfo(theme),
+          ]));
+    }
   }
 
   // Callback function to update the ListView
@@ -209,8 +240,9 @@ class _HomePageState extends State<HomePage> {
           ProgramControl().startProgram(index);
           setState(() {
             setSourceListVisibility(false);
-            adjustTextureTransparency(isSourceListVisible ? 0.5 : 1.0);
+            adjustTextureTransparency(isSourceListVisible ? getVideoTransparency(0.5) : getVideoTransparency(1.0));
           });
+          checkDelayDemo();
         },
       ),
     );
@@ -261,6 +293,23 @@ class _HomePageState extends State<HomePage> {
 
   void displaySelectedSourceInfo() {
     setState(() {});
+  }
+
+  double getVideoTransparency(double val)
+  {
+    return demoMode ? DEMO_MODE_TRANSPARENCY : val;
+  }
+
+  void checkDelayDemo() {
+    if (!UNLOCKED) {
+      // After LOCK_TIMEOUT_SEC seconds, update the state to show the text
+      Future.delayed(Duration(seconds: LOCK_TIMEOUT_SEC), () {
+        setState(() {
+            demoMode = true;
+            adjustTextureTransparency(DEMO_MODE_TRANSPARENCY);
+            });
+      });
+    }
   }
 }
 
